@@ -46,3 +46,61 @@ Listeningway is a ReShade addon for Final Fantasy XIV (FFXIV) that captures game
 - If you encounter issues, check the ReShade log for errors.
 
 ---
+
+# Listeningway Addon Shader Integration Guide
+
+To use real-time audio data (volume and frequency bands) from the Listeningway ReShade addon in your shaders, follow these steps:
+
+## 1. Include the Uniform Declarations
+
+Add the following to your shader file (e.g., at the top):
+
+```hlsl
+// Listeningway audio uniforms
+uniform float Listeningway_Volume;
+uniform float Listeningway_FreqBands[8];
+```
+
+- `Listeningway_Volume` is a float in the range [0, 1] representing the current audio volume.
+- `Listeningway_FreqBands` is a float array (default size 8) where each element represents the normalized magnitude of a frequency band.
+
+## 2. Use the Uniforms in Your Shader Code
+
+You can use these uniforms in your pixel/vertex shaders to drive visual effects. Example:
+
+```hlsl
+float bar = Listeningway_FreqBands[band_index]; // Use band_index in [0,7]
+float vol = Listeningway_Volume; // Use for global volume-based effects
+```
+
+## 3. (Optional) Customize Number of Bands
+
+If you want a different number of bands, you must:
+- Change the array size in both the shader and the C++ addon (LISTENINGWAY_NUM_BANDS).
+- Rebuild the addon and update the shader accordingly.
+
+## 4. Enable the Effect in ReShade
+
+- Place your shader (e.g., `Listeningway.fx`) in the ReShade shaders directory.
+- Enable the effect in the ReShade overlay in-game.
+
+## 5. Example Shader Snippet
+
+```hlsl
+uniform float Listeningway_Volume;
+uniform float Listeningway_FreqBands[8];
+
+float4 main(float2 uv : TEXCOORD) : SV_Target
+{
+    float intensity = Listeningway_FreqBands[0] * 0.5 + Listeningway_Volume * 0.5;
+    return float4(intensity, 0, 0, 1);
+}
+```
+
+---
+
+**Note:**  
+- The addon will automatically find and update all uniforms named `Listeningway_Volume` and `Listeningway_FreqBands` in all loaded effects.
+- No additional setup is required in the shader beyond declaring the uniforms.
+
+For advanced usage or troubleshooting, refer to the Listeningway README or contact the addon maintainer.
