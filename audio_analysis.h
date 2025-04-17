@@ -2,16 +2,16 @@
 #include <vector>
 #include <cstddef>
 
-constexpr size_t NUM_BANDS = 8;
+constexpr size_t LISTENINGWAY_NUM_BANDS = 8;
 
 struct AudioAnalysisData {
     float volume = 0.0f;
     std::vector<float> freq_bands;
-    AudioAnalysisData(size_t bands = NUM_BANDS) : freq_bands(bands, 0.0f) {}
+    AudioAnalysisData(size_t bands = LISTENINGWAY_NUM_BANDS) : freq_bands(bands, 0.0f) {}
 };
 
 struct AudioAnalysisConfig {
-    size_t num_bands = NUM_BANDS;
+    size_t num_bands = LISTENINGWAY_NUM_BANDS;
     size_t fft_size = 512;
 };
 

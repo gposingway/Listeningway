@@ -1,4 +1,6 @@
 #include <algorithm> // Required for std::min, std::copy
+#include <unordered_map>
+#include <string_view>
 
 // --- ImGui Integration ---
 // Define necessary macros before including imgui.h when using ReShade's ImGui instance
@@ -26,41 +28,55 @@
 #include "overlay.h"
 #include "logging.h"
 
+#define LISTENINGWAY_NUM_BANDS 8
+
 // --- Global State ---
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
-static AudioAnalysisConfig g_audio_config = { 16, 512 };
-static reshade::api::effect_uniform_variable g_freq_bands_uniform = { 0 }; // Add global handle for the uniform
-static reshade::api::effect_uniform_variable g_volume_uniform = { 0 }; // Add global handle for the volume uniform
+static AudioAnalysisConfig g_audio_config = { LISTENINGWAY_NUM_BANDS, 512 };
+
+// --- Uniform variable cache ---
+static std::vector<reshade::api::effect_uniform_variable> g_volume_uniforms;
+static std::vector<reshade::api::effect_uniform_variable> g_freq_bands_uniforms;
 
 // --- Uniform Update Callback ---
 static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
-    if (g_freq_bands_uniform == 0) {
-        g_freq_bands_uniform = runtime->find_uniform_variable("Listeningway.fx", "fListeningwayFreqBands");
-        if (g_freq_bands_uniform == 0) {
-            LogToFile("UpdateShaderUniforms: Failed to find uniform 'fListeningwayFreqBands'");
-            return;
-        }
+    float volume_to_set;
+    std::vector<float> freq_bands_to_set;
+    {
+        std::lock_guard<std::mutex> lock(g_audio_data_mutex);
+        volume_to_set = g_audio_data.volume;
+        freq_bands_to_set = g_audio_data.freq_bands;
     }
-    if (g_volume_uniform == 0) {
-        g_volume_uniform = runtime->find_uniform_variable("Listeningway.fx", "fListeningwayVolume");
-        if (g_volume_uniform == 0) {
-            LogToFile("UpdateShaderUniforms: Failed to find uniform 'fListeningwayVolume'");
-            // Don't return, bands can still be set
-        }
+    // Cache miss: build the cache if empty
+    if (g_volume_uniforms.empty() || g_freq_bands_uniforms.empty()) {
+        runtime->enumerate_uniform_variables(nullptr, [&](reshade::api::effect_runtime*, reshade::api::effect_uniform_variable var_handle) {
+            char name[256] = {};
+            runtime->get_uniform_variable_name(var_handle, name);
+            if (std::string_view(name) == "Listeningway_Volume") {
+                g_volume_uniforms.push_back(var_handle);
+            } else if (std::string_view(name) == "Listeningway_FreqBands") {
+                g_freq_bands_uniforms.push_back(var_handle);
+            }
+        });
     }
-    std::lock_guard<std::mutex> lock(g_audio_data_mutex);
-    if (!g_audio_data.freq_bands.empty()) {
-        runtime->set_uniform_value_float(g_freq_bands_uniform, g_audio_data.freq_bands.data(), g_audio_data.freq_bands.size());
+    // Set the uniform for all cached handles
+    for (auto var_handle : g_volume_uniforms) {
+        runtime->set_uniform_value_float(var_handle, &volume_to_set, 1);
     }
-    // Always set volume if handle is valid
-    if (g_volume_uniform != 0) {
-        float volume = g_audio_data.volume;
-        runtime->set_uniform_value_float(g_volume_uniform, &volume, 1);
+    for (auto var_handle : g_freq_bands_uniforms) {
+        if (!freq_bands_to_set.empty())
+            runtime->set_uniform_value_float(var_handle, freq_bands_to_set.data(), static_cast<uint32_t>(freq_bands_to_set.size()));
     }
+}
+
+// --- Effect reload event: clear cache ---
+static void OnReloadedEffects(reshade::api::effect_runtime*) {
+    g_volume_uniforms.clear();
+    g_freq_bands_uniforms.clear();
 }
 
 // --- Overlay callback ---
@@ -81,6 +97,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                 // Register the function using the correct event enum
                 reshade::register_event<reshade::addon_event::reshade_begin_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
+                reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
+                    (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
                 StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
                 g_addon_enabled = true;
             }
@@ -91,10 +109,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                 // Unregister the function using the correct event enum
                 reshade::unregister_event<reshade::addon_event::reshade_begin_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
+                reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(
+                    (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
                 StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
                 CloseLogFile();
                 g_addon_enabled = false;
-                g_freq_bands_uniform = { 0 }; // Reset uniform handle
             }
             break;
     }

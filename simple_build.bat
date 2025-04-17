@@ -29,6 +29,8 @@ move /Y build\%CONFIG%\Listeningway.addon %DIST%\Listeningway.addon
 
 REM Copy Listeningway.fx to dist
 copy /Y Listeningway.fx %DIST%\Listeningway.fx
+REM Copy ListeningwayUniforms.fxh to dist
+copy /Y ListeningwayUniforms.fxh %DIST%\ListeningwayUniforms.fxh
 
 REM No DLLs to copy for static build
 
