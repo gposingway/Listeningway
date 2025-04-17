@@ -1,5 +1,5 @@
 // Simple debug shader for Listeningway addon
-#define NUM_BANDS 8
+#define NUM_BANDS 16
 #define ORIENT_HORIZONTAL 0
 #define ORIENT_VERTICAL 1
 #define CORNER_TOP_LEFT 0
@@ -12,11 +12,10 @@ uniform float fListeningwayVolume < ui_visible = false; >;
 uniform int iListeningwayOrientation < ui_type = "combo"; ui_items = "Horizontal\0Vertical\0"; ui_label = "Orientation"; > = ORIENT_HORIZONTAL;
 uniform int iListeningwayCorner < ui_type = "combo"; ui_items = "Top Left\0Top Right\0Bottom Left\0Bottom Right\0"; ui_label = "Corner"; > = CORNER_TOP_LEFT;
 
-uniform texture2D backbufferTex : COLOR;
-sampler2D backbuffer = sampler_state { Texture = <backbufferTex>; };
+uniform float4 backbufferTex : BACKBUFFER;
 
 // Overlay size and margin
-static const float2 overlay_size = float2(0.28, 0.12); // width, height in UV space
+static const float2 overlay_size = float2(0.38, 0.12); // width, height in UV space (wider for more bands)
 static const float2 margin = float2(0.02, 0.02);
 
 // Simple passthrough vertex shader
@@ -50,10 +49,8 @@ float4 DebugPS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 
     float2 overlay_uv = (uv - base) / overlay_size;
     // Sample the backbuffer for the base color
-    float4 baseColor = tex2D(backbuffer, uv);
-    // Only draw in overlay area
     if (any(overlay_uv < 0.0) || any(overlay_uv > 1.0))
-        return baseColor;
+        return backbufferTex; // Show the game for non-overlay pixels
 
     float3 color = float3(0.08, 0.08, 0.10); // background
 
@@ -91,7 +88,7 @@ float4 DebugPS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         if (overlay_uv.x < vol_width && overlay_uv.y > 1.0 - clamp(fListeningwayVolume, 0.0, 1.0))
             color = float3(1.0, 0.5, 0.1);
     }
-    return float4(lerp(baseColor.rgb, color, 0.85), 1.0);
+    return float4(color, 1.0); // Draw overlay fully opaque
 }
 
 technique DebugBars

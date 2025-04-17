@@ -32,8 +32,9 @@ static std::atomic_bool g_audio_thread_running = false;
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
-static AudioAnalysisConfig g_audio_config = { 8, 512 };
+static AudioAnalysisConfig g_audio_config = { 16, 512 };
 static reshade::api::effect_uniform_variable g_freq_bands_uniform = { 0 }; // Add global handle for the uniform
+static reshade::api::effect_uniform_variable g_volume_uniform = { 0 }; // Add global handle for the volume uniform
 
 // --- Uniform Update Callback ---
 static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
@@ -43,14 +44,22 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
             LogToFile("UpdateShaderUniforms: Failed to find uniform 'fListeningwayFreqBands'");
             return;
         }
-        LogToFile("UpdateShaderUniforms: Found uniform 'fListeningwayFreqBands'");
+    }
+    if (g_volume_uniform == 0) {
+        g_volume_uniform = runtime->find_uniform_variable("Listeningway.fx", "fListeningwayVolume");
+        if (g_volume_uniform == 0) {
+            LogToFile("UpdateShaderUniforms: Failed to find uniform 'fListeningwayVolume'");
+            // Don't return, bands can still be set
+        }
     }
     std::lock_guard<std::mutex> lock(g_audio_data_mutex);
     if (!g_audio_data.freq_bands.empty()) {
-        LogToFile("UpdateShaderUniforms (begin_effects): Sending band 0 value: " + std::to_string(g_audio_data.freq_bands[0]));
         runtime->set_uniform_value_float(g_freq_bands_uniform, g_audio_data.freq_bands.data(), g_audio_data.freq_bands.size());
-    } else {
-        LogToFile("UpdateShaderUniforms (begin_effects): freq_bands is empty!");
+    }
+    // Always set volume if handle is valid
+    if (g_volume_uniform != 0) {
+        float volume = g_audio_data.volume;
+        runtime->set_uniform_value_float(g_volume_uniform, &volume, 1);
     }
 }
 
