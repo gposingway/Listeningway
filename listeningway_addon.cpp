@@ -80,22 +80,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     switch (ul_reason_for_call)
     {
         case DLL_PROCESS_ATTACH:
-            // Disable thread library calls to avoid potential deadlocks
-            // if the DLL is loaded under unusual circumstances.
             DisableThreadLibraryCalls(hModule);
 
-            // Check if the host application is loading ReShade
-            // We only want to register our addon if ReShade is present.
-            // reshade::register_addon expects the hModule of the addon DLL.
+            // Revert to the original registration call
             if (reshade::register_addon(hModule))
             {
                 RegisterListeningwayAddon();
             }
-            // If ReShade isn't present or registration fails, do nothing more.
             break;
 
         case DLL_PROCESS_DETACH:
-            // Only unregister if we successfully registered before.
             if (g_addon_enabled.load())
             {
                 UnregisterListeningwayAddon();

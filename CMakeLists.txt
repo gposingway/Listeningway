@@ -18,9 +18,10 @@ message(STATUS "Using ReShade SDK from: ${RESHADE_SDK_PATH}")
 include_directories(${RESHADE_SDK_PATH})
 
 # --- Project Configuration ---
-# Add source file(s) - we'll create this in Phase 2
+# Add source file(s) including the resource file
 add_library(${PROJECT_NAME} SHARED
     listeningway_addon.cpp
+    listeningway.rc # <-- Add the resource file here
 )
 
 # --- Preprocessor Definitions ---
