@@ -21,7 +21,16 @@ include_directories(${RESHADE_SDK_PATH})
 # Add source file(s) including the resource file
 add_library(${PROJECT_NAME} SHARED
     listeningway_addon.cpp
-    listeningway.rc # <-- Add the resource file here
+    audio_capture.cpp
+    audio_analysis.cpp
+    overlay.cpp
+    logging.cpp
+    listeningway.rc
+)
+
+# Add ImGui include directory specifically for the Listeningway target
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/tools/reshade/deps/imgui
 )
 
 # --- Preprocessor Definitions ---
@@ -44,8 +53,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 # Link vcpkg libraries
+# Use kissfft-float linkage
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    kissfft::kissfft-float # Link specific float target
+    kissfft::kissfft-float
 )
 
 # --- Output Configuration ---

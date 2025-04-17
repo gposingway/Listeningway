@@ -13,6 +13,7 @@ set CMAKE_GENERATOR="Visual Studio 17 2022" REM Adjust if needed
 set CMAKE_PLATFORM=x64
 set VCPKG_TOOLCHAIN_FILE=%~dp0%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake
 set RESHADE_SDK_INCLUDE_PATH=%~dp0%RESHADE_DIR%\include
+set VCPKG_TARGET_TRIPLET=x64-windows-static
 
 REM --- Preparation Steps ---
 
@@ -65,6 +66,15 @@ if not exist "%VCPKG_DIR%\vcpkg.exe" (
     echo vcpkg.exe found.
 )
 
+echo Installing dependencies with static triplet...
+pushd "%VCPKG_DIR%"
+vcpkg install --triplet %VCPKG_TARGET_TRIPLET%
+if errorlevel 1 (
+    echo Failed to install dependencies with vcpkg.
+    goto failure
+)
+popd
+
 echo Configuring CMake project...
 if exist "%BUILD_DIR%" (
     echo Removing existing build directory for clean configuration...
@@ -74,7 +84,7 @@ if exist "%BUILD_DIR%" (
         goto failure
     )
 )
-cmake -S . -B "%BUILD_DIR%" -G %CMAKE_GENERATOR% -A %CMAKE_PLATFORM% -DRESHADE_SDK_PATH="%RESHADE_SDK_INCLUDE_PATH%" -DCMAKE_TOOLCHAIN_FILE="%VCPKG_TOOLCHAIN_FILE%"
+cmake -S . -B "%BUILD_DIR%" -G %CMAKE_GENERATOR% -A %CMAKE_PLATFORM% -DRESHADE_SDK_PATH="%RESHADE_SDK_INCLUDE_PATH%" -DCMAKE_TOOLCHAIN_FILE="%VCPKG_TOOLCHAIN_FILE%" -DVCPKG_TARGET_TRIPLET=%VCPKG_TARGET_TRIPLET%
 if errorlevel 1 (
     echo CMake configuration failed!
     goto failure

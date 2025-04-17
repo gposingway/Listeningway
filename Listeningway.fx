@@ -1,179 +1,104 @@
-// Listeningway.fx - ReShade FX Shader for Audio Visualization
+// Simple debug shader for Listeningway addon
+#define NUM_BANDS 8
+#define ORIENT_HORIZONTAL 0
+#define ORIENT_VERTICAL 1
+#define CORNER_TOP_LEFT 0
+#define CORNER_TOP_RIGHT 1
+#define CORNER_BOTTOM_LEFT 2
+#define CORNER_BOTTOM_RIGHT 3
 
-// Define the number of frequency bands - MUST match NUM_BANDS in C++ code!
-#define LW_NUM_BANDS 32
+uniform float fListeningwayFreqBands[NUM_BANDS] < ui_visible = false; >;
+uniform float fListeningwayVolume < ui_visible = false; >;
+uniform int iListeningwayOrientation < ui_type = "combo"; ui_items = "Horizontal\0Vertical\0"; ui_label = "Orientation"; > = ORIENT_HORIZONTAL;
+uniform int iListeningwayCorner < ui_type = "combo"; ui_items = "Top Left\0Top Right\0Bottom Left\0Bottom Right\0"; ui_label = "Corner"; > = CORNER_TOP_LEFT;
 
-// --- Uniforms (Updated by Addon) ---
-uniform float fListeningwayVolume <
-    ui_visible = false;
-> = 0.0;
+uniform texture2D backbufferTex : COLOR;
+sampler2D backbuffer = sampler_state { Texture = <backbufferTex>; };
 
-uniform float fListeningwayFreqBands[LW_NUM_BANDS] <
-    ui_visible = false;
->;
+// Overlay size and margin
+static const float2 overlay_size = float2(0.28, 0.12); // width, height in UV space
+static const float2 margin = float2(0.02, 0.02);
 
-// --- UI / Debug Uniforms ---
-uniform bool bListeningwayDebugView <
-    ui_label = "Show Debug Visualization";
-    ui_tooltip = "Displays raw volume and frequency band values as bars.";
-> = false;
-
-uniform float fBarGraphHeight <
-    ui_type = "slider";
-    ui_label = "Bar Graph Height";
-    ui_min = 0.01; ui_max = 0.5;
-> = 0.1;
-
-uniform float fBarGraphWidth <
-    ui_type = "slider";
-    ui_label = "Bar Graph Width";
-    ui_min = 0.1; ui_max = 1.0;
-> = 0.8;
-
-uniform float fBarGraphYPos <
-    ui_type = "slider";
-    ui_label = "Bar Graph Y Position";
-    ui_min = 0.0; ui_max = 1.0;
-> = 0.9;
-
-uniform float4 cBarColor <
-    ui_type = "color";
-    ui_label = "Bar Color";
-> = float4(0.1, 0.7, 1.0, 0.8);
-
-uniform float4 cBarBgColor <
-    ui_type = "color";
-    ui_label = "Bar Background Color";
-> = float4(0.1, 0.1, 0.1, 0.5);
-
-// --- Textures --- (ReShade provides these)
-texture BackBufferTex : COLOR;
-sampler BackBuffer { Texture = BackBufferTex; };
-
-// --- Helper Functions ---
-// Simple box drawing: returns 1.0 inside, 0.0 outside
-float Box(float2 uv, float2 center, float2 size)
+// Simple passthrough vertex shader
+void VS_DebugBars(in uint id : SV_VertexID, out float4 pos : SV_Position, out float2 uv : TEXCOORD)
 {
-    float2 halfSize = size * 0.5;
-    float2 delta = abs(uv - center);
-    return step(delta.x, halfSize.x) * step(delta.y, halfSize.y);
+    uv.x = (id == 2) ? 2.0 : 0.0;
+    uv.y = (id == 1) ? 2.0 : 0.0;
+    pos = float4(uv * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
 }
 
-// --- Vertex Shader ---
-// Standard pass-through vertex shader required by ReShade
-struct VS_OUTPUT {
-    float4 position : SV_Position; // Clip space position
-    float2 texcoord : TEXCOORD0;   // Texture coordinates
-};
-
-VS_OUTPUT ListeningwayVS(uint id : SV_VertexID)
-{
-    VS_OUTPUT output;
-    // Generate texture coordinates for a full-screen triangle
-    output.texcoord.x = (id == 2) ? 2.0 : 0.0;
-    output.texcoord.y = (id == 1) ? 2.0 : 0.0;
-    // Generate clip space position for the full-screen triangle
-    output.position = float4(output.texcoord * float2(2.0, -2.0) + float2(-1.0, 1.0), 0.0, 1.0);
-    return output;
+float3 band_color(float t) {
+    // Gradient: blue -> cyan -> green -> yellow -> red
+    float3 c1 = float3(0.2, 0.6, 1.0); // blue
+    float3 c2 = float3(0.0, 1.0, 1.0); // cyan
+    float3 c3 = float3(0.0, 1.0, 0.2); // green
+    float3 c4 = float3(1.0, 1.0, 0.0); // yellow
+    float3 c5 = float3(1.0, 0.2, 0.2); // red
+    if (t < 0.25) return lerp(c1, c2, t / 0.25);
+    else if (t < 0.5) return lerp(c2, c3, (t - 0.25) / 0.25);
+    else if (t < 0.75) return lerp(c3, c4, (t - 0.5) / 0.25);
+    else return lerp(c4, c5, (t - 0.75) / 0.25);
 }
 
-// --- Pixel Shader Input Struct ---
-// Mirrors the VS_OUTPUT struct to ensure signature matching
-struct PS_INPUT {
-    float4 position : SV_Position;
-    float2 texcoord : TEXCOORD0;
-};
-
-// --- Pixel Shader ---
-// Use the PS_INPUT struct for input
-float4 ListeningwayPS(PS_INPUT input) : SV_Target
+float4 DebugPS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
-    // Use input.texcoord instead of texcoord
-    float4 color = tex2D(BackBuffer, input.texcoord);
+    // Determine overlay position
+    float2 base = margin;
+    if (iListeningwayCorner == CORNER_TOP_RIGHT) base.x = 1.0 - overlay_size.x - margin.x;
+    else if (iListeningwayCorner == CORNER_BOTTOM_LEFT) base.y = 1.0 - overlay_size.y - margin.y;
+    else if (iListeningwayCorner == CORNER_BOTTOM_RIGHT) base = 1.0 - overlay_size - margin;
 
-    // --- Bar Graph Visualization ---
-    // Calculate dimensions and position in screen space (0.0 to 1.0)
-    float graphWidth = fBarGraphWidth;
-    float graphHeight = fBarGraphHeight;
-    float graphBottom = fBarGraphYPos;
-    float graphTop = graphBottom - graphHeight;
-    float graphLeft = (1.0 - graphWidth) * 0.5;
+    float2 overlay_uv = (uv - base) / overlay_size;
+    // Sample the backbuffer for the base color
+    float4 baseColor = tex2D(backbuffer, uv);
+    // Only draw in overlay area
+    if (any(overlay_uv < 0.0) || any(overlay_uv > 1.0))
+        return baseColor;
 
-    float barTotalWidth = graphWidth / LW_NUM_BANDS;
-    float barSpacing = barTotalWidth * 0.1; // 10% spacing
-    float barWidth = barTotalWidth - barSpacing;
+    float3 color = float3(0.08, 0.08, 0.10); // background
 
-    // Check if the current pixel is within the graph background area
-    // Use input.texcoord instead of texcoord
-    if (input.texcoord.x >= graphLeft && input.texcoord.x <= graphLeft + graphWidth && input.texcoord.y >= graphTop && input.texcoord.y <= graphBottom)
-    {
-        // Draw background for the graph area
-        color.rgb = lerp(color.rgb, cBarBgColor.rgb, cBarBgColor.a);
-
-        // Determine which band this pixel falls into
-        // Use input.texcoord instead of texcoord
-        int bandIndex = floor((input.texcoord.x - graphLeft) / barTotalWidth);
-
-        if (bandIndex >= 0 && bandIndex < LW_NUM_BANDS)
-        {
-            // Calculate the horizontal center of the current band's bar
-            float bandCenterX = graphLeft + (bandIndex + 0.5) * barTotalWidth;
-
-            // Get the normalized height for this band
-            float bandHeight = fListeningwayFreqBands[bandIndex];
-
-            // Calculate the bar's dimensions and position
-            float barActualHeight = bandHeight * graphHeight;
-            float barTop = graphBottom - barActualHeight;
-            float barCenterY = graphBottom - barActualHeight * 0.5;
-
-            // Check if the pixel is within the visible part of the bar
-            float2 barCenter = float2(bandCenterX, barCenterY);
-            float2 barSize = float2(barWidth, barActualHeight);
-
-            // Use input.texcoord instead of texcoord
-            float barMask = Box(input.texcoord, barCenter, barSize);
-
-            // If inside the bar, blend with bar color
-            if (barMask > 0.0)
-            {
-                color.rgb = lerp(color.rgb, cBarColor.rgb, cBarColor.a);
-            }
+    // Draw bars and volume
+    if (iListeningwayOrientation == ORIENT_HORIZONTAL) {
+        // Horizontal bars
+        int band = int(overlay_uv.x * NUM_BANDS);
+        band = clamp(band, 0, NUM_BANDS - 1);
+        float bandValue = clamp(fListeningwayFreqBands[band], 0.0, 1.0);
+        float bar_top = 1.0 - bandValue;
+        float bar_width = 1.0 / NUM_BANDS * 0.8;
+        float bar_center = (band + 0.5) / NUM_BANDS;
+        float xdist = abs(overlay_uv.x - bar_center);
+        if (xdist < bar_width * 0.5 && overlay_uv.y > bar_top) {
+            color = band_color(band / (float)(NUM_BANDS - 1));
         }
+        // Volume meter as a thin bar below
+        float vol_height = 0.08;
+        if (overlay_uv.y > 1.0 - vol_height && overlay_uv.x < clamp(fListeningwayVolume, 0.0, 1.0))
+            color = float3(1.0, 0.5, 0.1);
+    } else {
+        // Vertical bars
+        int band = int((1.0 - overlay_uv.y) * NUM_BANDS);
+        band = clamp(band, 0, NUM_BANDS - 1);
+        float bandValue = clamp(fListeningwayFreqBands[band], 0.0, 1.0);
+        float bar_right = bandValue;
+        float bar_height = 1.0 / NUM_BANDS * 0.8;
+        float bar_center = 1.0 - (band + 0.5) / NUM_BANDS;
+        float ydist = abs(overlay_uv.y - bar_center);
+        if (ydist < bar_height * 0.5 && overlay_uv.x < bar_right) {
+            color = band_color(band / (float)(NUM_BANDS - 1));
+        }
+        // Volume meter as a thin bar at left
+        float vol_width = 0.08;
+        if (overlay_uv.x < vol_width && overlay_uv.y > 1.0 - clamp(fListeningwayVolume, 0.0, 1.0))
+            color = float3(1.0, 0.5, 0.1);
     }
-
-    // --- Debug View (Overlay) ---
-    if (bListeningwayDebugView)
-    {
-        // Draw a simple bar for the overall volume near the top left
-        float volWidth = 0.1;
-        float volHeight = 0.02;
-        float volPosX = 0.01;
-        float volPosY = 0.01;
-        float volFill = fListeningwayVolume * volWidth;
-
-        // Background
-        float2 volBgCenter = float2(volPosX + volWidth * 0.5, volPosY + volHeight * 0.5);
-        float2 volBgSize = float2(volWidth, volHeight);
-        // Use input.texcoord instead of texcoord
-        color.rgb = lerp(color.rgb, float3(0.1, 0.1, 0.1), Box(input.texcoord, volBgCenter, volBgSize) * 0.7);
-
-        // Foreground (Filled part)
-        float2 volFgCenter = float2(volPosX + volFill * 0.5, volPosY + volHeight * 0.5);
-        float2 volFgSize = float2(volFill, volHeight);
-        // Use input.texcoord instead of texcoord
-        color.rgb = lerp(color.rgb, float3(0.9, 0.9, 0.9), Box(input.texcoord, volFgCenter, volFgSize));
-    }
-
-    return color;
+    return float4(lerp(baseColor.rgb, color, 0.85), 1.0);
 }
 
-// --- Technique ---
-technique Listeningway
+technique DebugBars
 {
     pass
     {
-        VertexShader = ListeningwayVS; // Assign the vertex shader
-        PixelShader = ListeningwayPS;
+        VertexShader = VS_DebugBars;
+        PixelShader = DebugPS;
     }
 }
