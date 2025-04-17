@@ -1,49 +1,45 @@
-#include <algorithm> // Required for std::min, std::copy
+// ---------------------------------------------
+// @file listeningway_addon.cpp
+// @brief Main entry point for the Listeningway ReShade addon
+// ---------------------------------------------
+#include <algorithm>
 #include <unordered_map>
 #include <string_view>
-
-// --- ImGui Integration ---
-// Define necessary macros before including imgui.h when using ReShade's ImGui instance
 #define IMGUI_DISABLE_INCLUDE_IMCONFIG_H
-#define ImTextureID ImU64 // Use ReShade's resource view handle as texture ID
-#include <imgui.h> // <<< Include imgui.h BEFORE reshade.hpp
-// --- End ImGui Integration ---
-
-#include <reshade.hpp> // <<< Include reshade.hpp AFTER imgui.h
+#define ImTextureID ImU64
+#include <imgui.h>
+#include <reshade.hpp>
 #include <windows.h>
 #include <atomic>
 #include <mutex>
 #include <thread>
 #include <vector>
-#include <fstream> // For logging
-#include <string>  // For logging
-#include <chrono>  // For sleep and logging timestamp
-#include <cmath>   // For audio analysis later
-#include <combaseapi.h> // For COM
-#include <mmdeviceapi.h> // For WASAPI
-#include <audioclient.h> // For WASAPI
-
+#include <fstream>
+#include <string>
+#include <chrono>
+#include <cmath>
+#include <combaseapi.h>
+#include <mmdeviceapi.h>
+#include <audioclient.h>
 #include "audio_capture.h"
 #include "audio_analysis.h"
 #include "overlay.h"
 #include "logging.h"
+#include "uniform_manager.h"
 
 #define LISTENINGWAY_NUM_BANDS 8
-
-// --- Global State ---
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
 static AudioAnalysisConfig g_audio_config = { LISTENINGWAY_NUM_BANDS, 512 };
+static UniformManager g_uniform_manager;
 
-// --- Uniform variable cache ---
-static std::vector<reshade::api::effect_uniform_variable> g_volume_uniforms;
-static std::vector<reshade::api::effect_uniform_variable> g_freq_bands_uniforms;
-static std::vector<reshade::api::effect_uniform_variable> g_beat_uniforms;
-
-// --- Uniform Update Callback ---
+/**
+ * @brief Updates all Listeningway_* uniforms in all loaded effects.
+ * @param runtime The ReShade effect runtime.
+ */
 static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
     float volume_to_set;
     std::vector<float> freq_bands_to_set;
@@ -54,46 +50,30 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
         freq_bands_to_set = g_audio_data.freq_bands;
         beat_to_set = g_audio_data.beat;
     }
-    // Cache miss: build the cache if empty
-    if (g_volume_uniforms.empty() || g_freq_bands_uniforms.empty() || g_beat_uniforms.empty()) {
-        runtime->enumerate_uniform_variables(nullptr, [&](reshade::api::effect_runtime*, reshade::api::effect_uniform_variable var_handle) {
-            char name[256] = {};
-            runtime->get_uniform_variable_name(var_handle, name);
-            if (std::string_view(name) == "Listeningway_Volume") {
-                g_volume_uniforms.push_back(var_handle);
-            } else if (std::string_view(name) == "Listeningway_FreqBands") {
-                g_freq_bands_uniforms.push_back(var_handle);
-            } else if (std::string_view(name) == "Listeningway_Beat") {
-                g_beat_uniforms.push_back(var_handle);
-            }
-        });
-    }
-    // Set the uniform for all cached handles
-    for (auto var_handle : g_volume_uniforms) {
-        runtime->set_uniform_value_float(var_handle, &volume_to_set, 1);
-    }
-    for (auto var_handle : g_freq_bands_uniforms) {
-        if (!freq_bands_to_set.empty())
-            runtime->set_uniform_value_float(var_handle, freq_bands_to_set.data(), static_cast<uint32_t>(freq_bands_to_set.size()));
-    }
-    for (auto var_handle : g_beat_uniforms) {
-        runtime->set_uniform_value_float(var_handle, &beat_to_set, 1);
-    }
+    g_uniform_manager.update_uniforms(runtime, volume_to_set, freq_bands_to_set, beat_to_set);
 }
 
-// --- Effect reload event: clear cache ---
-static void OnReloadedEffects(reshade::api::effect_runtime*) {
-    g_volume_uniforms.clear();
-    g_freq_bands_uniforms.clear();
-    g_beat_uniforms.clear();
+/**
+ * @brief Caches all Listeningway_* uniforms on effect reload.
+ * @param runtime The ReShade effect runtime.
+ */
+static void OnReloadedEffects(reshade::api::effect_runtime* runtime) {
+    g_uniform_manager.clear();
+    g_uniform_manager.cache_uniforms(runtime);
 }
 
-// --- Overlay callback ---
+/**
+ * @brief Overlay callback for ReShade. Draws the debug overlay.
+ * @param runtime The ReShade effect runtime.
+ */
 static void OverlayCallback(reshade::api::effect_runtime*) {
     DrawListeningwayDebugOverlay(g_audio_data, g_audio_data_mutex);
 }
 
-// --- DllMain and registration ---
+/**
+ * @brief DLL entry point and addon registration for Listeningway.
+ * Handles ReShade addon lifecycle and event registration.
+ */
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     UNREFERENCED_PARAMETER(lpReserved);
     switch (ul_reason_for_call) {
@@ -103,7 +83,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                 OpenLogFile("listeningway.log");
                 LogToFile("Addon loaded and log file opened.");
                 reshade::register_overlay(nullptr, &OverlayCallback);
-                // Register the function using the correct event enum
                 reshade::register_event<reshade::addon_event::reshade_begin_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                 reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
@@ -115,7 +94,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         case DLL_PROCESS_DETACH:
             if (g_addon_enabled.load()) {
                 reshade::unregister_overlay(nullptr, &OverlayCallback);
-                // Unregister the function using the correct event enum
                 reshade::unregister_event<reshade::addon_event::reshade_begin_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                 reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(
@@ -128,4 +106,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     }
     return TRUE;
 }
+
+/**
+ * @mainpage Listeningway ReShade Addon
+ *
+ * @section intro_sec Introduction
+ * Listeningway is a modular audio analysis and visualization addon for ReShade. It captures system audio, analyzes it in real time, and exposes the results to shaders via uniforms.
+ *
+ * @section extend_sec How to Extend
+ * - Add new analysis features in audio_analysis.*
+ * - Add new uniforms in uniform_manager.* and update logic
+ * - Add new overlay elements in overlay.*
+ * - Use logging for debugging and diagnostics
+ *
+ * The flow is: Audio Capture (thread) -> Analysis -> Uniform Update -> Shader/Overlay
+ */
 

@@ -1,3 +1,7 @@
+// ---------------------------------------------
+// Overlay Module Implementation
+// Provides a debug ImGui overlay for real-time audio analysis data
+// ---------------------------------------------
 #define IMGUI_DISABLE_INCLUDE_IMCONFIG_H
 #define ImTextureID ImU64
 #include <imgui.h>
@@ -5,16 +9,21 @@
 #include "overlay.h"
 #include "audio_analysis.h"
 
+// Draws the Listeningway debug overlay using ImGui.
+// Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
     std::lock_guard<std::mutex> lock(data_mutex);
+    // --- Volume meter ---
     ImGui::Text("Volume:");
     ImGui::SameLine();
     ImGui::ProgressBar(data.volume, ImVec2(-1.0f, 0.0f));
     ImGui::Separator();
+    // --- Beat meter ---
     ImGui::Text("Beat:");
     ImGui::SameLine();
     ImGui::ProgressBar(data.beat, ImVec2(-1.0f, 0.0f));
     ImGui::Separator();
+    // --- Frequency bands ---
     ImGui::Text("Frequency Bands (%zu):", data.freq_bands.size());
     // Make the child window tall enough for all bands
     ImGui::BeginChild("FreqBandsChild", ImVec2(0, 24.0f * data.freq_bands.size()), true, ImGuiWindowFlags_HorizontalScrollbar);
