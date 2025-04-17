@@ -2,6 +2,8 @@
 #include <kiss_fftr.h>
 #include <cmath>
 #include <vector>
+#include <algorithm>
+#include <chrono>
 
 void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, const AudioAnalysisConfig& config, AudioAnalysisData& out) {
     // Calculate RMS volume
@@ -27,6 +29,40 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     std::vector<float> magnitudes(fftSize / 2 + 1, 0.0f);
     for (size_t i = 0; i < magnitudes.size(); ++i)
         magnitudes[i] = sqrtf(fft_out[i].r * fft_out[i].r + fft_out[i].i * fft_out[i].i);
+    // --- Spectral Flux Beat Detection ---
+    float flux = 0.0f;
+    if (!out._prev_magnitudes.empty() && out._prev_magnitudes.size() == magnitudes.size()) {
+        for (size_t i = 0; i < magnitudes.size(); ++i) {
+            float diff = magnitudes[i] - out._prev_magnitudes[i];
+            if (diff > 0) flux += diff;
+        }
+    }
+    // Update moving average for threshold
+    const float flux_alpha = 0.1f; // Smoothing factor
+    if (out._flux_avg == 0.0f) out._flux_avg = flux;
+    else out._flux_avg = (1.0f - flux_alpha) * out._flux_avg + flux_alpha * flux;
+    // Beat detection threshold
+    float threshold = out._flux_avg * 1.5f;
+    // Time for adaptive falloff
+    using clock = std::chrono::steady_clock;
+    static auto last_call = clock::now();
+    auto now = clock::now();
+    float dt = std::chrono::duration<float>(now - last_call).count();
+    last_call = now;
+    // Detect beat
+    bool is_beat = (flux > threshold) && (flux > 0.01f);
+    if (is_beat) {
+        // Adaptive falloff: set based on time since last beat
+        float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * 1e-9f : 0.5f;
+        out._falloff_rate = (time_since_last > 0.05f) ? (1.0f / std::max(0.1f, time_since_last)) : 2.0f;
+        out.beat = 1.0f;
+        out._last_beat_time = now.time_since_epoch().count();
+    } else {
+        // Fade out
+        out.beat -= out._falloff_rate * dt;
+        if (out.beat < 0.0f) out.beat = 0.0f;
+    }
+    out._prev_magnitudes = magnitudes;
     // Map FFT bins to frequency bands
     out.freq_bands.resize(config.num_bands, 0.0f);
     size_t binsPerBand = magnitudes.size() / config.num_bands;

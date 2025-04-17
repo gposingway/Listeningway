@@ -41,18 +41,21 @@ static AudioAnalysisConfig g_audio_config = { LISTENINGWAY_NUM_BANDS, 512 };
 // --- Uniform variable cache ---
 static std::vector<reshade::api::effect_uniform_variable> g_volume_uniforms;
 static std::vector<reshade::api::effect_uniform_variable> g_freq_bands_uniforms;
+static std::vector<reshade::api::effect_uniform_variable> g_beat_uniforms;
 
 // --- Uniform Update Callback ---
 static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
     float volume_to_set;
     std::vector<float> freq_bands_to_set;
+    float beat_to_set;
     {
         std::lock_guard<std::mutex> lock(g_audio_data_mutex);
         volume_to_set = g_audio_data.volume;
         freq_bands_to_set = g_audio_data.freq_bands;
+        beat_to_set = g_audio_data.beat;
     }
     // Cache miss: build the cache if empty
-    if (g_volume_uniforms.empty() || g_freq_bands_uniforms.empty()) {
+    if (g_volume_uniforms.empty() || g_freq_bands_uniforms.empty() || g_beat_uniforms.empty()) {
         runtime->enumerate_uniform_variables(nullptr, [&](reshade::api::effect_runtime*, reshade::api::effect_uniform_variable var_handle) {
             char name[256] = {};
             runtime->get_uniform_variable_name(var_handle, name);
@@ -60,6 +63,8 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
                 g_volume_uniforms.push_back(var_handle);
             } else if (std::string_view(name) == "Listeningway_FreqBands") {
                 g_freq_bands_uniforms.push_back(var_handle);
+            } else if (std::string_view(name) == "Listeningway_Beat") {
+                g_beat_uniforms.push_back(var_handle);
             }
         });
     }
@@ -71,12 +76,16 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
         if (!freq_bands_to_set.empty())
             runtime->set_uniform_value_float(var_handle, freq_bands_to_set.data(), static_cast<uint32_t>(freq_bands_to_set.size()));
     }
+    for (auto var_handle : g_beat_uniforms) {
+        runtime->set_uniform_value_float(var_handle, &beat_to_set, 1);
+    }
 }
 
 // --- Effect reload event: clear cache ---
 static void OnReloadedEffects(reshade::api::effect_runtime*) {
     g_volume_uniforms.clear();
     g_freq_bands_uniforms.clear();
+    g_beat_uniforms.clear();
 }
 
 // --- Overlay callback ---

@@ -11,6 +11,10 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
     ImGui::SameLine();
     ImGui::ProgressBar(data.volume, ImVec2(-1.0f, 0.0f));
     ImGui::Separator();
+    ImGui::Text("Beat:");
+    ImGui::SameLine();
+    ImGui::ProgressBar(data.beat, ImVec2(-1.0f, 0.0f));
+    ImGui::Separator();
     ImGui::Text("Frequency Bands (%zu):", data.freq_bands.size());
     // Make the child window tall enough for all bands
     ImGui::BeginChild("FreqBandsChild", ImVec2(0, 24.0f * data.freq_bands.size()), true, ImGuiWindowFlags_HorizontalScrollbar);
