@@ -2,7 +2,7 @@
 
 ## Description
 
-Listeningway is a ReShade addon for Final Fantasy XIV (FFXIV) that captures game audio and provides real-time volume and frequency band data for use in ReShade effects. It uses WASAPI for audio capture and KissFFT for analysis.
+Listeningway is a ReShade addon that captures game audio and provides real-time volume and frequency band data for use in ReShade effects. It uses WASAPI for audio capture and KissFFT for analysis.
 
 ## Prerequisites
 
