@@ -51,7 +51,7 @@ Listeningway is a modular ReShade addon that captures system audio and provides 
 
 ## Notes
 
-- All dependencies (including KissFFT) are now statically linked. No extra DLLs are required in the game directory.
+- All dependencies (including KissFFT) are statically linked; no extra DLLs are required in the game directory.
 - If you encounter issues, check the ReShade log for errors.
 - The number of frequency bands and available uniforms are managed in both the C++ code (see `LISTENINGWAY_NUM_BANDS` and `uniform_manager.*`) and your shader code. Update both if you want to change the number of bands or add new audio-driven uniforms.
 - Doxygen-style documentation is available for developers. Run Doxygen with the provided `Doxyfile` in the `tools/reshade` directory to generate API docs.
