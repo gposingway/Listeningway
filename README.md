@@ -2,7 +2,16 @@
 
 ## Description
 
-Listeningway is a ReShade addon that captures game audio and provides real-time volume and frequency band data for use in ReShade effects. It uses WASAPI for audio capture and KissFFT for analysis.
+Listeningway is a modular ReShade addon that captures system audio and provides real-time volume, frequency band, and beat data for use in ReShade effects. It uses WASAPI for audio capture, KissFFT for analysis, and exposes results to shaders via a flexible uniform management system.
+
+## Architecture Overview
+
+- **audio_capture.*:** WASAPI audio capture (threaded)
+- **audio_analysis.*:** Real-time audio feature extraction (volume, bands, beat)
+- **uniform_manager.*:** Caches and updates all Listeningway_* uniforms in loaded effects
+- **overlay.*:** ImGui debug overlay for real-time visualization
+- **logging.*:** Thread-safe logging for diagnostics
+- **listeningway_addon.cpp:** Main entry point and integration logic
 
 ## Prerequisites
 
@@ -44,12 +53,14 @@ Listeningway is a ReShade addon that captures game audio and provides real-time 
 
 - All dependencies (including KissFFT) are now statically linked. No extra DLLs are required in the game directory.
 - If you encounter issues, check the ReShade log for errors.
+- The number of frequency bands and available uniforms are managed in both the C++ code (see `LISTENINGWAY_NUM_BANDS` and `uniform_manager.*`) and your shader code. Update both if you want to change the number of bands or add new audio-driven uniforms.
+- Doxygen-style documentation is available for developers. Run Doxygen with the provided `Doxyfile` in the `tools/reshade` directory to generate API docs.
 
 ---
 
 # Listeningway Addon Shader Integration Guide
 
-To use real-time audio data (volume and frequency bands) from the Listeningway ReShade addon in your shaders, follow these steps:
+To use real-time audio data (volume, frequency bands, and beat detection) from the Listeningway ReShade addon in your shaders, follow these steps:
 
 ## 1. Include the Uniform Declarations
 
@@ -59,10 +70,12 @@ Add the following to your shader file (e.g., at the top):
 // Listeningway audio uniforms
 uniform float Listeningway_Volume;
 uniform float Listeningway_FreqBands[8];
+uniform float Listeningway_Beat; // (Optional) Beat detection value
 ```
 
 - `Listeningway_Volume` is a float in the range [0, 1] representing the current audio volume.
 - `Listeningway_FreqBands` is a float array (default size 8) where each element represents the normalized magnitude of a frequency band.
+- `Listeningway_Beat` is a float in [0, 1] indicating detected beats (useful for pulsing effects).
 
 ## 2. Use the Uniforms in Your Shader Code
 
@@ -71,6 +84,7 @@ You can use these uniforms in your pixel/vertex shaders to drive visual effects.
 ```hlsl
 float bar = Listeningway_FreqBands[band_index]; // Use band_index in [0,7]
 float vol = Listeningway_Volume; // Use for global volume-based effects
+float beat = Listeningway_Beat; // Use for beat-driven effects
 ```
 
 ## 3. (Optional) Customize Number of Bands
@@ -89,10 +103,11 @@ If you want a different number of bands, you must:
 ```hlsl
 uniform float Listeningway_Volume;
 uniform float Listeningway_FreqBands[8];
+uniform float Listeningway_Beat;
 
 float4 main(float2 uv : TEXCOORD) : SV_Target
 {
-    float intensity = Listeningway_FreqBands[0] * 0.5 + Listeningway_Volume * 0.5;
+    float intensity = Listeningway_FreqBands[0] * 0.5 + Listeningway_Volume * 0.5 + Listeningway_Beat * 0.5;
     return float4(intensity, 0, 0, 1);
 }
 ```
@@ -100,7 +115,5 @@ float4 main(float2 uv : TEXCOORD) : SV_Target
 ---
 
 **Note:**  
-- The addon will automatically find and update all uniforms named `Listeningway_Volume` and `Listeningway_FreqBands` in all loaded effects.
+- The addon will automatically find and update all uniforms named `Listeningway_Volume`, `Listeningway_FreqBands`, and `Listeningway_Beat` in all loaded effects.
 - No additional setup is required in the shader beyond declaring the uniforms.
-
-For advanced usage or troubleshooting, refer to the Listeningway README or contact the addon maintainer.

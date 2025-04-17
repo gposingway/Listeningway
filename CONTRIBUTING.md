@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Listeningway! This project is a m
 - **Key Modules:**
   - `audio_capture.*` — WASAPI audio capture
   - `audio_analysis.*` — Real-time audio feature extraction
-  - `uniform_manager.*` — Uniform caching and update logic
+  - `uniform_manager.*` — Uniform caching, update logic, and extensibility for all Listeningway_* uniforms
   - `overlay.*` — ImGui debug overlay
   - `logging.*` — Thread-safe logging
   - `listeningway_addon.cpp` — Main entry point and integration
@@ -26,13 +26,15 @@ Thank you for your interest in contributing to Listeningway! This project is a m
 ## Code Style & Documentation
 - Use modern C++ (C++17 or later).
 - Group code by module and responsibility.
-- Use Doxygen-style comments for all public classes, structs, and functions.
+- Use Doxygen-style comments for all public classes, structs, and functions (see existing modules for examples).
 - Add high-level comments to each file and function.
 - Use `// ...existing code...` in code reviews to indicate unchanged regions.
+- **To generate API documentation:**
+  - Run Doxygen with the provided `Doxyfile` in `tools/reshade`.
 
 ## How to Extend
 - **Add new analysis features:** Implement in `audio_analysis.*` and update `AudioAnalysisData`.
-- **Expose new uniforms:** Add to `uniform_manager.*` and update the uniform update logic.
+- **Expose new uniforms:** Add to `uniform_manager.*` and update the uniform update logic. All uniform extensibility is now managed in this module.
 - **Add overlay elements:** Extend `overlay.*` for new debug visualizations.
 - **Log for debugging:** Use `LogToFile()` for diagnostics.
 
