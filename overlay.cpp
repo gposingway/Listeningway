@@ -26,7 +26,6 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         SetAudioAnalysisEnabled(enabled);
         g_audio_analysis_enabled.store(enabled);
     }
-    ImGui::Separator();
     if (ImGui::Checkbox("Enable Debug Logging", &g_listeningway_debug_enabled)) {
         SetDebugEnabled(g_listeningway_debug_enabled);
     }
@@ -40,6 +39,13 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         ImGui::Text("(Click to open log file)");
     }
     ImGui::Separator();
+    ImGui::Text("Website:");
+    ImGui::SameLine();
+    if (ImGui::Selectable("https://github.com/gposingway/Listeningway")) {
+        ShellExecuteA(nullptr, "open", "https://github.com/gposingway/Listeningway", nullptr, nullptr, SW_SHOWNORMAL);
+    }
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
+    ImGui::Separator();
     // --- Volume meter ---
     ImGui::Text("Volume:");
     ImGui::SameLine();
@@ -52,8 +58,8 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
     ImGui::Separator();
     // --- Frequency bands ---
     ImGui::Text("Frequency Bands (%zu):", data.freq_bands.size());
-    // Make the child window tall enough for all bands
-    ImGui::BeginChild("FreqBandsChild", ImVec2(0, g_listeningway_freq_band_row_height * data.freq_bands.size()), true, ImGuiWindowFlags_HorizontalScrollbar);
+    // Make the child window tall enough for all bands (+10px for no clipping)
+    ImGui::BeginChild("FreqBandsChild", ImVec2(0, g_listeningway_freq_band_row_height * data.freq_bands.size() + 5), true, ImGuiWindowFlags_HorizontalScrollbar);
     const float item_width = ImGui::GetContentRegionAvail().x * g_listeningway_ui_progress_width;
     for (size_t i = 0; i < data.freq_bands.size(); ++i) {
         ImGui::Text("%zu:", i);
@@ -62,9 +68,4 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
     }
     ImGui::EndChild();
     ImGui::Separator();
-    ImGui::Text("Listeningway Addon");
-    ImGui::Text("Project: ");
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "https://github.com/gposingway/Listeningway");
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
 }
