@@ -19,23 +19,15 @@ include_directories(${RESHADE_SDK_PATH})
 
 # --- Project Configuration ---
 # Add source file(s) including the resource file
-set(SOURCES
-    audio_analysis.cpp
-    audio_analysis.h
-    audio_analysis_constants.h
-    audio_capture.cpp
-    audio_capture.h
+add_library(${PROJECT_NAME} SHARED
     listeningway_addon.cpp
-    logging.cpp
-    logging.h
+    audio_capture.cpp
+    audio_analysis.cpp
     overlay.cpp
-    overlay.h
+    logging.cpp
     uniform_manager.cpp
-    uniform_manager.h
     listeningway.rc
 )
-
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 # Add ImGui include directory specifically for the Listeningway target
 target_include_directories(${PROJECT_NAME} PRIVATE

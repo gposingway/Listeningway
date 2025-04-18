@@ -3,7 +3,6 @@
 // Performs real-time audio feature extraction for Listeningway
 // ---------------------------------------------
 #include "audio_analysis.h"
-#include "audio_analysis_constants.h"
 #include <kiss_fftr.h>
 #include <cmath>
 #include <vector>
@@ -52,10 +51,10 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
         }
     }
     // Update moving average for threshold
-    const float flux_alpha = FLUX_SMOOTHING_ALPHA; // Smoothing factor for moving average
+    const float flux_alpha = 0.1f; // Smoothing factor for moving average
     if (out._flux_avg == 0.0f) out._flux_avg = flux;
     else out._flux_avg = (1.0f - flux_alpha) * out._flux_avg + flux_alpha * flux;
-    float threshold = out._flux_avg * FLUX_THRESHOLD_MULTIPLIER; // Dynamic threshold
+    float threshold = out._flux_avg * 1.5f; // Dynamic threshold
 
     // --- 6. Adaptive beat fade-out ---
     using clock = std::chrono::steady_clock;
@@ -65,11 +64,11 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     last_call = now;
 
     // Detect beat (if flux exceeds threshold)
-    bool is_beat = (flux > threshold) && (flux > FLUX_MIN_BEAT);
+    bool is_beat = (flux > threshold) && (flux > 0.01f);
     if (is_beat) {
         // Set falloff rate based on time since last beat
-        float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * 1e-9f : DEFAULT_TIME_SINCE_LAST_BEAT;
-        out._falloff_rate = (time_since_last > MIN_TIME_BETWEEN_BEATS) ? (1.0f / std::max(MIN_FALLOFF_DENOMINATOR, time_since_last)) : DEFAULT_FALLOFF_RATE;
+        float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * 1e-9f : 0.5f;
+        out._falloff_rate = (time_since_last > 0.05f) ? (1.0f / std::max(0.1f, time_since_last)) : 2.0f;
         out.beat = 1.0f;
         out._last_beat_time = now.time_since_epoch().count();
     } else {
@@ -92,6 +91,6 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     }
 
     // --- 8. Normalize volume and bands ---
-    out.volume = std::min(rms * VOLUME_NORMALIZATION_FACTOR, 1.0f);
-    for (auto& b : out.freq_bands) b = std::min(b * FREQ_BAND_NORMALIZATION_FACTOR, 1.0f);
+    out.volume = std::min(rms * 2.0f, 1.0f);
+    for (auto& b : out.freq_bands) b = std::min(b * 0.1f, 1.0f);
 }
