@@ -43,7 +43,7 @@ All audio analysis constants (such as normalization factors, smoothing, and band
 2. **Build the Addon**
    - Run:
      ```
-     .\build.bat
+     .\simple_build.bat
      ```
    - This will:
      - Build the addon in Release mode.
