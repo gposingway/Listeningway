@@ -14,6 +14,15 @@ void SaveSettings();
 bool GetAudioAnalysisEnabled();
 // Sets the value of the audio analysis toggle and saves
 void SetAudioAnalysisEnabled(bool enabled);
+// Gets the current value of the debug toggle
+bool GetDebugEnabled();
+// Sets the value of the debug toggle and saves
+void SetDebugEnabled(bool enabled);
+
+// Gets the path to the settings file
+std::string GetSettingsPath();
+// Gets the path to the log file
+std::string GetLogFilePath();
 
 // Tunable variables (populated from .ini or defaults)
 extern size_t g_listeningway_num_bands;
@@ -31,6 +40,7 @@ extern float g_listeningway_band_norm;
 extern float g_listeningway_freq_band_row_height;
 extern float g_listeningway_ui_progress_width;
 extern std::atomic_bool g_audio_analysis_enabled;
+extern bool g_listeningway_debug_enabled;
 
 // Loads all tunables from .ini (or uses defaults)
 void LoadAllTunables();

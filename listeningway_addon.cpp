@@ -60,8 +60,7 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
  * @param runtime The ReShade effect runtime.
  */
 static void OnReloadedEffects(reshade::api::effect_runtime* runtime) {
-    g_uniform_manager.clear();
-    g_uniform_manager.cache_uniforms(runtime);
+    // No longer needed: uniform handles are not cached
 }
 
 /**

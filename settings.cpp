@@ -26,8 +26,9 @@ float g_listeningway_freq_band_row_height = DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_H
 float g_listeningway_ui_progress_width = DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH;
 
 std::atomic_bool g_audio_analysis_enabled = true;
+bool g_listeningway_debug_enabled = false;
 
-static std::string GetSettingsPath() {
+std::string GetSettingsPath() {
     char dllPath[MAX_PATH] = {};
     HMODULE hModule = nullptr;
     GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -39,18 +40,27 @@ static std::string GetSettingsPath() {
     return path + "ListeningwaySettings.ini";
 }
 
+std::string GetLogFilePath() {
+    std::string ini = GetSettingsPath();
+    size_t pos = ini.find_last_of("\\/");
+    std::string dir = (pos != std::string::npos) ? ini.substr(0, pos + 1) : "";
+    return dir + "listeningway.log";
+}
+
 static std::mutex g_settings_mutex;
 
 void LoadSettings() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     std::string ini = GetSettingsPath();
     g_audio_analysis_enabled = GetPrivateProfileIntA("General", "AudioAnalysisEnabled", 1, ini.c_str()) != 0;
+    g_listeningway_debug_enabled = GetPrivateProfileIntA("General", "DebugEnabled", 0, ini.c_str()) != 0;
 }
 
 void SaveSettings() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     std::string ini = GetSettingsPath();
     WritePrivateProfileStringA("General", "AudioAnalysisEnabled", g_audio_analysis_enabled ? "1" : "0", ini.c_str());
+    WritePrivateProfileStringA("General", "DebugEnabled", g_listeningway_debug_enabled ? "1" : "0", ini.c_str());
 }
 
 bool GetAudioAnalysisEnabled() {
@@ -62,6 +72,19 @@ void SetAudioAnalysisEnabled(bool enabled) {
     {
         std::lock_guard<std::mutex> lock(g_settings_mutex);
         g_audio_analysis_enabled = enabled;
+    }
+    SaveSettings();
+}
+
+bool GetDebugEnabled() {
+    std::lock_guard<std::mutex> lock(g_settings_mutex);
+    return g_listeningway_debug_enabled;
+}
+
+void SetDebugEnabled(bool enabled) {
+    {
+        std::lock_guard<std::mutex> lock(g_settings_mutex);
+        g_listeningway_debug_enabled = enabled;
     }
     SaveSettings();
 }
