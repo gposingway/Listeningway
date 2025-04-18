@@ -3,6 +3,7 @@
 // Thread-safe logging to a file for debugging and diagnostics
 // ---------------------------------------------
 #include "logging.h"
+#include "settings.h"
 #include <fstream>
 #include <mutex>
 #include <chrono>
@@ -10,9 +11,18 @@
 
 static std::ofstream g_log_file;
 std::mutex g_log_mutex;
+extern bool g_listeningway_debug_enabled;
+
+static std::string GetLogFilePath() {
+    std::string ini = GetSettingsPath();
+    size_t pos = ini.find_last_of("\\/");
+    std::string dir = (pos != std::string::npos) ? ini.substr(0, pos + 1) : "";
+    return dir + "listeningway.log";
+}
 
 // Writes a timestamped message to the log file (thread-safe)
 void LogToFile(const std::string& message) {
+    if (!g_listeningway_debug_enabled) return;
     std::lock_guard<std::mutex> lock(g_log_mutex);
     if (g_log_file.is_open()) {
         // Get current time for timestamp
@@ -28,10 +38,14 @@ void LogToFile(const std::string& message) {
 }
 
 // Opens the log file for writing (call at startup)
-void OpenLogFile(const std::string& filename) {
+void OpenLogFile(const char* /*filename*/) {
     std::lock_guard<std::mutex> lock(g_log_mutex);
-    if (g_log_file.is_open()) g_log_file.close();
-    g_log_file.open(filename, std::ios::out | std::ios::app);
+    if (g_log_file.is_open()) return;
+    g_log_file.open(GetLogFilePath(), std::ios::out | std::ios::app);
+}
+
+void OpenLogFile(const std::string& filename) {
+    OpenLogFile(filename.c_str());
 }
 
 // Closes the log file (call at shutdown)
