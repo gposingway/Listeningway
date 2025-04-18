@@ -11,15 +11,8 @@
 
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
-void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex, bool capture_active) {
+void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
     std::lock_guard<std::mutex> lock(data_mutex);
-    // --- Capture status ---
-    ImGui::Text("Audio Capture: %s", capture_active ? "ON" : "OFF");
-    ImGui::SameLine();
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Capture is active only if ReShade is enabled and at least one listeningway-integrated shader is using it.");
-    }
-    ImGui::Separator();
     // --- Volume meter ---
     ImGui::Text("Volume:");
     ImGui::SameLine();

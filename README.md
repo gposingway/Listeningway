@@ -64,34 +64,20 @@ To use real-time audio data (volume, frequency bands, and beat detection) from t
 
 ## 1. Include the Uniform Declarations
 
-**Recommended:**
-
-Include the provided uniform header at the top of your shader:
+Add the following to your shader file (e.g., at the top):
 
 ```hlsl
-#include "ListeningwayUniforms.fxh"
-```
-
-- This file declares all required uniforms and is kept up to date with the addon.
-- You can find it in the Listeningway addon package or repository.
-
-**Manual alternative:**
-
-If you prefer, you may declare the uniforms manually (not recommended):
-
-```hlsl
+// Listeningway audio uniforms
 uniform float Listeningway_Volume;
 uniform float Listeningway_FreqBands[8];
-uniform float Listeningway_Beat;
+uniform float Listeningway_Beat; // (Optional) Beat detection value
 ```
 
-## 2. Requirements
+- `Listeningway_Volume` is a float in the range [0, 1] representing the current audio volume.
+- `Listeningway_FreqBands` is a float array (default size 8) where each element represents the normalized magnitude of a frequency band.
+- `Listeningway_Beat` is a float in [0, 1] indicating detected beats (useful for pulsing effects).
 
-- The Listeningway ReShade addon must be installed and active.
-- At least one effect using these uniforms must be enabled for audio capture to run.
-- ReShade must be globally enabled (Numpad 7 by default).
-
-## 3. Use the Uniforms in Your Shader Code
+## 2. Use the Uniforms in Your Shader Code
 
 You can use these uniforms in your pixel/vertex shaders to drive visual effects. Example:
 
@@ -101,18 +87,18 @@ float vol = Listeningway_Volume; // Use for global volume-based effects
 float beat = Listeningway_Beat; // Use for beat-driven effects
 ```
 
-## 4. (Optional) Customize Number of Bands
+## 3. (Optional) Customize Number of Bands
 
 If you want a different number of bands, you must:
 - Change the array size in both the shader and the C++ addon (LISTENINGWAY_NUM_BANDS).
 - Rebuild the addon and update the shader accordingly.
 
-## 5. Enable the Effect in ReShade
+## 4. Enable the Effect in ReShade
 
 - Place your shader (e.g., `Listeningway.fx`) in the ReShade shaders directory.
 - Enable the effect in the ReShade overlay in-game.
 
-## 6. Example Shader Snippet
+## 5. Example Shader Snippet
 
 ```hlsl
 uniform float Listeningway_Volume;
