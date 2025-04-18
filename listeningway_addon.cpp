@@ -26,8 +26,8 @@
 #include "overlay.h"
 #include "logging.h"
 #include "uniform_manager.h"
+#include "constants.h"
 
-#define LISTENINGWAY_NUM_BANDS 8
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
 static std::thread g_audio_thread;

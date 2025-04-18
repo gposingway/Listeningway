@@ -5,8 +5,7 @@
 #pragma once
 #include <vector>
 #include <cstddef>
-
-constexpr size_t LISTENINGWAY_NUM_BANDS = 8;
+#include "constants.h"
 
 // Holds the results of audio analysis for one frame
 struct AudioAnalysisData {
@@ -26,7 +25,7 @@ struct AudioAnalysisData {
 // Configuration for audio analysis
 struct AudioAnalysisConfig {
     size_t num_bands = LISTENINGWAY_NUM_BANDS; // Number of frequency bands
-    size_t fft_size = 512;                    // FFT window size
+    size_t fft_size = LISTENINGWAY_FFT_SIZE;   // FFT window size
 };
 
 // Main entry point: analyze a buffer of audio samples and update analysis data
