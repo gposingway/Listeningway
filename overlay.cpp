@@ -9,11 +9,20 @@
 #include "overlay.h"
 #include "audio_analysis.h"
 #include "constants.h"
+#include "settings.h"
+
+extern std::atomic_bool g_audio_analysis_enabled;
 
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
     std::lock_guard<std::mutex> lock(data_mutex);
+    bool enabled = GetAudioAnalysisEnabled();
+    if (ImGui::Checkbox("Enable Audio Analysis", &enabled)) {
+        SetAudioAnalysisEnabled(enabled);
+        g_audio_analysis_enabled.store(enabled);
+    }
+    ImGui::Separator();
     // --- Volume meter ---
     ImGui::Text("Volume:");
     ImGui::SameLine();
@@ -27,8 +36,8 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
     // --- Frequency bands ---
     ImGui::Text("Frequency Bands (%zu):", data.freq_bands.size());
     // Make the child window tall enough for all bands
-    ImGui::BeginChild("FreqBandsChild", ImVec2(0, LISTENINGWAY_FREQ_BAND_ROW_HEIGHT * data.freq_bands.size()), true, ImGuiWindowFlags_HorizontalScrollbar);
-    const float item_width = ImGui::GetContentRegionAvail().x * LISTENINGWAY_UI_PROGRESS_WIDTH;
+    ImGui::BeginChild("FreqBandsChild", ImVec2(0, g_listeningway_freq_band_row_height * data.freq_bands.size()), true, ImGuiWindowFlags_HorizontalScrollbar);
+    const float item_width = ImGui::GetContentRegionAvail().x * g_listeningway_ui_progress_width;
     for (size_t i = 0; i < data.freq_bands.size(); ++i) {
         ImGui::Text("%zu:", i);
         ImGui::SameLine();

@@ -26,6 +26,7 @@ add_library(${PROJECT_NAME} SHARED
     overlay.cpp
     logging.cpp
     uniform_manager.cpp
+    settings.cpp
     listeningway.rc
 )
 

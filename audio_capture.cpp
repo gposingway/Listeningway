@@ -13,6 +13,7 @@
 #include <windows.h>
 #include <combaseapi.h>
 #include "audio_analysis.h"
+#include "settings.h"
 
 // Starts a background thread that captures audio and updates analysis data.
 void StartAudioCaptureThread(const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
@@ -83,8 +84,14 @@ void StartAudioCaptureThread(const AudioAnalysisConfig& config, std::atomic_bool
                 if (SUCCEEDED(hr)) {
                     if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
                         // Feed captured audio to analysis
-                        std::lock_guard<std::mutex> lock(data_mutex);
-                        AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), numFramesAvailable, pwfx->nChannels, config, data);
+                        if (g_audio_analysis_enabled.load()) {
+                            AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), numFramesAvailable, pwfx->nChannels, config, data);
+                        } else {
+                            // If disabled, zero out the analysis data for safety
+                            data.volume = 0.0f;
+                            std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
+                            data.beat = 0.0f;
+                        }
                     }
                     pCaptureClient->ReleaseBuffer(numFramesAvailable);
                 }

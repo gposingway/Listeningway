@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstddef>
 #include "constants.h"
+#include "settings.h"
 
 // Holds the results of audio analysis for one frame
 struct AudioAnalysisData {
@@ -19,13 +20,13 @@ struct AudioAnalysisData {
     float _last_beat_time = 0.0f;       // Last beat timestamp (for adaptive falloff)
     float _falloff_rate = 1.0f;         // Adaptive beat falloff rate
 
-    AudioAnalysisData(size_t bands = LISTENINGWAY_NUM_BANDS) : freq_bands(bands, 0.0f) {}
+    AudioAnalysisData(size_t bands = g_listeningway_num_bands) : freq_bands(bands, 0.0f) {}
 };
 
 // Configuration for audio analysis
 struct AudioAnalysisConfig {
-    size_t num_bands = LISTENINGWAY_NUM_BANDS; // Number of frequency bands
-    size_t fft_size = LISTENINGWAY_FFT_SIZE;   // FFT window size
+    size_t num_bands = g_listeningway_num_bands;
+    size_t fft_size = g_listeningway_fft_size;
 };
 
 // Main entry point: analyze a buffer of audio samples and update analysis data

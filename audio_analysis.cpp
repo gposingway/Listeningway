@@ -4,6 +4,7 @@
 // ---------------------------------------------
 #include "audio_analysis.h"
 #include "constants.h"
+#include "settings.h"
 #include <kiss_fftr.h>
 #include <cmath>
 #include <vector>
@@ -21,7 +22,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     float rms = numSamples > 0 ? static_cast<float>(sqrt(sumSquares / numSamples)) : 0.0f;
 
     // --- 2. Prepare mono buffer for FFT (use only the first channel) ---
-    size_t fftSize = config.fft_size;
+    size_t fftSize = g_listeningway_fft_size;
     std::vector<float> monoBuffer(fftSize, 0.0f);
     size_t copySamples = std::min(numFrames, fftSize);
     for (size_t i = 0; i < copySamples; ++i)
@@ -52,10 +53,10 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
         }
     }
     // Update moving average for threshold
-    const float flux_alpha = LISTENINGWAY_FLUX_ALPHA; // Smoothing factor for moving average
+    const float flux_alpha = g_listeningway_flux_alpha; // Smoothing factor for moving average
     if (out._flux_avg == 0.0f) out._flux_avg = flux;
     else out._flux_avg = (1.0f - flux_alpha) * out._flux_avg + flux_alpha * flux;
-    float threshold = out._flux_avg * LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER; // Dynamic threshold
+    float threshold = out._flux_avg * g_listeningway_flux_threshold_multiplier; // Dynamic threshold
 
     // --- 6. Adaptive beat fade-out ---
     using clock = std::chrono::steady_clock;
@@ -65,11 +66,11 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     last_call = now;
 
     // Detect beat (if flux exceeds threshold)
-    bool is_beat = (flux > threshold) && (flux > LISTENINGWAY_BEAT_FLUX_MIN);
+    bool is_beat = (flux > threshold) && (flux > g_listeningway_beat_flux_min);
     if (is_beat) {
         // Set falloff rate based on time since last beat
-        float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * LISTENINGWAY_BEAT_TIME_SCALE : LISTENINGWAY_BEAT_TIME_INITIAL;
-        out._falloff_rate = (time_since_last > LISTENINGWAY_BEAT_TIME_MIN) ? (1.0f / std::max(LISTENINGWAY_BEAT_TIME_DIVISOR, time_since_last)) : LISTENINGWAY_BEAT_FALLOFF_DEFAULT;
+        float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * g_listeningway_beat_time_scale : g_listeningway_beat_time_initial;
+        out._falloff_rate = (time_since_last > g_listeningway_beat_time_min) ? (1.0f / std::max(g_listeningway_beat_time_divisor, time_since_last)) : g_listeningway_beat_falloff_default;
         out.beat = 1.0f;
         out._last_beat_time = now.time_since_epoch().count();
     } else {
@@ -92,6 +93,6 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     }
 
     // --- 8. Normalize volume and bands ---
-    out.volume = std::min(rms * LISTENINGWAY_VOLUME_NORM, 1.0f);
-    for (auto& b : out.freq_bands) b = std::min(b * LISTENINGWAY_BAND_NORM, 1.0f);
+    out.volume = std::min(rms * g_listeningway_volume_norm, 1.0f);
+    for (auto& b : out.freq_bands) b = std::min(b * g_listeningway_band_norm, 1.0f);
 }

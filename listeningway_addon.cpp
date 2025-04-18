@@ -27,13 +27,15 @@
 #include "logging.h"
 #include "uniform_manager.h"
 #include "constants.h"
+#include "settings.h"
 
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
+static std::atomic_bool g_audio_analysis_enabled = true; // Toggle for audio analysis
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
-static AudioAnalysisConfig g_audio_config = { LISTENINGWAY_NUM_BANDS, 512 };
+static AudioAnalysisConfig g_audio_config = { g_listeningway_num_bands, g_listeningway_fft_size };
 static UniformManager g_uniform_manager;
 
 /**

@@ -12,7 +12,7 @@ Listeningway is a modular ReShade addon that captures system audio and provides 
 - **overlay.*:** ImGui debug overlay for real-time visualization
 - **logging.*:** Thread-safe logging for diagnostics
 - **listeningway_addon.cpp:** Main entry point and integration logic
-- **constants.h:** All tunable parameters and project-wide constants (see below)
+- **settings.cpp/settings.h:** All tunable parameters are loaded from an .ini file (see below)
 
 ## Prerequisites
 
@@ -52,23 +52,48 @@ Listeningway is a modular ReShade addon that captures system audio and provides 
 
 ## Tuning and Configuration
 
-All tunable parameters and project-wide constants are defined in `constants.h`. You can adjust:
-- Audio analysis parameters (number of bands, FFT size, smoothing, thresholds, normalization, etc.)
+All tunable parameters (audio analysis, beat detection, UI layout, etc.) are now loaded from `ListeningwaySettings.ini` in the same directory as the DLL. You can edit this file directly to change:
+- Number of frequency bands, FFT size, smoothing, thresholds, normalization, etc.
 - Beat detection and falloff behavior
 - UI/overlay layout and appearance
 
-**To change behavior or tune the addon:**
-1. Open `constants.h` in the project root.
-2. Edit the relevant constant (e.g., `LISTENINGWAY_NUM_BANDS`, `LISTENINGWAY_FLUX_ALPHA`, `LISTENINGWAY_BEAT_FALLOFF_DEFAULT`, etc.).
-3. Rebuild the project with `.\build.bat`.
+**How it works:**
+- On startup, the addon loads all tunables from `ListeningwaySettings.ini`.
+- If a key is missing, the default value from `constants.h` is used.
+- When you change a setting in the overlay (such as the audio analysis toggle), it is saved to the .ini file.
+- You can also edit the .ini file manually and restart the game/addon to apply changes.
 
-See comments in `constants.h` for descriptions of each parameter.
+**Example .ini entries:**
+```
+[Audio]
+NumBands=8
+FFTSize=512
+FluxAlpha=0.1
+FluxThresholdMultiplier=1.5
+BeatFluxMin=0.01
+BeatFalloffDefault=2.0
+BeatTimeScale=0.000000001
+BeatTimeInitial=0.5
+BeatTimeMin=0.05
+BeatTimeDivisor=0.1
+VolumeNorm=2.0
+BandNorm=0.1
+
+[UI]
+FreqBandRowHeight=24.0
+ProgressWidth=0.9
+
+[General]
+AudioAnalysisEnabled=1
+```
+
+See comments in `constants.h` for descriptions of each parameter's default.
 
 ## Notes
 
 - All dependencies (including KissFFT) are statically linked; no extra DLLs are required in the game directory.
 - If you encounter issues, check the ReShade log for errors.
-- The number of frequency bands and available uniforms are managed in both the C++ code (see `LISTENINGWAY_NUM_BANDS` and `uniform_manager.*`) and your shader code. Update both if you want to change the number of bands or add new audio-driven uniforms.
+- The number of frequency bands and available uniforms are managed in both the C++ code (see `settings.h` and `uniform_manager.*`) and your shader code. Update both if you want to change the number of bands or add new audio-driven uniforms.
 - Doxygen-style documentation is available for developers. Run Doxygen with the provided `Doxyfile` in the `tools/reshade` directory to generate API docs.
 
 ---
@@ -105,8 +130,8 @@ float beat = Listeningway_Beat; // Use for beat-driven effects
 ## 3. (Optional) Customize Number of Bands
 
 If you want a different number of bands, you must:
-- Change the array size in both the shader and the C++ addon (`LISTENINGWAY_NUM_BANDS` in `constants.h`).
-- Rebuild the addon and update the shader accordingly.
+- Change the array size in both the shader and the .ini file (`NumBands` in `[Audio]` section of `ListeningwaySettings.ini`).
+- Restart the game or reload the addon to apply the change.
 
 ## 4. Enable the Effect in ReShade
 
