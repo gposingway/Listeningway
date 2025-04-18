@@ -1,4 +1,4 @@
-# Listeningway - FFXIV Audio Visualizer ReShade Addon
+# Listeningway - Audio Visualizer ReShade Addon
 
 ## Quick Start for Shader Developers
 
