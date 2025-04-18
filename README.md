@@ -39,13 +39,13 @@ float4 main(float2 uv : TEXCOORD) : SV_Target
 
 ## Tuning and Configuration
 
-All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loaded from `ListeningwaySettings.ini` in the same directory as the DLL. Edit this file to change:
+All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loaded from `Listeningway.ini` in the same directory as the DLL. Edit this file to change:
 - Number of frequency bands, FFT size, smoothing, thresholds, normalization, etc.
 - Beat detection and falloff behavior
 - UI/overlay layout and appearance
 
 **How it works:**
-- On startup, the addon loads all tunables from `ListeningwaySettings.ini`.
+- On startup, the addon loads all tunables from `Listeningway.ini`.
 - If a key is missing, the default value from `constants.h` is used.
 - When you change a setting in the overlay (such as the audio analysis toggle), it is saved to the .ini file.
 - You can also edit the .ini file manually and restart the game/addon to apply changes.
