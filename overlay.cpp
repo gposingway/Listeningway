@@ -9,6 +9,9 @@
 #include "overlay.h"
 #include "audio_analysis.h"
 
+constexpr float FREQ_BAND_ROW_HEIGHT = 24.0f;
+constexpr float FREQ_BAND_BAR_WIDTH_SCALE = 0.9f;
+
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex, bool capture_active) {
@@ -33,8 +36,8 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
     // --- Frequency bands ---
     ImGui::Text("Frequency Bands (%zu):", data.freq_bands.size());
     // Make the child window tall enough for all bands
-    ImGui::BeginChild("FreqBandsChild", ImVec2(0, 24.0f * data.freq_bands.size()), true, ImGuiWindowFlags_HorizontalScrollbar);
-    const float item_width = ImGui::GetContentRegionAvail().x * 0.9f;
+    ImGui::BeginChild("FreqBandsChild", ImVec2(0, FREQ_BAND_ROW_HEIGHT * data.freq_bands.size()), true, ImGuiWindowFlags_HorizontalScrollbar);
+    const float item_width = ImGui::GetContentRegionAvail().x * FREQ_BAND_BAR_WIDTH_SCALE;
     for (size_t i = 0; i < data.freq_bands.size(); ++i) {
         ImGui::Text("%zu:", i);
         ImGui::SameLine();

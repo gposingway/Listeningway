@@ -14,6 +14,9 @@
 //   Listeningway_FreqBands:  [0,1] array of normalized frequency band magnitudes
 //   Listeningway_Beat:       [0,1] beat detection (pulses on detected beats)
 
+// NOTE: The number of bands (LISTENINGWAY_NUM_BANDS) must match the value in audio_analysis_constants.h
+// Update both this file and the C++ header if you change the band count.
+
 #define LISTENINGWAY_NUM_BANDS 8
 
 uniform float Listeningway_FreqBands[LISTENINGWAY_NUM_BANDS] < ui_visible = false; >;

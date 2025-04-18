@@ -27,7 +27,7 @@
 #include "logging.h"
 #include "uniform_manager.h"
 
-#define LISTENINGWAY_NUM_BANDS 8
+constexpr size_t LISTENINGWAY_FFT_SIZE = 512;
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
 static std::atomic_bool g_effects_enabled = false;
@@ -35,7 +35,7 @@ static std::wstring g_current_preset_path;
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
-static AudioAnalysisConfig g_audio_config = { LISTENINGWAY_NUM_BANDS, 512 };
+static AudioAnalysisConfig g_audio_config = { LISTENINGWAY_NUM_BANDS, LISTENINGWAY_FFT_SIZE };
 static UniformManager g_uniform_manager;
 
 /**

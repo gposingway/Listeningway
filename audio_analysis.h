@@ -5,8 +5,7 @@
 #pragma once
 #include <vector>
 #include <cstddef>
-
-constexpr size_t LISTENINGWAY_NUM_BANDS = 8;
+#include "audio_analysis_constants.h"
 
 // Holds the results of audio analysis for one frame
 struct AudioAnalysisData {
