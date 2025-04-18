@@ -105,10 +105,12 @@ DebugEnabled=0
 
 ## Libraries Used & Credits
 
-- [ReShade](https://github.com/crosire/reshade) — by crosire. Core post-processing framework and SDK.
-- [ImGui](https://github.com/ocornut/imgui) — by Omar Cornut. Immediate-mode GUI for the overlay.
-- [KissFFT](https://github.com/mborgerding/kissfft) — by Mark Borgerding. Fast Fourier Transform library for audio analysis.
-- [Microsoft WASAPI](https://learn.microsoft.com/en-us/windows/win32/coreaudio/wasapi) — Windows audio capture API.
+| Library / API | Author / Project | Purpose |
+|---------------|------------------|---------|
+| [ReShade](https://github.com/crosire/reshade) | crosire | Core post-processing framework and SDK |
+| [ImGui](https://github.com/ocornut/imgui) | Omar Cornut | Immediate-mode GUI for the overlay |
+| [KissFFT](https://github.com/mborgerding/kissfft) | Mark Borgerding | Fast Fourier Transform library for audio analysis |
+| [Microsoft WASAPI](https://docs.microsoft.com/en-us/windows/win32/coreaudio/windows-audio-session-api) | Microsoft | Windows audio capture API |
 
 Special thanks to the ReShade community and contributors for documentation, support, and best practices.
 
