@@ -12,6 +12,7 @@ Listeningway is a modular ReShade addon that captures system audio and provides 
 - **overlay.*:** ImGui debug overlay for real-time visualization
 - **logging.*:** Thread-safe logging for diagnostics
 - **listeningway_addon.cpp:** Main entry point and integration logic
+- **constants.h:** All tunable parameters and project-wide constants (see below)
 
 ## Prerequisites
 
@@ -30,13 +31,13 @@ Listeningway is a modular ReShade addon that captures system audio and provides 
    - This will:
      - Clone ReShade SDK and vcpkg if needed.
      - Bootstrap vcpkg.
-     - Install all dependencies using the static triplet (`x64-windows-static`), so no extra DLLs are needed at runtime.
+     - Install all dependencies using the static triplet (`x64-windows-static`).
      - Configure the project with CMake in the `build` directory.
 
 2. **Build the Addon**
    - Run:
      ```
-     .\simple_build.bat
+     .\build.bat
      ```
    - This will:
      - Build the addon in Release mode.
@@ -48,6 +49,20 @@ Listeningway is a modular ReShade addon that captures system audio and provides 
 1. Copy `dist\Listeningway.addon` to your FFXIV ReShade directory (where your ReShade DLL is).
 2. Place `Listeningway.fx` in your ReShade shaders directory.
 3. Launch FFXIV. The addon will load automatically; enable the effect in the ReShade overlay.
+
+## Tuning and Configuration
+
+All tunable parameters and project-wide constants are defined in `constants.h`. You can adjust:
+- Audio analysis parameters (number of bands, FFT size, smoothing, thresholds, normalization, etc.)
+- Beat detection and falloff behavior
+- UI/overlay layout and appearance
+
+**To change behavior or tune the addon:**
+1. Open `constants.h` in the project root.
+2. Edit the relevant constant (e.g., `LISTENINGWAY_NUM_BANDS`, `LISTENINGWAY_FLUX_ALPHA`, `LISTENINGWAY_BEAT_FALLOFF_DEFAULT`, etc.).
+3. Rebuild the project with `.\build.bat`.
+
+See comments in `constants.h` for descriptions of each parameter.
 
 ## Notes
 
@@ -90,7 +105,7 @@ float beat = Listeningway_Beat; // Use for beat-driven effects
 ## 3. (Optional) Customize Number of Bands
 
 If you want a different number of bands, you must:
-- Change the array size in both the shader and the C++ addon (LISTENINGWAY_NUM_BANDS).
+- Change the array size in both the shader and the C++ addon (`LISTENINGWAY_NUM_BANDS` in `constants.h`).
 - Rebuild the addon and update the shader accordingly.
 
 ## 4. Enable the Effect in ReShade
