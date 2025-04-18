@@ -15,7 +15,7 @@ Listeningway is a modular ReShade addon that captures system audio and provides 
 
 ## Audio Analysis Constants
 
-All audio analysis constants (such as normalization factors, smoothing, and band count) are defined in `audio_analysis_constants.h`. Update this file to change analysis parameters globally.
+All audio analysis constants (such as normalization factors, smoothing, and band count) are now defined in `audio_analysis_constants.h`. Update this file to change analysis parameters globally.
 
 - The number of frequency bands (`LISTENINGWAY_NUM_BANDS`) must match the value in the shader include (`ListeningwayUniforms.fxh`).
 - If you change the number of bands, update both C++ and shader code accordingly.
