@@ -43,6 +43,7 @@ All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loa
 - Number of frequency bands, FFT size, smoothing, thresholds, normalization, etc.
 - Beat detection and falloff behavior
 - UI/overlay layout and appearance
+- **CaptureStaleTimeout**: Time in seconds to wait before attempting to restart audio capture if no new audio is detected (default: 3.0)
 
 **How it works:**
 - On startup, the addon loads all tunables from `Listeningway.ini`.
@@ -69,6 +70,7 @@ BandNorm=0.1
 [UI]
 FreqBandRowHeight=24.0
 ProgressWidth=0.9
+CaptureStaleTimeout=3.0
 
 [General]
 AudioAnalysisEnabled=1

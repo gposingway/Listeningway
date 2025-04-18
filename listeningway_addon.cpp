@@ -37,6 +37,8 @@ static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
 static AudioAnalysisConfig g_audio_config = { g_listeningway_num_bands, g_listeningway_fft_size };
 static UniformManager g_uniform_manager;
+static std::chrono::steady_clock::time_point g_last_audio_update = std::chrono::steady_clock::now();
+static float g_last_volume = 0.0f;
 
 /**
  * @brief Updates all Listeningway_* uniforms in all loaded effects.
@@ -64,10 +66,32 @@ static void OnReloadedEffects(reshade::api::effect_runtime* runtime) {
 }
 
 /**
+ * @brief Checks if new audio values have been captured in the last 3 seconds.
+ * If not, attempts to restart the audio capture thread.
+ */
+static void MaybeRestartAudioCaptureIfStale() {
+    float current_volume;
+    {
+        std::lock_guard<std::mutex> lock(g_audio_data_mutex);
+        current_volume = g_audio_data.volume;
+    }
+    auto now = std::chrono::steady_clock::now();
+    if (current_volume != g_last_volume) {
+        g_last_audio_update = now;
+        g_last_volume = current_volume;
+    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_last_audio_update).count() > static_cast<int>(g_listeningway_capture_stale_timeout * 1000.0f)) {
+        // No new audio for the configured timeout, try to restart
+        CheckAndRestartAudioCapture(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+        g_last_audio_update = now; // Prevent rapid restarts
+    }
+}
+
+/**
  * @brief Overlay callback for ReShade. Draws the debug overlay.
  * @param runtime The ReShade effect runtime.
  */
 static void OverlayCallback(reshade::api::effect_runtime*) {
+    MaybeRestartAudioCaptureIfStale();
     DrawListeningwayDebugOverlay(g_audio_data, g_audio_data_mutex);
 }
 
@@ -79,7 +103,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     UNREFERENCED_PARAMETER(lpReserved);
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH:
+            LoadSettings();
+            LoadAllTunables();
             DisableThreadLibraryCalls(hModule);
+            InitAudioDeviceNotification();
             if (reshade::register_addon(hModule)) {
                 OpenLogFile("listeningway.log");
                 LogToFile("Addon loaded and log file opened.");
@@ -103,6 +130,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                 CloseLogFile();
                 g_addon_enabled = false;
             }
+            UninitAudioDeviceNotification();
             break;
     }
     return TRUE;

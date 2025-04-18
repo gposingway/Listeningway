@@ -41,6 +41,7 @@ extern float g_listeningway_freq_band_row_height;
 extern float g_listeningway_ui_progress_width;
 extern std::atomic_bool g_audio_analysis_enabled;
 extern bool g_listeningway_debug_enabled;
+extern float g_listeningway_capture_stale_timeout;
 
 // Loads all tunables from .ini (or uses defaults)
 void LoadAllTunables();

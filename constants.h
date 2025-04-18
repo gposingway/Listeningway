@@ -26,4 +26,7 @@ constexpr float DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT = 24.0f; // Default he
 // UI/Overlay tunables
 constexpr float DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH = 0.9f; // Default progress bar width multiplier
 
+// General constants
+constexpr float DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT = 1.5f;
+
 // Add more constants as needed

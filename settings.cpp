@@ -24,6 +24,7 @@ float g_listeningway_volume_norm = DEFAULT_LISTENINGWAY_VOLUME_NORM;
 float g_listeningway_band_norm = DEFAULT_LISTENINGWAY_BAND_NORM;
 float g_listeningway_freq_band_row_height = DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT;
 float g_listeningway_ui_progress_width = DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH;
+float g_listeningway_capture_stale_timeout = DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT;
 
 std::atomic_bool g_audio_analysis_enabled = true;
 bool g_listeningway_debug_enabled = false;
@@ -111,6 +112,7 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "BandNorm", g_listeningway_band_norm, DEFAULT_LISTENINGWAY_BAND_NORM);
     RW_INI_FLOAT("UI", "FreqBandRowHeight", g_listeningway_freq_band_row_height, DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT);
     RW_INI_FLOAT("UI", "ProgressWidth", g_listeningway_ui_progress_width, DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH);
+    RW_INI_FLOAT("UI", "CaptureStaleTimeout", g_listeningway_capture_stale_timeout, DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT);
 }
 
 void SaveAllTunables() {
@@ -130,4 +132,5 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "BandNorm", g_listeningway_band_norm);
     WR_INI_FLOAT("UI", "FreqBandRowHeight", g_listeningway_freq_band_row_height);
     WR_INI_FLOAT("UI", "ProgressWidth", g_listeningway_ui_progress_width);
+    WR_INI_FLOAT("UI", "CaptureStaleTimeout", g_listeningway_capture_stale_timeout);
 }
