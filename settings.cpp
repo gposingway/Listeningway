@@ -37,7 +37,7 @@ std::string GetSettingsPath() {
     std::string path(dllPath);
     size_t pos = path.find_last_of("\\/");
     if (pos != std::string::npos) path = path.substr(0, pos + 1);
-    return path + "ListeningwaySettings.ini";
+    return path + "Listeningway.ini";
 }
 
 std::string GetLogFilePath() {
