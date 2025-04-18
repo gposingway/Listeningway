@@ -30,6 +30,8 @@
 #define LISTENINGWAY_NUM_BANDS 8
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
+static std::atomic_bool g_effects_enabled = false;
+static std::wstring g_current_preset_path;
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
@@ -54,12 +56,40 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
 }
 
 /**
+ * @brief Helper: Called when ReShade global effects state changes.
+ * @param runtime The ReShade effect runtime.
+ * @param enabled Whether the global effects state is enabled.
+ */
+static void OnSetEffectsState(reshade::api::effect_runtime* runtime, bool enabled) {
+    g_effects_enabled = enabled;
+    bool should_run = g_effects_enabled && g_uniform_manager.has_any_uniforms();
+    if (should_run && !g_audio_thread_running.load()) {
+        StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+    } else if (!should_run && g_audio_thread_running.load()) {
+        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+    }
+}
+
+/**
+ * @brief Helper: Called when uniforms are (re)cached.
+ */
+static void OnUniformsChanged() {
+    bool should_run = g_effects_enabled && g_uniform_manager.has_any_uniforms();
+    if (should_run && !g_audio_thread_running.load()) {
+        StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+    } else if (!should_run && g_audio_thread_running.load()) {
+        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+    }
+}
+
+/**
  * @brief Caches all Listeningway_* uniforms on effect reload.
  * @param runtime The ReShade effect runtime.
  */
 static void OnReloadedEffects(reshade::api::effect_runtime* runtime) {
     g_uniform_manager.clear();
     g_uniform_manager.cache_uniforms(runtime);
+    OnUniformsChanged();
 }
 
 /**
@@ -67,7 +97,7 @@ static void OnReloadedEffects(reshade::api::effect_runtime* runtime) {
  * @param runtime The ReShade effect runtime.
  */
 static void OverlayCallback(reshade::api::effect_runtime*) {
-    DrawListeningwayDebugOverlay(g_audio_data, g_audio_data_mutex);
+    DrawListeningwayDebugOverlay(g_audio_data, g_audio_data_mutex, g_audio_thread_running.load());
 }
 
 /**
@@ -87,7 +117,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                     (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                 reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
-                StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+                reshade::register_event<reshade::addon_event::reshade_set_effects_state>(
+                    (reshade::addon_event_traits<reshade::addon_event::reshade_set_effects_state>::decl)OnSetEffectsState);
                 g_addon_enabled = true;
             }
             break;
@@ -98,6 +129,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                     (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                 reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
+                reshade::unregister_event<reshade::addon_event::reshade_set_effects_state>(
+                    (reshade::addon_event_traits<reshade::addon_event::reshade_set_effects_state>::decl)OnSetEffectsState);
                 StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
                 CloseLogFile();
                 g_addon_enabled = false;

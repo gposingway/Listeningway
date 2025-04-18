@@ -32,6 +32,13 @@ public:
      */
     void clear();
 
+    /**
+     * @brief Returns true if any Listeningway_* uniforms are cached (i.e., at least one shader uses them).
+     */
+    bool has_any_uniforms() const {
+        return !m_volume_uniforms.empty() || !m_freq_bands_uniforms.empty() || !m_beat_uniforms.empty();
+    }
+
 private:
     std::vector<reshade::api::effect_uniform_variable> m_volume_uniforms;
     std::vector<reshade::api::effect_uniform_variable> m_freq_bands_uniforms;
