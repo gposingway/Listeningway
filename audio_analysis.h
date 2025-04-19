@@ -8,7 +8,10 @@
 #include "constants.h"
 #include "settings.h"
 
-// Holds the results of audio analysis for one frame
+/**
+ * @brief Holds the results of audio analysis for one frame.
+ * Contains normalized volume, frequency bands, and beat value.
+ */
 struct AudioAnalysisData {
     float volume = 0.0f;                // Normalized RMS volume [0,1]
     std::vector<float> freq_bands;      // Normalized frequency band magnitudes
@@ -20,19 +23,26 @@ struct AudioAnalysisData {
     float _last_beat_time = 0.0f;       // Last beat timestamp (for adaptive falloff)
     float _falloff_rate = 1.0f;         // Adaptive beat falloff rate
 
-    AudioAnalysisData(size_t bands = g_listeningway_num_bands) : freq_bands(bands, 0.0f) {}
+    AudioAnalysisData(size_t bands = 8) : freq_bands(bands, 0.0f) {}
 };
 
-// Configuration for audio analysis
+/**
+ * @brief Configuration for audio analysis (FFT size, bands, etc.).
+ */
 struct AudioAnalysisConfig {
-    size_t num_bands = g_listeningway_num_bands;
-    size_t fft_size = g_listeningway_fft_size;
+    size_t num_bands;
+    size_t fft_size;
+
+    AudioAnalysisConfig(const ListeningwaySettings& settings)
+        : num_bands(settings.num_bands), fft_size(settings.fft_size) {}
 };
 
-// Main entry point: analyze a buffer of audio samples and update analysis data
-//   - data: pointer to interleaved float samples
-//   - numFrames: number of frames (samples per channel)
-//   - numChannels: number of channels (e.g. 2 for stereo)
-//   - config: analysis configuration
-//   - out: analysis results (updated in-place)
+/**
+ * @brief Analyze a buffer of audio samples and update analysis data.
+ * @param data Pointer to interleaved float samples.
+ * @param numFrames Number of frames (samples per channel).
+ * @param numChannels Number of channels (e.g. 2 for stereo).
+ * @param config Analysis configuration.
+ * @param out Analysis results (updated in-place).
+ */
 void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, const AudioAnalysisConfig& config, AudioAnalysisData& out);
