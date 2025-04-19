@@ -5,7 +5,7 @@
 Listeningway exposes real-time audio data (volume, frequency bands, beat) to your ReShade shaders. You must use annotation-based uniforms:
 
 ### Annotation-based (required)
-Add a `source` annotation to your uniform variable. This is robust, avoids name collisions, and is now required.
+Add a `source` annotation to your uniform variable. This is robust, avoids name collisions, and is required.
 
 ```hlsl
 // Use your own names with annotation:
@@ -39,7 +39,7 @@ float4 main(float2 uv : TEXCOORD) : SV_Target
 
 ## Tuning and Configuration
 
-All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loaded from `Listeningway.ini` in the same directory as the DLL. These are now grouped in the `ListeningwaySettings` struct in the code, and loaded/saved atomically. Edit this file to change:
+All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loaded from `Listeningway.ini` in the same directory as the DLL. These are grouped in the `ListeningwaySettings` struct in the code, and loaded/saved atomically. Edit this file to change:
 - Number of frequency bands, FFT size, smoothing, thresholds, normalization, etc.
 - Beat detection and falloff behavior
 - UI/overlay layout and appearance
@@ -51,7 +51,7 @@ All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loa
 - When you change a setting in the overlay (such as the audio analysis toggle), it is saved to the .ini file and the struct is updated atomically.
 - You can also edit the .ini file manually and restart the game/addon to apply changes.
 - The `AudioAnalysisConfig` struct is used to pass settings to the analysis and capture modules, ensuring all tunables are grouped and consistent.
-- Legacy global variables have been removed; all tunables are now accessed via the settings struct.
+- Legacy global variables have been removed; all tunables are accessed via the settings struct.
 
 **Example .ini entries:**
 ```
