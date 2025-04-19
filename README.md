@@ -39,17 +39,19 @@ float4 main(float2 uv : TEXCOORD) : SV_Target
 
 ## Tuning and Configuration
 
-All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loaded from `Listeningway.ini` in the same directory as the DLL. Edit this file to change:
+All tunable parameters (audio analysis, beat detection, UI layout, etc.) are loaded from `Listeningway.ini` in the same directory as the DLL. These are now grouped in the `ListeningwaySettings` struct in the code, and loaded/saved atomically. Edit this file to change:
 - Number of frequency bands, FFT size, smoothing, thresholds, normalization, etc.
 - Beat detection and falloff behavior
 - UI/overlay layout and appearance
 - **CaptureStaleTimeout**: Time in seconds to wait before attempting to restart audio capture if no new audio is detected (default: 3.0)
 
 **How it works:**
-- On startup, the addon loads all tunables from `Listeningway.ini`.
+- On startup, the addon loads all tunables from `Listeningway.ini` into the `ListeningwaySettings` struct.
 - If a key is missing, the default value from `constants.h` is used.
-- When you change a setting in the overlay (such as the audio analysis toggle), it is saved to the .ini file.
+- When you change a setting in the overlay (such as the audio analysis toggle), it is saved to the .ini file and the struct is updated atomically.
 - You can also edit the .ini file manually and restart the game/addon to apply changes.
+- The `AudioAnalysisConfig` struct is used to pass settings to the analysis and capture modules, ensuring all tunables are grouped and consistent.
+- Legacy global variables have been removed; all tunables are now accessed via the settings struct.
 
 **Example .ini entries:**
 ```
@@ -129,10 +131,10 @@ Special thanks to the ReShade community and contributors for documentation, supp
 
 ## Architecture Overview
 
-- **audio_capture.*:** WASAPI audio capture (threaded)
-- **audio_analysis.*:** Real-time audio feature extraction (volume, bands, beat)
+- **audio_capture.*:** WASAPI audio capture (threaded, uses `AudioAnalysisConfig`)
+- **audio_analysis.*:** Real-time audio feature extraction (volume, bands, beat, uses `AudioAnalysisConfig`)
 - **uniform_manager.*:** Updates all Listeningway uniforms in loaded effects
 - **overlay.*:** ImGui debug overlay for real-time visualization
 - **logging.*:** Thread-safe logging for diagnostics
 - **listeningway_addon.cpp:** Main entry point and integration logic
-- **settings.cpp/settings.h:** All tunable parameters are loaded from an .ini file
+- **settings.cpp/settings.h:** All tunable parameters are loaded from an .ini file and grouped in `ListeningwaySettings` struct
