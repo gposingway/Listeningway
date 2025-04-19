@@ -1,7 +1,7 @@
 **Download:**
-- [Listeningway.addon](https://github.com/gposingway/Listeningway/releases/download/v{{VERSION}}/Listeningway.addon)
-- [Listeningway.fx](https://github.com/gposingway/Listeningway/releases/download/v{{VERSION}}/Listeningway.fx)
-- [ListeningwayUniforms.fxh](https://github.com/gposingway/Listeningway/releases/download/v{{VERSION}}/ListeningwayUniforms.fxh)
+- [Listeningway.addon](https://github.com/gposingway/listeningway/releases/download/v{{VERSION}}/Listeningway.addon)
+- [Listeningway.fx](https://github.com/gposingway/listeningway/releases/download/v{{VERSION}}/Listeningway.fx)
+- [ListeningwayUniforms.fxh](https://github.com/gposingway/listeningway/releases/download/v{{VERSION}}/ListeningwayUniforms.fxh)
 
 ## Installation
 1. Download the files above.
@@ -11,4 +11,4 @@
 
 ## Notes
 - Requires ReShade 5.2 or newer.
-- For more information and troubleshooting, see the [GitHub repository](https://github.com/gposingway/Listeningway).
+- For more information and troubleshooting, see the [GitHub repository](https://github.com/gposingway/listeningway).
