@@ -1,6 +1,6 @@
 // ---------------------------------------------
 // @file listeningway_addon.cpp
-// @brief Main entry point for the Listeningway ReShade addon
+// @brief Main entry point and DLL logic for Listeningway ReShade Addon
 // ---------------------------------------------
 #include <algorithm>
 #include <unordered_map>

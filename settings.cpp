@@ -1,6 +1,6 @@
 // ---------------------------------------------
 // @file settings.cpp
-// @brief Simple .ini settings manager for Listeningway
+// @brief Implementation of settings management for Listeningway
 // ---------------------------------------------
 #include "constants.h"
 #include "settings.h"
@@ -15,6 +15,10 @@ ListeningwaySettings g_settings;
 std::atomic_bool g_audio_analysis_enabled = true;
 bool g_listeningway_debug_enabled = false;
 
+/**
+ * @brief Retrieves the path to the settings .ini file.
+ * @return The full path to the Listeningway.ini file.
+ */
 std::string GetSettingsPath() {
     char dllPath[MAX_PATH] = {};
     HMODULE hModule = nullptr;
@@ -27,6 +31,10 @@ std::string GetSettingsPath() {
     return path + "Listeningway.ini";
 }
 
+/**
+ * @brief Retrieves the path to the log file.
+ * @return The full path to the listeningway.log file.
+ */
 std::string GetLogFilePath() {
     std::string ini = GetSettingsPath();
     size_t pos = ini.find_last_of("\\/");
@@ -36,6 +44,9 @@ std::string GetLogFilePath() {
 
 static std::mutex g_settings_mutex;
 
+/**
+ * @brief Loads settings from the .ini file into global variables.
+ */
 void LoadSettings() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     std::string ini = GetSettingsPath();
@@ -43,6 +54,9 @@ void LoadSettings() {
     g_listeningway_debug_enabled = GetPrivateProfileIntA("General", "DebugEnabled", 0, ini.c_str()) != 0;
 }
 
+/**
+ * @brief Saves current settings to the .ini file.
+ */
 void SaveSettings() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     std::string ini = GetSettingsPath();
@@ -50,11 +64,19 @@ void SaveSettings() {
     WritePrivateProfileStringA("General", "DebugEnabled", g_listeningway_debug_enabled ? "1" : "0", ini.c_str());
 }
 
+/**
+ * @brief Gets the current state of audio analysis.
+ * @return True if audio analysis is enabled, false otherwise.
+ */
 bool GetAudioAnalysisEnabled() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     return g_audio_analysis_enabled;
 }
 
+/**
+ * @brief Sets the state of audio analysis and saves the setting.
+ * @param enabled True to enable audio analysis, false to disable.
+ */
 void SetAudioAnalysisEnabled(bool enabled) {
     {
         std::lock_guard<std::mutex> lock(g_settings_mutex);
@@ -63,11 +85,19 @@ void SetAudioAnalysisEnabled(bool enabled) {
     SaveSettings();
 }
 
+/**
+ * @brief Gets the current state of debug mode.
+ * @return True if debug mode is enabled, false otherwise.
+ */
 bool GetDebugEnabled() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     return g_listeningway_debug_enabled;
 }
 
+/**
+ * @brief Sets the state of debug mode and saves the setting.
+ * @param enabled True to enable debug mode, false to disable.
+ */
 void SetDebugEnabled(bool enabled) {
     {
         std::lock_guard<std::mutex> lock(g_settings_mutex);
@@ -81,6 +111,9 @@ void SetDebugEnabled(bool enabled) {
 #define WR_INI_FLOAT(section, key, var) { char buf[32]; sprintf_s(buf, "%.6f", var); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
 #define WR_INI_SIZE(section, key, var) { char buf[32]; sprintf_s(buf, "%zu", var); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
 
+/**
+ * @brief Loads all tunable settings from the .ini file into the ListeningwaySettings structure.
+ */
 void LoadAllTunables() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     std::string ini = GetSettingsPath();
@@ -101,6 +134,9 @@ void LoadAllTunables() {
     RW_INI_FLOAT("UI", "CaptureStaleTimeout", g_settings.capture_stale_timeout, DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT);
 }
 
+/**
+ * @brief Saves all tunable settings from the ListeningwaySettings structure to the .ini file.
+ */
 void SaveAllTunables() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     std::string ini = GetSettingsPath();
