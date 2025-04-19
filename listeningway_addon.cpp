@@ -35,7 +35,7 @@ static std::atomic_bool g_audio_analysis_enabled = true; // Toggle for audio ana
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
-static AudioAnalysisConfig g_audio_config = { g_listeningway_num_bands, g_listeningway_fft_size };
+static AudioAnalysisConfig g_audio_config(g_settings);
 static UniformManager g_uniform_manager;
 static std::chrono::steady_clock::time_point g_last_audio_update = std::chrono::steady_clock::now();
 static float g_last_volume = 0.0f;
@@ -79,9 +79,11 @@ static void MaybeRestartAudioCaptureIfStale() {
     if (current_volume != g_last_volume) {
         g_last_audio_update = now;
         g_last_volume = current_volume;
-    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_last_audio_update).count() > static_cast<int>(g_listeningway_capture_stale_timeout * 1000.0f)) {
+    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_last_audio_update).count() > static_cast<int>(g_settings.capture_stale_timeout * 1000.0f)) {
         // No new audio for the configured timeout, try to restart
+        LOG_DEBUG("[Addon] Audio capture thread stale, attempting restart.");
         CheckAndRestartAudioCapture(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+        LOG_DEBUG("[Addon] Audio capture thread restarted.");
         g_last_audio_update = now; // Prevent rapid restarts
     }
 }
@@ -103,23 +105,29 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     UNREFERENCED_PARAMETER(lpReserved);
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH:
+            LOG_DEBUG("[Addon] DLL_PROCESS_ATTACH: Startup sequence initiated.");
             LoadSettings();
+            LOG_DEBUG("[Addon] Loaded settings from ini.");
             LoadAllTunables();
+            LOG_DEBUG("[Addon] Loaded all tunables from ini.");
             DisableThreadLibraryCalls(hModule);
             InitAudioDeviceNotification();
+            LOG_DEBUG("[Addon] Device notification initialized.");
             if (reshade::register_addon(hModule)) {
                 OpenLogFile("listeningway.log");
-                LogToFile("Addon loaded and log file opened.");
+                LOG_DEBUG("Addon loaded and log file opened.");
                 reshade::register_overlay(nullptr, &OverlayCallback);
                 reshade::register_event<reshade::addon_event::reshade_begin_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                 reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
                 StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+                LOG_DEBUG("[Addon] Audio capture thread started.");
                 g_addon_enabled = true;
             }
             break;
         case DLL_PROCESS_DETACH:
+            LOG_DEBUG("[Addon] DLL_PROCESS_DETACH: Shutdown sequence initiated.");
             if (g_addon_enabled.load()) {
                 reshade::unregister_overlay(nullptr, &OverlayCallback);
                 reshade::unregister_event<reshade::addon_event::reshade_begin_effects>(
@@ -127,10 +135,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                 reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(
                     (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
                 StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+                LOG_DEBUG("[Addon] Audio capture thread stopped.");
                 CloseLogFile();
                 g_addon_enabled = false;
             }
             UninitAudioDeviceNotification();
+            LOG_DEBUG("[Addon] Device notification uninitialized.");
             break;
     }
     return TRUE;
