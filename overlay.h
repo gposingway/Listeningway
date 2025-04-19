@@ -7,7 +7,10 @@
 #include <mutex>
 #include "audio_analysis.h"
 
-// Draws the Listeningway debug overlay using ImGui.
-//   - data: current audio analysis data (volume, bands, beat)
-//   - data_mutex: mutex protecting the analysis data
+/**
+ * @brief Draws the Listeningway debug overlay using ImGui.
+ * Shows volume, beat, and frequency bands in real time.
+ * @param data Current audio analysis data (volume, bands, beat).
+ * @param data_mutex Mutex protecting the analysis data.
+ */
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex);
