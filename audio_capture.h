@@ -11,29 +11,39 @@
 #include <audioclient.h>
 #include "audio_analysis.h"
 
-// Starts the audio capture thread.
-//   - config: analysis configuration (FFT size, bands)
-//   - running: atomic flag to control thread lifetime
-//   - thread: thread object (will be started)
-//   - data_mutex: mutex protecting the analysis data
-//   - data: analysis data to be updated by the thread
+/**
+ * @brief Starts the audio capture thread.
+ * @param config Analysis configuration (FFT size, bands).
+ * @param running Atomic flag to control thread lifetime.
+ * @param thread Thread object (will be started).
+ * @param data_mutex Mutex protecting the analysis data.
+ * @param data Analysis data to be updated by the thread.
+ */
 void StartAudioCaptureThread(const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
 
-// Stops the audio capture thread.
-//   - running: atomic flag to signal thread to stop
-//   - thread: thread object (will be joined)
+/**
+ * @brief Stops the audio capture thread.
+ * @param running Atomic flag to signal thread to stop.
+ * @param thread Thread object (will be joined).
+ */
 void StopAudioCaptureThread(std::atomic_bool& running, std::thread& thread);
 
-// Initializes audio device notifications.
+/**
+ * @brief Initializes audio device notifications.
+ */
 void InitAudioDeviceNotification();
 
-// Uninitializes audio device notifications.
+/**
+ * @brief Uninitializes audio device notifications.
+ */
 void UninitAudioDeviceNotification();
 
-// Checks and restarts the audio capture thread if necessary.
-//   - config: analysis configuration (FFT size, bands)
-//   - running: atomic flag to control thread lifetime
-//   - thread: thread object (will be restarted if needed)
-//   - data_mutex: mutex protecting the analysis data
-//   - data: analysis data to be updated by the thread
+/**
+ * @brief Checks and restarts the audio capture thread if necessary.
+ * @param config Analysis configuration (FFT size, bands).
+ * @param running Atomic flag to control thread lifetime.
+ * @param thread Thread object (will be restarted if needed).
+ * @param data_mutex Mutex protecting the analysis data.
+ * @param data Analysis data to be updated by the thread.
+ */
 void CheckAndRestartAudioCapture(const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
