@@ -35,7 +35,8 @@ float4 main(float2 uv : TEXCOORD) : SV_Target
 
 1. Copy `dist\Listeningway.addon` to your ReShade directory (where your ReShade DLL is).
 2. Place your shader (e.g., `Listeningway.fx`) in the ReShade shaders directory.
-3. Launch your game. The addon will load automatically; enable your effect in the ReShade overlay.
+3. Place `ListeningwayUniforms.fxh` in your ReShade include directory (usually `reshade-shaders\Shaders`).
+4. Launch your game. The addon will load automatically; enable your effect in the ReShade overlay.
 
 ---
 
