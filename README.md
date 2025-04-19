@@ -1,5 +1,7 @@
 # Listeningway - Audio Visualizer ReShade Addon
 
+![Listeningway3](https://github.com/user-attachments/assets/0a8338cd-3694-4318-ab69-389f6a0b082e)
+
 ## Quick Start for Shader Developers
 
 Listeningway exposes real-time audio data (volume, frequency bands, beat) to your ReShade shaders. You must use annotation-based uniforms:
