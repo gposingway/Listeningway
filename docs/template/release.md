@@ -1,5 +1,3 @@
-# Listeningway v{{VERSION}}
-
 **Download:**
 - [Listeningway.addon](https://github.com/gposingway/Listeningway/releases/download/v{{VERSION}}/Listeningway.addon)
 - [Listeningway.fx](https://github.com/gposingway/Listeningway/releases/download/v{{VERSION}}/Listeningway.fx)
