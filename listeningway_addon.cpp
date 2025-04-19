@@ -93,8 +93,14 @@ static void MaybeRestartAudioCaptureIfStale() {
  * @param runtime The ReShade effect runtime.
  */
 static void OverlayCallback(reshade::api::effect_runtime*) {
-    MaybeRestartAudioCaptureIfStale();
-    DrawListeningwayDebugOverlay(g_audio_data, g_audio_data_mutex);
+    try {
+        MaybeRestartAudioCaptureIfStale();
+        DrawListeningwayDebugOverlay(g_audio_data, g_audio_data_mutex);
+    } catch (const std::exception& ex) {
+        LOG_ERROR(std::string("[Overlay] Exception: ") + ex.what());
+    } catch (...) {
+        LOG_ERROR("[Overlay] Unknown exception.");
+    }
 }
 
 /**
@@ -103,45 +109,51 @@ static void OverlayCallback(reshade::api::effect_runtime*) {
  */
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     UNREFERENCED_PARAMETER(lpReserved);
-    switch (ul_reason_for_call) {
-        case DLL_PROCESS_ATTACH:
-            LOG_DEBUG("[Addon] DLL_PROCESS_ATTACH: Startup sequence initiated.");
-            LoadSettings();
-            LOG_DEBUG("[Addon] Loaded settings from ini.");
-            LoadAllTunables();
-            LOG_DEBUG("[Addon] Loaded all tunables from ini.");
-            DisableThreadLibraryCalls(hModule);
-            InitAudioDeviceNotification();
-            LOG_DEBUG("[Addon] Device notification initialized.");
-            if (reshade::register_addon(hModule)) {
-                OpenLogFile("listeningway.log");
-                LOG_DEBUG("Addon loaded and log file opened.");
-                reshade::register_overlay(nullptr, &OverlayCallback);
-                reshade::register_event<reshade::addon_event::reshade_begin_effects>(
-                    (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
-                reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
-                    (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
-                StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
-                LOG_DEBUG("[Addon] Audio capture thread started.");
-                g_addon_enabled = true;
-            }
-            break;
-        case DLL_PROCESS_DETACH:
-            LOG_DEBUG("[Addon] DLL_PROCESS_DETACH: Shutdown sequence initiated.");
-            if (g_addon_enabled.load()) {
-                reshade::unregister_overlay(nullptr, &OverlayCallback);
-                reshade::unregister_event<reshade::addon_event::reshade_begin_effects>(
-                    (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
-                reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(
-                    (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
-                StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
-                LOG_DEBUG("[Addon] Audio capture thread stopped.");
-                CloseLogFile();
-                g_addon_enabled = false;
-            }
-            UninitAudioDeviceNotification();
-            LOG_DEBUG("[Addon] Device notification uninitialized.");
-            break;
+    try {
+        switch (ul_reason_for_call) {
+            case DLL_PROCESS_ATTACH:
+                LOG_DEBUG("[Addon] DLL_PROCESS_ATTACH: Startup sequence initiated.");
+                LoadSettings();
+                LOG_DEBUG("[Addon] Loaded settings from ini.");
+                LoadAllTunables();
+                LOG_DEBUG("[Addon] Loaded all tunables from ini.");
+                DisableThreadLibraryCalls(hModule);
+                InitAudioDeviceNotification();
+                LOG_DEBUG("[Addon] Device notification initialized.");
+                if (reshade::register_addon(hModule)) {
+                    OpenLogFile("listeningway.log");
+                    LOG_DEBUG("Addon loaded and log file opened.");
+                    reshade::register_overlay(nullptr, &OverlayCallback);
+                    reshade::register_event<reshade::addon_event::reshade_begin_effects>(
+                        (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
+                    reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
+                        (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
+                    StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+                    LOG_DEBUG("[Addon] Audio capture thread started.");
+                    g_addon_enabled = true;
+                }
+                break;
+            case DLL_PROCESS_DETACH:
+                LOG_DEBUG("[Addon] DLL_PROCESS_DETACH: Shutdown sequence initiated.");
+                if (g_addon_enabled.load()) {
+                    reshade::unregister_overlay(nullptr, &OverlayCallback);
+                    reshade::unregister_event<reshade::addon_event::reshade_begin_effects>(
+                        (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
+                    reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(
+                        (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
+                    StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+                    LOG_DEBUG("[Addon] Audio capture thread stopped.");
+                    CloseLogFile();
+                    g_addon_enabled = false;
+                }
+                UninitAudioDeviceNotification();
+                LOG_DEBUG("[Addon] Device notification uninitialized.");
+                break;
+        }
+    } catch (const std::exception& ex) {
+        LOG_ERROR(std::string("[Addon] Exception in DllMain: ") + ex.what());
+    } catch (...) {
+        LOG_ERROR("[Addon] Unknown exception in DllMain.");
     }
     return TRUE;
 }

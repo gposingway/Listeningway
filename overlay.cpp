@@ -85,16 +85,22 @@ static void DrawFrequencyBands(const AudioAnalysisData& data) {
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
-    std::lock_guard<std::mutex> lock(data_mutex);
-    DrawToggles();
-    DrawLogInfo();
-    ImGui::Separator();
-    DrawWebsite();
-    ImGui::Separator();
-    DrawVolume(data);
-    ImGui::Separator();
-    DrawBeat(data);
-    ImGui::Separator();
-    DrawFrequencyBands(data);
-    ImGui::Separator();
+    try {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        DrawToggles();
+        DrawLogInfo();
+        ImGui::Separator();
+        DrawWebsite();
+        ImGui::Separator();
+        DrawVolume(data);
+        ImGui::Separator();
+        DrawBeat(data);
+        ImGui::Separator();
+        DrawFrequencyBands(data);
+        ImGui::Separator();
+    } catch (const std::exception& ex) {
+        LOG_ERROR(std::string("[Overlay] Exception in DrawListeningwayDebugOverlay: ") + ex.what());
+    } catch (...) {
+        LOG_ERROR("[Overlay] Unknown exception in DrawListeningwayDebugOverlay.");
+    }
 }

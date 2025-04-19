@@ -84,153 +84,161 @@ void StartAudioCaptureThread(const AudioAnalysisConfig& config, std::atomic_bool
     g_device_change_pending = false;
     LOG_DEBUG("[AudioCapture] Starting audio capture thread.");
     thread = std::thread([&, config]() {
-        struct WasapiResources {
-            IMMDevice* pDevice = nullptr;
-            IAudioClient* pAudioClient = nullptr;
-            IAudioCaptureClient* pCaptureClient = nullptr;
-            WAVEFORMATEX* pwfx = nullptr;
-            HANDLE hAudioEvent = nullptr;
-            ~WasapiResources() {
-                if (pAudioClient) pAudioClient->Stop();
-                if (hAudioEvent) CloseHandle(hAudioEvent);
-                if (pCaptureClient) pCaptureClient->Release();
-                if (pAudioClient) pAudioClient->Release();
-                if (pDevice) pDevice->Release();
-                if (pwfx) CoTaskMemFree(pwfx);
-            }
-        } res;
-        HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to initialize COM: " + std::to_string(hr));
-            running = false;
-            return;
-        }
-        // WASAPI device and client setup
-        UINT32 bufferFrameCount = 0;
-        if (!g_device_enumerator) {
-            LOG_ERROR("[AudioCapture] Device enumerator is null!");
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        hr = g_device_enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &res.pDevice);
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to get default audio endpoint: " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        hr = res.pDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&res.pAudioClient);
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to activate audio client: " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        hr = res.pAudioClient->GetMixFormat(&res.pwfx);
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to get mix format: " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        // Check for float format
-        bool isFloatFormat = false;
-        if (res.pwfx->wFormatTag == WAVE_FORMAT_IEEE_FLOAT) isFloatFormat = true;
-        else if (res.pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
-            WAVEFORMATEXTENSIBLE* pwfex = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(res.pwfx);
-            if (pwfex->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) isFloatFormat = true;
-        }
-        res.hAudioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (!res.hAudioEvent) {
-            LOG_ERROR("[AudioCapture] Failed to create audio event.");
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        REFERENCE_TIME hnsRequestedDuration = 200000;
-        hr = res.pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, hnsRequestedDuration, 0, res.pwfx, nullptr);
-        if (hr == AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED) {
-            hr = res.pAudioClient->GetBufferSize(&bufferFrameCount);
+        try {
+            struct WasapiResources {
+                IMMDevice* pDevice = nullptr;
+                IAudioClient* pAudioClient = nullptr;
+                IAudioCaptureClient* pCaptureClient = nullptr;
+                WAVEFORMATEX* pwfx = nullptr;
+                HANDLE hAudioEvent = nullptr;
+                ~WasapiResources() {
+                    if (pAudioClient) pAudioClient->Stop();
+                    if (hAudioEvent) CloseHandle(hAudioEvent);
+                    if (pCaptureClient) pCaptureClient->Release();
+                    if (pAudioClient) pAudioClient->Release();
+                    if (pDevice) pDevice->Release();
+                    if (pwfx) CoTaskMemFree(pwfx);
+                }
+            } res;
+            HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
             if (FAILED(hr)) {
-                LOG_ERROR("[AudioCapture] Failed to get buffer size: " + std::to_string(hr));
+                LOG_ERROR("[AudioCapture] Failed to initialize COM: " + std::to_string(hr));
+                running = false;
+                return;
+            }
+            // WASAPI device and client setup
+            UINT32 bufferFrameCount = 0;
+            if (!g_device_enumerator) {
+                LOG_ERROR("[AudioCapture] Device enumerator is null!");
                 running = false;
                 CoUninitialize();
                 return;
             }
-            hnsRequestedDuration = (REFERENCE_TIME)((10000.0 * 1000 / res.pwfx->nSamplesPerSec * bufferFrameCount) + 0.5);
-            hr = res.pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, hnsRequestedDuration, 0, res.pwfx, nullptr);
-        }
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to initialize audio client: " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        hr = res.pAudioClient->GetBufferSize(&bufferFrameCount);
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to get buffer size (2): " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        hr = res.pAudioClient->SetEventHandle(res.hAudioEvent);
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to set event handle: " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        hr = res.pAudioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&res.pCaptureClient);
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to get capture client: " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        hr = res.pAudioClient->Start();
-        if (FAILED(hr)) {
-            LOG_ERROR("[AudioCapture] Failed to start audio client: " + std::to_string(hr));
-            running = false;
-            CoUninitialize();
-            return;
-        }
-        LOG_DEBUG("[AudioCapture] Entering main capture loop.");
-        // Main capture loop
-        while (running.load()) {
-            if (g_device_change_pending.load()) {
-                LOG_DEBUG("[AudioCapture] Audio device change detected. Restarting capture.");
-                break; // Exit thread to allow restart
+            hr = g_device_enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &res.pDevice);
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to get default audio endpoint: " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
             }
-            DWORD waitResult = WaitForSingleObject(res.hAudioEvent, 200);
-            if (!running.load()) break;
-            if (waitResult == WAIT_OBJECT_0) {
-                BYTE* pData = nullptr;
-                UINT32 numFramesAvailable = 0;
-                DWORD flags = 0;
-                UINT64 devicePosition = 0;
-                UINT64 qpcPosition = 0;
-                hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
-                if (SUCCEEDED(hr)) {
-                    if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
-                        if (g_settings.audio_analysis_enabled) {
-                            AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), numFramesAvailable, res.pwfx->nChannels, config, data);
-                        } else {
-                            data.volume = 0.0f;
-                            std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
-                            data.beat = 0.0f;
+            hr = res.pDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, (void**)&res.pAudioClient);
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to activate audio client: " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            hr = res.pAudioClient->GetMixFormat(&res.pwfx);
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to get mix format: " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            // Check for float format
+            bool isFloatFormat = false;
+            if (res.pwfx->wFormatTag == WAVE_FORMAT_IEEE_FLOAT) isFloatFormat = true;
+            else if (res.pwfx->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
+                WAVEFORMATEXTENSIBLE* pwfex = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(res.pwfx);
+                if (pwfex->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) isFloatFormat = true;
+            }
+            res.hAudioEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+            if (!res.hAudioEvent) {
+                LOG_ERROR("[AudioCapture] Failed to create audio event.");
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            REFERENCE_TIME hnsRequestedDuration = 200000;
+            hr = res.pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, hnsRequestedDuration, 0, res.pwfx, nullptr);
+            if (hr == AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED) {
+                hr = res.pAudioClient->GetBufferSize(&bufferFrameCount);
+                if (FAILED(hr)) {
+                    LOG_ERROR("[AudioCapture] Failed to get buffer size: " + std::to_string(hr));
+                    running = false;
+                    CoUninitialize();
+                    return;
+                }
+                hnsRequestedDuration = (REFERENCE_TIME)((10000.0 * 1000 / res.pwfx->nSamplesPerSec * bufferFrameCount) + 0.5);
+                hr = res.pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, hnsRequestedDuration, 0, res.pwfx, nullptr);
+            }
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to initialize audio client: " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            hr = res.pAudioClient->GetBufferSize(&bufferFrameCount);
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to get buffer size (2): " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            hr = res.pAudioClient->SetEventHandle(res.hAudioEvent);
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to set event handle: " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            hr = res.pAudioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&res.pCaptureClient);
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to get capture client: " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            hr = res.pAudioClient->Start();
+            if (FAILED(hr)) {
+                LOG_ERROR("[AudioCapture] Failed to start audio client: " + std::to_string(hr));
+                running = false;
+                CoUninitialize();
+                return;
+            }
+            LOG_DEBUG("[AudioCapture] Entering main capture loop.");
+            // Main capture loop
+            while (running.load()) {
+                if (g_device_change_pending.load()) {
+                    LOG_DEBUG("[AudioCapture] Audio device change detected. Restarting capture.");
+                    break; // Exit thread to allow restart
+                }
+                DWORD waitResult = WaitForSingleObject(res.hAudioEvent, 200);
+                if (!running.load()) break;
+                if (waitResult == WAIT_OBJECT_0) {
+                    BYTE* pData = nullptr;
+                    UINT32 numFramesAvailable = 0;
+                    DWORD flags = 0;
+                    UINT64 devicePosition = 0;
+                    UINT64 qpcPosition = 0;
+                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
+                    if (SUCCEEDED(hr)) {
+                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
+                            if (g_settings.audio_analysis_enabled) {
+                                AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), numFramesAvailable, res.pwfx->nChannels, config, data);
+                            } else {
+                                data.volume = 0.0f;
+                                std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
+                                data.beat = 0.0f;
+                            }
                         }
+                        res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
+                    } else {
+                        LOG_ERROR("[AudioCapture] GetBuffer failed: " + std::to_string(hr));
                     }
-                    res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
-                } else {
-                    LOG_ERROR("[AudioCapture] GetBuffer failed: " + std::to_string(hr));
                 }
             }
+            LOG_DEBUG("[AudioCapture] Exiting capture loop.");
+            CoUninitialize();
+            running = false;
+            LOG_DEBUG("[AudioCapture] Audio capture thread stopped.");
+        } catch (const std::exception& ex) {
+            LOG_ERROR(std::string("[AudioCapture] Exception in capture thread: ") + ex.what());
+            running = false;
+        } catch (...) {
+            LOG_ERROR("[AudioCapture] Unknown exception in capture thread.");
+            running = false;
         }
-        LOG_DEBUG("[AudioCapture] Exiting capture loop.");
-        CoUninitialize();
-        running = false;
-        LOG_DEBUG("[AudioCapture] Audio capture thread stopped.");
     });
 }
 
