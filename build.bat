@@ -32,6 +32,9 @@ copy /Y Listeningway.fx %DIST%\Listeningway.fx
 REM Copy ListeningwayUniforms.fxh to dist
 copy /Y ListeningwayUniforms.fxh %DIST%\ListeningwayUniforms.fxh
 
+REM Extract FileVersion from listeningway.rc and write to dist/VERSION.txt using PowerShell (robust to spaces)
+powershell -Command "Select-String 'FileVersion' listeningway.rc | ForEach-Object { if ($_.Line -match 'FileVersion\"\s*,\s*\"([^\"]+)\"') { $matches[1] } }" > %DIST%\VERSION.txt
+
 REM No DLLs to copy for static build
 
 echo --- Build, Rename, and Move Successful ---
