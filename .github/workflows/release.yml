@@ -21,6 +21,11 @@ jobs:
           VERSION=$(cat dist/VERSION.txt | tr -d '\r\n')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Prepare release notes from template
+        id: prep_release_notes
+        run: |
+          sed "s/{{VERSION}}/${{ steps.get_version.outputs.version }}/g" docs/template/release.md > release_body.md
+
       - name: Check if tag exists
         id: check_tag
         run: |
@@ -43,6 +48,7 @@ jobs:
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
           name: Listeningway v${{ steps.get_version.outputs.version }}
+          body_path: release_body.md
           files: |
             dist/Listeningway.addon
             dist/Listeningway.fx
