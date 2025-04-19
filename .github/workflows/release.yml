@@ -15,6 +15,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fetch all tags
+        run: git fetch --tags
+
       - name: Read version from VERSION.txt
         id: get_version
         run: |
