@@ -14,6 +14,8 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <string>
+#include <chrono>
+#include <cmath>
 
 extern std::atomic_bool g_audio_analysis_enabled;
 extern bool g_listeningway_debug_enabled;
@@ -82,6 +84,25 @@ static void DrawFrequencyBands(const AudioAnalysisData& data) {
     ImGui::EndChild();
 }
 
+// Helper: Draw time/phase info
+static void DrawTimePhaseInfo() {
+    // Calculate time since start (same as in listeningway_addon.cpp)
+    static const auto start_time = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    std::chrono::duration<float> elapsed = now - start_time;
+    float time_seconds = elapsed.count();
+    float phase_60hz = std::fmod(time_seconds * 60.0f, 1.0f);
+    float phase_120hz = std::fmod(time_seconds * 120.0f, 1.0f);
+    float total_phases_60hz = time_seconds * 60.0f;
+    float total_phases_120hz = time_seconds * 120.0f;
+    ImGui::Text("Time/Phase Uniforms:");
+    ImGui::Text("  Seconds: %.3f", time_seconds);
+    ImGui::Text("  Phase 60Hz: %.3f", phase_60hz);
+    ImGui::Text("  Phase 120Hz: %.3f", phase_120hz);
+    ImGui::Text("  Total 60Hz cycles: %.1f", total_phases_60hz);
+    ImGui::Text("  Total 120Hz cycles: %.1f", total_phases_120hz);
+}
+
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
@@ -97,6 +118,8 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         DrawBeat(data);
         ImGui::Separator();
         DrawFrequencyBands(data);
+        ImGui::Separator();
+        DrawTimePhaseInfo();
         ImGui::Separator();
     } catch (const std::exception& ex) {
         LOG_ERROR(std::string("[Overlay] Exception in DrawListeningwayDebugOverlay: ") + ex.what());

@@ -39,6 +39,7 @@ static AudioAnalysisConfig g_audio_config(g_settings);
 static UniformManager g_uniform_manager;
 static std::chrono::steady_clock::time_point g_last_audio_update = std::chrono::steady_clock::now();
 static float g_last_volume = 0.0f;
+static std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
 
 /**
  * @brief Updates all Listeningway_* uniforms in all loaded effects.
@@ -54,7 +55,16 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
         freq_bands_to_set = g_audio_data.freq_bands;
         beat_to_set = g_audio_data.beat;
     }
-    g_uniform_manager.update_uniforms(runtime, volume_to_set, freq_bands_to_set, beat_to_set);
+    // Time/phase calculations
+    auto now = std::chrono::steady_clock::now();
+    std::chrono::duration<float> elapsed = now - g_start_time;
+    float time_seconds = elapsed.count();
+    float phase_60hz = std::fmod(time_seconds * 60.0f, 1.0f);
+    float phase_120hz = std::fmod(time_seconds * 120.0f, 1.0f);
+    float total_phases_60hz = time_seconds * 60.0f;
+    float total_phases_120hz = time_seconds * 120.0f;
+    g_uniform_manager.update_uniforms(runtime, volume_to_set, freq_bands_to_set, beat_to_set,
+        time_seconds, phase_60hz, phase_120hz, total_phases_60hz, total_phases_120hz);
 }
 
 /**
