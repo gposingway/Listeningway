@@ -38,7 +38,7 @@ Let's add audio reactivity to your existing ReShade presets or try out effects d
 
 ---
 
-## For Shader Creators: Let's Make Magic! ✨
+## For Shader Creators
 
 Want to make your *own* effects react to audio? Listeningway makes it quite simple by exposing audio data as `uniform` variables.
 
@@ -123,7 +123,7 @@ Now go make something awesome\! ✨
 
 -----
 
-## For Addon Developers: Peek Under the Hood 🛠️
+## For Addon Developers
 
 Interested in the nitty-gritty, building from source, or understanding the internals?
 
