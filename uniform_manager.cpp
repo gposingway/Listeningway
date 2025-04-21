@@ -6,7 +6,8 @@
 #include <string_view>
 #include "settings.h" // Include settings header for g_settings
 
-void UniformManager::update_uniforms(reshade::api::effect_runtime* runtime, float volume, const std::vector<float>& freq_bands, float beat) {
+void UniformManager::update_uniforms(reshade::api::effect_runtime* runtime, float volume, const std::vector<float>& freq_bands, float beat,
+    float time_seconds, float phase_60hz, float phase_120hz, float total_phases_60hz, float total_phases_120hz) {
     // Only update uniforms with the correct annotation (source = ...)
     runtime->enumerate_uniform_variables(nullptr, [&](reshade::api::effect_runtime*, reshade::api::effect_uniform_variable var_handle) {
         char source[64] = "";
@@ -19,6 +20,16 @@ void UniformManager::update_uniforms(reshade::api::effect_runtime* runtime, floa
                 }
             } else if (strcmp(source, "listeningway_beat") == 0) {
                 runtime->set_uniform_value_float(var_handle, &beat, 1);
+            } else if (strcmp(source, "listeningway_timeseconds") == 0) {
+                runtime->set_uniform_value_float(var_handle, &time_seconds, 1);
+            } else if (strcmp(source, "listeningway_timephase60hz") == 0) {
+                runtime->set_uniform_value_float(var_handle, &phase_60hz, 1);
+            } else if (strcmp(source, "listeningway_timephase120hz") == 0) {
+                runtime->set_uniform_value_float(var_handle, &phase_120hz, 1);
+            } else if (strcmp(source, "listeningway_totalphases60hz") == 0) {
+                runtime->set_uniform_value_float(var_handle, &total_phases_60hz, 1);
+            } else if (strcmp(source, "listeningway_totalphases120hz") == 0) {
+                runtime->set_uniform_value_float(var_handle, &total_phases_120hz, 1);
             }
         }
     });

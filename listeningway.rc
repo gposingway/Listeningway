@@ -1,8 +1,8 @@
 #include <winver.h>
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     1,0,0,0       // Internal file version
-PRODUCTVERSION  1,0,0,0       // Product version
+FILEVERSION     1,0,0,1       // Internal file version
+PRODUCTVERSION  1,0,0,1       // Product version
 FILEFLAGSMASK   0x3fL         // Version info mask
 #ifdef _DEBUG
 FILEFLAGS       0x1L          // Debug build
@@ -20,12 +20,12 @@ BEGIN
             // ReShade seems to use:
             VALUE "CompanyName",      "Leon Aquitaine" // Displayed as Author
             VALUE "FileDescription",  "Provides audio volume and frequency data to ReShade effects." // Displayed as Description
-            VALUE "FileVersion",      "1.0.0.0"        // Displayed as Version
+            VALUE "FileVersion",      "1.0.0.1"        // Displayed as Version
             VALUE "InternalName",     "Listeningway"
             VALUE "LegalCopyright",   "Copyright (C) 2025 Leon Aquitaine" // Optional
             VALUE "OriginalFilename", "Listeningway.addon"
             VALUE "ProductName",      "Listeningway"   // Displayed as Name
-            VALUE "ProductVersion",   "1.0.0.0"        // Displayed as Version (often same as FileVersion)
+            VALUE "ProductVersion",   "1.0.0.1"        // Displayed as Version (often same as FileVersion)
         END
     END
     BLOCK "VarFileInfo"
