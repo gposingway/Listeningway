@@ -46,6 +46,13 @@ jobs:
           git tag v${{ steps.get_version.outputs.version }}
           git push origin v${{ steps.get_version.outputs.version }}
 
+      - name: Zip release files
+        run: |
+          VERSION=$(cat dist/VERSION.txt | tr -d '\r\n')
+          cd dist
+          zip Listeningway-${VERSION}.zip Listeningway.addon Listeningway.fx ListeningwayUniforms.fxh
+          cd ..
+
       - name: Create or update release
         uses: softprops/action-gh-release@v2
         with:
@@ -53,9 +60,7 @@ jobs:
           name: Listeningway v${{ steps.get_version.outputs.version }}
           body_path: release_body.md
           files: |
-            dist/Listeningway.addon
-            dist/Listeningway.fx
-            dist/ListeningwayUniforms.fxh
+            dist/Listeningway-${{ steps.get_version.outputs.version }}.zip
           prerelease: false
           draft: false
         env:
