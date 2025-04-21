@@ -1,7 +1,6 @@
 **`Listeningway`** is a ReShade addon that provides  **real-time audio visualization** for shaders. It listens to your system's audio, analyzes it live, and exposes data like volume, frequency bands, and beat detection directly to your `.fx` files.
 
 ![Listeningway Showcase](https://github.com/user-attachments/assets/0a8338cd-3694-4318-ab69-389f6a0b082e)
-*(Image: Listeningway debug overlay showing live audio analysis)*
 
 ---
 
