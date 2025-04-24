@@ -83,15 +83,16 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     // --- 7. Map FFT bins to frequency bands (log or linear) ---
     out.freq_bands.resize(config.num_bands, 0.0f);
     if (g_settings.band_log_scale) {
-        // Logarithmic mapping
+        // Logarithmic mapping with tunable strength
         float min_freq = std::max(1.0f, g_settings.band_min_freq);
         float max_freq = std::min((float)config.fft_size / 2.0f, g_settings.band_max_freq);
         float nyquist = (float)config.fft_size / 2.0f;
         size_t num_bins = magnitudes.size();
+        float log_strength = std::max(0.01f, g_settings.band_log_strength); // Prevent zero or negative
         for (size_t band = 0; band < config.num_bands; ++band) {
-            // Calculate log-spaced frequency range for this band
-            float band_frac_low = (float)band / config.num_bands;
-            float band_frac_high = (float)(band + 1) / config.num_bands;
+            // Apply log_strength to band fraction
+            float band_frac_low = powf((float)band / config.num_bands, log_strength);
+            float band_frac_high = powf((float)(band + 1) / config.num_bands, log_strength);
             float freq_low = min_freq * powf(max_freq / min_freq, band_frac_low);
             float freq_high = min_freq * powf(max_freq / min_freq, band_frac_high);
             // Convert frequency to bin indices

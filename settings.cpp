@@ -110,6 +110,7 @@ void SetDebugEnabled(bool enabled) {
 #define RW_INI_SIZE(section, key, var, def) var = (size_t)GetPrivateProfileIntA(section, key, (int)(def), ini.c_str());
 #define WR_INI_FLOAT(section, key, var) { char buf[32]; sprintf_s(buf, "%.6f", var); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
 #define WR_INI_SIZE(section, key, var) { char buf[32]; sprintf_s(buf, "%zu", var); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
+#define RW_INI_BOOL(section, key, var, def) var = (GetPrivateProfileIntA(section, key, (def) ? 1 : 0, ini.c_str()) != 0);
 
 /**
  * @brief Loads all tunable settings from the .ini file into the ListeningwaySettings structure.
@@ -135,6 +136,7 @@ void LoadAllTunables() {
     RW_INI_BOOL("Audio", "BandLogScale", g_settings.band_log_scale, DEFAULT_LISTENINGWAY_BAND_LOG_SCALE);
     RW_INI_FLOAT("Audio", "BandMinFreq", g_settings.band_min_freq, DEFAULT_LISTENINGWAY_BAND_MIN_FREQ);
     RW_INI_FLOAT("Audio", "BandMaxFreq", g_settings.band_max_freq, DEFAULT_LISTENINGWAY_BAND_MAX_FREQ);
+    RW_INI_FLOAT("Audio", "BandLogStrength", g_settings.band_log_strength, DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH);
 }
 
 /**

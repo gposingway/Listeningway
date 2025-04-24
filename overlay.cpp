@@ -59,27 +59,42 @@ static void DrawWebsite() {
 
 // Helper: Draw volume meter
 static void DrawVolume(const AudioAnalysisData& data) {
+    ImGui::AlignTextToFramePadding();
     ImGui::Text("Volume:");
     ImGui::SameLine();
-    ImGui::ProgressBar(data.volume, ImVec2(-1.0f, 0.0f));
+    ImGui::ProgressBar(data.volume, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
 }
 
 // Helper: Draw beat meter
 static void DrawBeat(const AudioAnalysisData& data) {
+    ImGui::AlignTextToFramePadding();
     ImGui::Text("Beat:");
     ImGui::SameLine();
-    ImGui::ProgressBar(data.beat, ImVec2(-1.0f, 0.0f));
+    ImGui::ProgressBar(data.beat, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
 }
 
-// Helper: Draw frequency bands
+// Helper: Draw frequency bands with view mode
 static void DrawFrequencyBands(const AudioAnalysisData& data) {
-    ImGui::Text("Frequency Bands (%zu):", data.freq_bands.size());
-    ImGui::BeginChild("FreqBandsChild", ImVec2(0, g_settings.freq_band_row_height * data.freq_bands.size() + 5), true, ImGuiWindowFlags_HorizontalScrollbar);
-    const float item_width = ImGui::GetContentRegionAvail().x * g_settings.ui_progress_width;
-    for (size_t i = 0; i < data.freq_bands.size(); ++i) {
+    static int band_view_mode = 1; // 0 = Collapsed, 1 = 8-band, 2 = All bands
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Frequency Bands");
+    ImGui::SameLine();
+    if (ImGui::Button(band_view_mode == 0 ? "[Show 8 Bands]" : band_view_mode == 1 ? "[Show All Bands]" : "[Collapse]")) {
+        band_view_mode = (band_view_mode + 1) % 3;
+    }
+    if (band_view_mode == 0) {
+        ImGui::TextDisabled("(Panel collapsed)");
+        return;
+    }
+    size_t band_count = data.freq_bands.size();
+    size_t show_bands = (band_view_mode == 1) ? 8 : band_count;
+    ImGui::BeginChild("FreqBandsChild", ImVec2(0, g_settings.freq_band_row_height * show_bands + 5), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    for (size_t i = 0; i < band_count; ++i) {
+        if (band_view_mode == 1 && i >= 8) break;
+        ImGui::AlignTextToFramePadding();
         ImGui::Text("%zu:", i);
         ImGui::SameLine();
-        ImGui::ProgressBar(data.freq_bands[i], ImVec2(item_width, 0.0f));
+        ImGui::ProgressBar(data.freq_bands[i], ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
     }
     ImGui::EndChild();
 }
@@ -120,6 +135,17 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         DrawFrequencyBands(data);
         ImGui::Separator();
         DrawTimePhaseInfo();
+        ImGui::Separator();
+        ImGui::Text("Frequency Band Mapping:");
+        ImGui::Checkbox("Logarithmic Bands", &g_settings.band_log_scale);
+        ImGui::SameLine();
+        ImGui::TextDisabled("(Log scale better matches hearing; linear is legacy)");
+        if (g_settings.band_log_scale) {
+            ImGui::SliderFloat("Log Strength (Bass Detail)", &g_settings.band_log_strength, 0.2f, 3.0f, "%.2f");
+            ImGui::SliderFloat("Min Freq (Hz)", &g_settings.band_min_freq, 10.0f, 500.0f, "%.0f");
+            ImGui::SliderFloat("Max Freq (Hz)", &g_settings.band_max_freq, 2000.0f, 22050.0f, "%.0f");
+        }
+        if (ImGui::Button("Save Band Mapping Settings")) SaveAllTunables();
         ImGui::Separator();
     } catch (const std::exception& ex) {
         LOG_ERROR(std::string("[Overlay] Exception in DrawListeningwayDebugOverlay: ") + ex.what());

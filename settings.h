@@ -31,6 +31,7 @@ struct ListeningwaySettings {
     bool band_log_scale = DEFAULT_LISTENINGWAY_BAND_LOG_SCALE;
     float band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
     float band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
+    float band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
 };
 
 extern ListeningwaySettings g_settings;
