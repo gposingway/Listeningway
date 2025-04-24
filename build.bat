@@ -1,6 +1,17 @@
 @echo off
 setlocal
 
+REM === Generate ListeningwayUniforms.fxh from template ===
+set NUM_BANDS=32
+set TEMPLATE=ListeningwayUniforms.fxh.template
+set OUTPUT=ListeningwayUniforms.fxh
+if exist %TEMPLATE% (
+    powershell -Command "(Get-Content %TEMPLATE%) -replace '\{\{NUM_BANDS\}\}', '%NUM_BANDS%' | Set-Content %OUTPUT%"
+) else (
+    echo Template %TEMPLATE% not found!
+    exit /b 1
+)
+
 REM Build the project using MSBuild
 if not exist build (
     echo Build directory not found. Run prepare.bat first.

@@ -52,8 +52,8 @@ You *must* use annotation-based uniforms to access the data. This is robust and 
 // Example: Get overall volume
 uniform float MyAwesomeVolume < source = "listeningway_volume"; >;
 
-// Example: Get the 8 frequency bands (0=bass -> 7=treble)
-uniform float MyCoolFreqBands[8] < source = "listeningway_freqbands"; >;
+// Example: Get the 32 frequency bands (0=bass -> 31=treble)
+uniform float MyCoolFreqBands[32] < source = "listeningway_freqbands"; >;
 
 // Example: Get the beat trigger (1.0 on beat, fades down)
 uniform float MyFunkyBeat < source = "listeningway_beat"; >;
@@ -70,8 +70,8 @@ Here's the data Listeningway provides (check `ListeningwayUniforms.fxh` for read
 
   * `uniform float Listeningway_Volume < source="listeningway_volume"; >`
       * Current overall audio volume (normalized, good for intensity/brightness).
-  * `uniform float Listeningway_FreqBands[8] < source="listeningway_freqbands"; >`
-      * Amplitude of 8 frequency bands (Index 0 = Low Bass ... Index 7 = High Treble). Great for spectrum visualizations or driving different effects based on frequency\!
+  * `uniform float Listeningway_FreqBands[32] < source="listeningway_freqbands"; >`
+      * Amplitude of 32 frequency bands (Index 0 = Low Bass ... Index 31 = High Treble). Great for spectrum visualizations or driving different effects based on frequency\!
   * `uniform float Listeningway_Beat < source="listeningway_beat"; >`
       * Beat detection value. Typically pulses to 1.0 on a detected beat and then quickly falls off. Perfect for triggering flashes or movements.
   * `uniform float Listeningway_TimeSeconds < source="listeningway_timeseconds"; >`
@@ -151,7 +151,7 @@ It's streamlined with batch scripts\!
 
 ```ini
 [Audio]
-NumBands=8
+NumBands=32
 FFTSize=512
 FluxAlpha=0.1
 FluxThresholdMultiplier=1.5

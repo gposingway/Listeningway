@@ -5,7 +5,7 @@
 #pragma once
 
 // Audio analysis
-constexpr size_t DEFAULT_LISTENINGWAY_NUM_BANDS = 8; // Default number of frequency bands
+constexpr size_t DEFAULT_LISTENINGWAY_NUM_BANDS = 32; // Default number of frequency bands
 constexpr size_t DEFAULT_LISTENINGWAY_FFT_SIZE = 512; // Default FFT window size
 constexpr float DEFAULT_LISTENINGWAY_FLUX_ALPHA = 0.1f; // Default smoothing factor for moving average
 constexpr float DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER = 1.5f; // Default dynamic threshold multiplier
