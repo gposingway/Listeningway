@@ -19,6 +19,9 @@ constexpr float DEFAULT_LISTENINGWAY_BEAT_TIME_MIN = 0.05f; // Default minimum t
 constexpr float DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR = 0.1f; // Default divisor for adaptive falloff
 constexpr float DEFAULT_LISTENINGWAY_VOLUME_NORM = 2.0f; // Default volume normalization multiplier
 constexpr float DEFAULT_LISTENINGWAY_BAND_NORM = 0.1f; // Default frequency band normalization multiplier
+constexpr float DEFAULT_LISTENINGWAY_BAND_MIN_FREQ = 50.0f; // Default min frequency for log bands (Hz)
+constexpr float DEFAULT_LISTENINGWAY_BAND_MAX_FREQ = 16000.0f; // Default max frequency for log bands (Hz)
+constexpr bool  DEFAULT_LISTENINGWAY_BAND_LOG_SCALE = true; // Use logarithmic band mapping by default
 
 // UI/Overlay
 constexpr float DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT = 24.0f; // Default height per frequency band row in overlay

@@ -174,6 +174,21 @@ AudioAnalysisEnabled=1
 DebugEnabled=0
 ```
 
+**Frequency Band Mapping (Logarithmic/Linear):**
+
+By default, Listeningway uses a logarithmic (log-scale) mapping for frequency bands, which better matches human hearing and makes higher bands more visually active. You can control this behavior in `Listeningway.ini`:
+
+```ini
+[Audio]
+BandLogScale=1      ; 1 = Logarithmic mapping (default), 0 = Linear mapping
+BandMinFreq=50      ; Minimum frequency for band mapping (Hz, default: 50)
+BandMaxFreq=16000   ; Maximum frequency for band mapping (Hz, default: 16000)
+```
+- **BandLogScale**: Set to 1 for log-scale (recommended for most music/audio), or 0 for legacy linear mapping.
+- **BandMinFreq/BandMaxFreq**: Adjust the frequency range covered by the bands. Lower min or higher max can make bands more/less sensitive to certain audio content.
+
+This makes the visualization more balanced and interesting, especially for music and dynamic audio sources.
+
 **Architecture Overview:**
 
   * `audio_capture.*`: Handles WASAPI audio capture thread.

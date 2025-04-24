@@ -28,6 +28,9 @@ struct ListeningwaySettings {
     float capture_stale_timeout = DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT;
     std::atomic_bool audio_analysis_enabled = true;
     bool debug_enabled = false;
+    bool band_log_scale = DEFAULT_LISTENINGWAY_BAND_LOG_SCALE;
+    float band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
+    float band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
 };
 
 extern ListeningwaySettings g_settings;

@@ -132,6 +132,9 @@ void LoadAllTunables() {
     RW_INI_FLOAT("UI", "FreqBandRowHeight", g_settings.freq_band_row_height, DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT);
     RW_INI_FLOAT("UI", "ProgressWidth", g_settings.ui_progress_width, DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH);
     RW_INI_FLOAT("UI", "CaptureStaleTimeout", g_settings.capture_stale_timeout, DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT);
+    RW_INI_BOOL("Audio", "BandLogScale", g_settings.band_log_scale, DEFAULT_LISTENINGWAY_BAND_LOG_SCALE);
+    RW_INI_FLOAT("Audio", "BandMinFreq", g_settings.band_min_freq, DEFAULT_LISTENINGWAY_BAND_MIN_FREQ);
+    RW_INI_FLOAT("Audio", "BandMaxFreq", g_settings.band_max_freq, DEFAULT_LISTENINGWAY_BAND_MAX_FREQ);
 }
 
 /**

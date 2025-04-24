@@ -80,16 +80,43 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     }
     out._prev_magnitudes = magnitudes;
 
-    // --- 7. Map FFT bins to frequency bands ---
+    // --- 7. Map FFT bins to frequency bands (log or linear) ---
     out.freq_bands.resize(config.num_bands, 0.0f);
-    size_t binsPerBand = magnitudes.size() / config.num_bands;
-    for (size_t band = 0; band < config.num_bands; ++band) {
-        float sum = 0.0f;
-        size_t start = band * binsPerBand;
-        size_t end = (band + 1) * binsPerBand;
-        if (band == config.num_bands - 1) end = magnitudes.size();
-        for (size_t j = start; j < end; ++j) sum += magnitudes[j];
-        out.freq_bands[band] = (end > start) ? sum / (end - start) : 0.0f;
+    if (g_settings.band_log_scale) {
+        // Logarithmic mapping
+        float min_freq = std::max(1.0f, g_settings.band_min_freq);
+        float max_freq = std::min((float)config.fft_size / 2.0f, g_settings.band_max_freq);
+        float nyquist = (float)config.fft_size / 2.0f;
+        size_t num_bins = magnitudes.size();
+        for (size_t band = 0; band < config.num_bands; ++band) {
+            // Calculate log-spaced frequency range for this band
+            float band_frac_low = (float)band / config.num_bands;
+            float band_frac_high = (float)(band + 1) / config.num_bands;
+            float freq_low = min_freq * powf(max_freq / min_freq, band_frac_low);
+            float freq_high = min_freq * powf(max_freq / min_freq, band_frac_high);
+            // Convert frequency to bin indices
+            size_t bin_low = (size_t)std::floor(freq_low / max_freq * (num_bins - 1));
+            size_t bin_high = (size_t)std::ceil(freq_high / max_freq * (num_bins - 1));
+            bin_high = std::min(bin_high, num_bins - 1);
+            float sum = 0.0f;
+            size_t count = 0;
+            for (size_t j = bin_low; j <= bin_high; ++j) {
+                sum += magnitudes[j];
+                ++count;
+            }
+            out.freq_bands[band] = (count > 0) ? sum / count : 0.0f;
+        }
+    } else {
+        // Linear mapping (legacy)
+        size_t binsPerBand = magnitudes.size() / config.num_bands;
+        for (size_t band = 0; band < config.num_bands; ++band) {
+            float sum = 0.0f;
+            size_t start = band * binsPerBand;
+            size_t end = (band + 1) * binsPerBand;
+            if (band == config.num_bands - 1) end = magnitudes.size();
+            for (size_t j = start; j < end; ++j) sum += magnitudes[j];
+            out.freq_bands[band] = (end > start) ? sum / (end - start) : 0.0f;
+        }
     }
 
     // --- 8. Normalize volume and bands ---
