@@ -1,4 +1,4 @@
-![Listeningway Showcase](https://github.com/user-attachments/assets/0a770e71-7f4b-4637-9a5e-0c1b26a47e41)
+
 
 <div align="center">
 
@@ -6,13 +6,15 @@
 
 **Real-time audio visualization for ReShade shaders**
 
-Listeningway listens to your system's audio, analyzes it live, and exposes data like volume, frequency bands, and beat detection directly to your `.fx` files.
+![Listeningway Showcase](https://github.com/user-attachments/assets/0a770e71-7f4b-4637-9a5e-0c1b26a47e41)
 
-[<img src="https://img.shields.io/github/v/release/gposingway/Listeningway?style=for-the-badge&logo=github&logoColor=white&label=DOWNLOAD&labelColor=2f353f&color=2f6f3f" height="36">](https://github.com/gposingway/Listeningway/releases/latest)
+[<img src="https://github.com/user-attachments/assets/20794810-9e43-4167-bb0e-faf46275186e">](https://github.com/gposingway/Listeningway/releases/latest)
 
 </div>
 
 ---
+
+Listeningway listens to your system's audio, analyzes it live, and exposes data like volume, frequency bands, and beat detection directly to your `.fx` files.
 
 ## For End Users: Get Started!
 
