@@ -34,7 +34,7 @@ Let's add audio reactivity to your existing ReShade presets or try out effects d
 
 **Tuning (Optional):**
 
-* For most users, the default settings work great! If you want to fine-tune the audio analysis (like how sensitive beat detection is), you can edit the `Listeningway.ini` file located in the same directory as the .addon file. More details on this in the section for developers below or on the [GitHub Wiki](link-to-wiki-placeholder).
+* For most users, the default settings work great! If you want to fine-tune the audio analysis (like how sensitive beat detection is), you can use the built-in overlay UI (accessible through the ReShade menu) or edit the `Listeningway.ini` file located in the same directory as the .addon file. More details on this in the section for developers below.
 
 ---
 
@@ -157,10 +157,10 @@ FluxAlpha=0.1
 FluxThresholdMultiplier=1.5
 
 # Band-limited beat detection settings
-BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection
-BeatMaxFreq=200.0        ; Maximum frequency (Hz) for beat detection
-FluxLowAlpha=0.08        ; Smoothing factor for low-frequency flux (smaller = smoother)
-FluxLowThresholdMultiplier=1.4  ; Threshold multiplier for low-frequency flux
+BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection (default: 0.0)
+BeatMaxFreq=400.0        ; Maximum frequency (Hz) for beat detection (default: 400.0)
+FluxLowAlpha=0.35        ; Smoothing factor for low-frequency flux (default: 0.35, smaller = smoother)
+FluxLowThresholdMultiplier=2.0  ; Threshold multiplier for low-frequency flux (default: 2.0)
 
 BeatFluxMin=0.01
 BeatFalloffDefault=2.0
@@ -183,17 +183,17 @@ DebugEnabled=0
 
 **Band-Limited Beat Detection:**
 
-Listeningway now features band-limited spectral flux detection for more accurate beat detection, especially in music with strong bass beats like electronic, hip-hop, and rock. This feature focuses the beat detection on low frequencies (by default 0-200Hz) where kick drums and bass hits typically occur, making it less sensitive to other sounds like vocals, synths, or high-frequency percussion.
+Listeningway features band-limited spectral flux detection for more accurate beat detection, especially in music with strong bass beats like electronic, hip-hop, and rock. This feature focuses the beat detection on low frequencies (by default 0-400Hz) where kick drums and bass hits typically occur, making it less sensitive to other sounds like vocals, synths, or high-frequency percussion.
 
-You can fine-tune this feature through these settings in `Listeningway.ini`:
+You can fine-tune this feature through the overlay UI (available in the ReShade menu) or directly through these settings in `Listeningway.ini`:
 
 ```ini
 [Audio]
 # Band-limited beat detection settings
-BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection
-BeatMaxFreq=200.0        ; Maximum frequency (Hz) for beat detection
-FluxLowAlpha=0.08        ; Smoothing factor for low-frequency flux (smaller = smoother)
-FluxLowThresholdMultiplier=1.4  ; Threshold multiplier for low-frequency flux
+BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection (default: 0.0)
+BeatMaxFreq=400.0        ; Maximum frequency (Hz) for beat detection (default: 400.0)
+FluxLowAlpha=0.35        ; Smoothing factor for low-frequency flux (default: 0.35, smaller = smoother)
+FluxLowThresholdMultiplier=2.0  ; Threshold multiplier for low-frequency flux (default: 2.0)
 ```
 
 **Tuning Tips:**

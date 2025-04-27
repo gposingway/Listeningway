@@ -147,6 +147,18 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         }
         if (ImGui::Button("Save Band Mapping Settings")) SaveAllTunables();
         ImGui::Separator();
+        
+        // Band-limited Beat Detection Settings
+        ImGui::Text("Band-Limited Beat Detection:");
+        ImGui::TextDisabled("(Focus beat detection on specific frequency range, e.g., bass/kick drums)");
+        ImGui::SliderFloat("Beat Min Freq (Hz)", &g_settings.beat_min_freq, 0.0f, 100.0f, "%.1f");
+        ImGui::SliderFloat("Beat Max Freq (Hz)", &g_settings.beat_max_freq, 100.0f, 500.0f, "%.1f");
+        ImGui::SliderFloat("Low Flux Smoothing", &g_settings.flux_low_alpha, 0.01f, 0.5f, "%.3f");
+        ImGui::TextDisabled("(Lower value = smoother, higher = more responsive)");
+        ImGui::SliderFloat("Low Flux Threshold", &g_settings.flux_low_threshold_multiplier, 1.0f, 3.0f, "%.2f");
+        ImGui::TextDisabled("(Lower value = more sensitive, higher = less false positives)");
+        if (ImGui::Button("Save Beat Detection Settings")) SaveAllTunables();
+        ImGui::Separator();
     } catch (const std::exception& ex) {
         LOG_ERROR(std::string("[Overlay] Exception in DrawListeningwayDebugOverlay: ") + ex.what());
     } catch (...) {

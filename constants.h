@@ -12,9 +12,9 @@ constexpr float DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER = 1.5f; // Defaul
 
 // Band-limited beat detection
 constexpr float DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ = 0.0f; // Default minimum frequency for beat detection (Hz)
-constexpr float DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ = 200.0f; // Default maximum frequency for beat detection (Hz)
-constexpr float DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA = 0.08f; // Default smoothing factor for low-frequency flux
-constexpr float DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER = 1.4f; // Default threshold multiplier for low-frequency flux
+constexpr float DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ = 400.0f; // Default maximum frequency for beat detection (Hz)
+constexpr float DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA = 0.35f; // Default smoothing factor for low-frequency flux
+constexpr float DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER = 2.0f; // Default threshold multiplier for low-frequency flux
 
 // Audio analysis tunables
 constexpr float DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN = 0.01f; // Default minimum flux to trigger beat
