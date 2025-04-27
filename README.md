@@ -46,6 +46,31 @@ Let's add audio reactivity to your existing ReShade presets or try out effects d
 
 * For most users, the default settings work great! If you want to fine-tune the audio analysis (like how sensitive beat detection is), you can use the built-in overlay UI (accessible through the ReShade menu) or edit the `Listeningway.ini` file located in the same directory as the .addon file. More details on this in the section for developers below.
 
+<div align="center">
+
+## Compatible Shader Collections
+
+</div>
+
+These shader collections are specifically designed to work with Listeningway's audio reactivity features:
+
+<table>
+  <tr>
+    <th align="left">Collection</th>
+    <th align="left">Author</th>
+    <th align="left">Description</th>
+    <th align="left">Link</th>
+  </tr>
+  <tr>
+    <td><strong>AS-StageFX</strong></td>
+    <td>Leon Aquitaine</td>
+    <td>A collection of stage/concert-like visual effects that react to music. Includes various light beams, strobes, and atmospheric effects.</td>
+    <td><a href="https://github.com/LeonAquitaine/as-stagefx">GitHub Repository</a></td>
+  </tr>
+</table>
+
+Want to add your shader collection to this list? Create a pull request with your compatible shaders!
+
 ---
 
 ## For Shader Creators
