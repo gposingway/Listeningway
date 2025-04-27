@@ -78,24 +78,68 @@ uniform float MyTime < source = "listeningway_timeseconds"; >;
 
 Here's the data Listeningway provides:
 
-| Uniform | Description |
-| :------ | :---------- |
-| **Listeningway_Volume** | Current overall audio volume (normalized, good for intensity/brightness). |
-| ```uniform float Listeningway_Volume < source="listeningway_volume"; >;``` ||
-| **Listeningway_FreqBands** | Amplitude of 32 frequency bands (Index 0 = Low Bass ... Index 31 = High Treble). Great for spectrum visualizations or driving different effects based on frequency! |
-| ```uniform float Listeningway_FreqBands[32] < source="listeningway_freqbands"; >;``` ||
-| **Listeningway_Beat** | Beat detection value. Typically pulses to 1.0 on a detected beat and then quickly falls off. Perfect for triggering flashes or movements. |
-| ```uniform float Listeningway_Beat < source="listeningway_beat"; >;``` ||
-| **Listeningway_TimeSeconds** | Time elapsed (in seconds) since the addon started. Useful for continuous animations. |
-| ```uniform float Listeningway_TimeSeconds < source="listeningway_timeseconds"; >;``` ||
-| **Listeningway_TimePhase60Hz** | Phase (0.0 to 1.0) cycling at 60Hz. Good for smooth, fast oscillations. |
-| ```uniform float Listeningway_TimePhase60Hz < source="listeningway_timephase60hz"; >;``` ||
-| **Listeningway_TimePhase120Hz** | Phase (0.0 to 1.0) cycling at 120Hz. Even faster oscillations! |
-| ```uniform float Listeningway_TimePhase120Hz < source="listeningway_timephase120hz"; >;``` ||
-| **Listeningway_TotalPhases60Hz** | Total number of 60Hz cycles elapsed (float). |
-| ```uniform float Listeningway_TotalPhases60Hz < source="listeningway_totalphases60hz"; >;``` ||
-| **Listeningway_TotalPhases120Hz** | Total number of 120Hz cycles elapsed (float). |
-| ```uniform float Listeningway_TotalPhases120Hz < source="listeningway_totalphases120hz"; >;``` ||
+<table>
+  <tr>
+    <th align="left">Uniform</th>
+    <th align="left">Description</th>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_Volume</strong></td>
+    <td>Current overall audio volume (normalized, good for intensity/brightness).</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_Volume &lt; source="listeningway_volume"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_FreqBands</strong></td>
+    <td>Amplitude of 32 frequency bands (Index 0 = Low Bass ... Index 31 = High Treble). Great for spectrum visualizations or driving different effects based on frequency!</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_FreqBands[32] &lt; source="listeningway_freqbands"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_Beat</strong></td>
+    <td>Beat detection value. Typically pulses to 1.0 on a detected beat and then quickly falls off. Perfect for triggering flashes or movements.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_Beat &lt; source="listeningway_beat"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_TimeSeconds</strong></td>
+    <td>Time elapsed (in seconds) since the addon started. Useful for continuous animations.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_TimeSeconds &lt; source="listeningway_timeseconds"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_TimePhase60Hz</strong></td>
+    <td>Phase (0.0 to 1.0) cycling at 60Hz. Good for smooth, fast oscillations.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_TimePhase60Hz &lt; source="listeningway_timephase60hz"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_TimePhase120Hz</strong></td>
+    <td>Phase (0.0 to 1.0) cycling at 120Hz. Even faster oscillations!</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_TimePhase120Hz &lt; source="listeningway_timephase120hz"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_TotalPhases60Hz</strong></td>
+    <td>Total number of 60Hz cycles elapsed (float).</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_TotalPhases60Hz &lt; source="listeningway_totalphases60hz"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_TotalPhases120Hz</strong></td>
+    <td>Total number of 120Hz cycles elapsed (float).</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_TotalPhases120Hz &lt; source="listeningway_totalphases120hz"; &gt;;</code></td>
+  </tr>
+</table>
 
 **Tip:** For convenience, you can `#include "ListeningwayUniforms.fxh"` which contains all these declarations ready to use.
 
