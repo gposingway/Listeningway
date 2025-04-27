@@ -1,6 +1,16 @@
 ![Listeningway Showcase](https://github.com/user-attachments/assets/0a770e71-7f4b-4637-9a5e-0c1b26a47e41)
 
-**`Listeningway`** is a ReShade addon that provides  **real-time audio visualization** for shaders. It listens to your system's audio, analyzes it live, and exposes data like volume, frequency bands, and beat detection directly to your `.fx` files.
+<div align="center">
+
+# Listeningway
+
+**Real-time audio visualization for ReShade shaders**
+
+Listeningway listens to your system's audio, analyzes it live, and exposes data like volume, frequency bands, and beat detection directly to your `.fx` files.
+
+[<img src="https://img.shields.io/github/v/release/gposingway/Listeningway?style=for-the-badge&logo=github&logoColor=white&label=DOWNLOAD&labelColor=2f353f&color=2f6f3f" height="36">](https://github.com/gposingway/Listeningway/releases/latest)
+
+</div>
 
 ---
 
@@ -125,9 +135,11 @@ Now go make something awesome\! ✨
 
 ## For Addon Developers
 
-Interested in the nitty-gritty, building from source, or understanding the internals?
+<div align="center">
 
-**Building the Addon:**
+### Building from Source
+
+</div>
 
 It's streamlined with batch scripts\!
 
@@ -139,13 +151,13 @@ It's streamlined with batch scripts\!
       * Run: `.\build.bat`
       * *(This builds in Release mode, renames the DLL to `.addon`, and copies it to `dist\`)*
 
-**Configuration Deep Dive (`Listeningway.ini`):**
+<div align="center">
 
-  * All tunable parameters (FFT size, number of bands, smoothing factors, beat detection thresholds, UI layout values, etc.) live in `Listeningway.ini`.
-  * This file is created/read from the same directory as the ReShade DLL / addon file.
-  * Settings are loaded into the `ListeningwaySettings` struct on startup. Missing keys use defaults from `constants.h`.
-  * Changes made in the overlay UI are saved back to the `.ini` atomically. Manual edits require a game/addon restart.
-  * The `AudioAnalysisConfig` struct bundles settings for the analysis modules.
+### Configuration Deep Dive
+
+</div>
+
+All tunable parameters (FFT size, number of bands, smoothing factors, beat detection thresholds, UI layout values, etc.) live in `Listeningway.ini`, created in the same directory as the ReShade DLL / addon file. Settings are loaded into the `ListeningwaySettings` struct on startup. Missing keys use defaults from `constants.h`. Changes made in the overlay UI are saved back to the `.ini` atomically. Manual edits require a game/addon restart. The `AudioAnalysisConfig` struct bundles settings for the analysis modules.
 
 **Example `.ini` entries:**
 
@@ -250,12 +262,20 @@ This makes the visualization more balanced and interesting, especially for music
 
 -----
 
-## Feedback & Show Us What You Make\!
+<div align="center">
 
-Feedback, ideas, bug reports, and pull requests are very welcome over on the [GitHub Repository](https://www.google.com/search?q=https://github.com/gposingway/Listeningway)\!
+## Feedback & Show Us What You Make!
 
-And most importantly – if you use Listeningway to create some cool audio-reactive shaders, **please share them\!** Post screenshots or videos here, on GitHub Discussions, wherever you hang out\! We'd love to see your creativity in action\!
+</div>
 
-Hope you have a blast making your visuals groove\!
+Feedback, ideas, bug reports, and pull requests are very welcome over on the [GitHub Repository](https://github.com/gposingway/Listeningway)!
 
-Happy visualizing\! =)
+And most importantly – if you use Listeningway to create some cool audio-reactive shaders, **please share them!** Post screenshots or videos on GitHub Discussions, Discord, or wherever you hang out! We'd love to see your creativity in action!
+
+<div align="center">
+
+**Hope you have a blast making your visuals groove!**
+
+Happy visualizing! =)
+
+</div>
