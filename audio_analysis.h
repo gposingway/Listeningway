@@ -20,6 +20,7 @@ struct AudioAnalysisData {
     // --- Internal state for analysis (not for API consumers) ---
     std::vector<float> _prev_magnitudes; // Previous FFT magnitudes (for spectral flux)
     float _flux_avg = 0.0f;             // Moving average of spectral flux
+    float _flux_low_avg = 0.0f;         // Moving average of low-frequency spectral flux
     float _last_beat_time = 0.0f;       // Last beat timestamp (for adaptive falloff)
     float _falloff_rate = 1.0f;         // Adaptive beat falloff rate
 

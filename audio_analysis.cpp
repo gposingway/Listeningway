@@ -11,6 +11,11 @@
 #include <algorithm>
 #include <chrono>
 
+// Define M_PI if not already defined
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 // Analyze a buffer of audio samples and update the analysis data structure.
 // This function extracts volume, frequency bands, and beat information.
 void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, const AudioAnalysisConfig& config, AudioAnalysisData& out) {
@@ -31,8 +36,11 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     // --- 3. Perform FFT ---
     std::vector<kiss_fft_scalar> fft_in(fftSize, 0.0f);
     std::vector<kiss_fft_cpx> fft_out(fftSize / 2 + 1);
-    for (size_t i = 0; i < fftSize; ++i)
-        fft_in[i] = monoBuffer[i];
+    for (size_t i = 0; i < fftSize; ++i) {
+        // Apply Hann window to input sample to reduce spectral leakage
+        float hann_multiplier = 0.5f * (1.0f - cosf(2.0f * (float)M_PI * i / (fftSize - 1)));
+        fft_in[i] = monoBuffer[i] * hann_multiplier;
+    }
     kiss_fftr_cfg cfg = kiss_fftr_alloc((int)fftSize, 0, nullptr, nullptr);
     if (cfg) {
         kiss_fftr(cfg, fft_in.data(), fft_out.data());
@@ -46,17 +54,50 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
 
     // --- 5. Spectral Flux Beat Detection ---
     float flux = 0.0f;
+    // Define frequency range for beat detection (focusing on low frequencies)
+    float min_beat_freq = 0.0f;
+    float max_beat_freq = 200.0f;
+    
+    // Calculate sample rate from FFT size - assuming 44.1kHz if not available
+    float sample_rate = 44100.0f; // Default assumption
+    float freq_resolution = sample_rate / (float)config.fft_size;
+    
+    // Calculate bin indices for beat frequency range
+    size_t bin_low = (size_t)(min_beat_freq / freq_resolution);
+    size_t bin_high = (size_t)(max_beat_freq / freq_resolution);
+    
+    // Clamp indices to valid range
+    bin_high = std::min(bin_high, magnitudes.size() - 1);
+    
+    float flux_low = 0.0f; // Band-limited flux for beat detection
+    
     if (!out._prev_magnitudes.empty() && out._prev_magnitudes.size() == magnitudes.size()) {
+        // Calculate full-spectrum flux (for backward compatibility)
         for (size_t i = 0; i < magnitudes.size(); ++i) {
             float diff = magnitudes[i] - out._prev_magnitudes[i];
             if (diff > 0) flux += diff;
         }
+        
+        // Calculate band-limited flux (low frequencies)
+        for (size_t i = bin_low; i <= bin_high; ++i) {
+            float diff = magnitudes[i] - out._prev_magnitudes[i];
+            if (diff > 0) flux_low += diff;
+        }
     }
-    // Update moving average for threshold
-    const float flux_alpha = g_settings.flux_alpha; // Smoothing factor for moving average
+    
+    // Update moving averages for thresholds
+    const float flux_alpha = g_settings.flux_alpha;
+    
+    // Full-spectrum flux (kept for backward compatibility)
     if (out._flux_avg == 0.0f) out._flux_avg = flux;
     else out._flux_avg = (1.0f - flux_alpha) * out._flux_avg + flux_alpha * flux;
-    float threshold = out._flux_avg * g_settings.flux_threshold_multiplier; // Dynamic threshold
+    
+    // Band-limited flux
+    if (out._flux_low_avg == 0.0f) out._flux_low_avg = flux_low;
+    else out._flux_low_avg = (1.0f - flux_alpha) * out._flux_low_avg + flux_alpha * flux_low;
+    
+    // Dynamic threshold based on band-limited flux
+    float threshold = out._flux_low_avg * g_settings.flux_threshold_multiplier; // Dynamic threshold
 
     // --- 6. Adaptive beat fade-out ---
     using clock = std::chrono::steady_clock;
@@ -66,7 +107,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     last_call = now;
 
     // Detect beat (if flux exceeds threshold)
-    bool is_beat = (flux > threshold) && (flux > g_settings.beat_flux_min);
+    bool is_beat = (flux_low > threshold) && (flux_low > g_settings.beat_flux_min);
     if (is_beat) {
         // Set falloff rate based on time since last beat
         float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * g_settings.beat_time_scale : g_settings.beat_time_initial;
