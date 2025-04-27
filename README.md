@@ -1,5 +1,3 @@
-
-
 <div align="center">
 
 # Listeningway
@@ -72,30 +70,34 @@ uniform float MyFunkyBeat < source = "listeningway_beat"; >;
 
 // Example: Get elapsed time
 uniform float MyTime < source = "listeningway_timeseconds"; >;
-````
+```
 
 **Tip:** For convenience, you can `#include "ListeningwayUniforms.fxh"` (make sure you placed it in `reshade-shaders\Shaders\` as per installation steps) which contains pre-defined declarations for all available Listeningway uniforms.
 
 **Available Uniforms:**
 
-Here's the data Listeningway provides (check `ListeningwayUniforms.fxh` for ready-to-use declarations):
+Here's the data Listeningway provides:
 
-  * `uniform float Listeningway_Volume < source="listeningway_volume"; >`
-      * Current overall audio volume (normalized, good for intensity/brightness).
-  * `uniform float Listeningway_FreqBands[32] < source="listeningway_freqbands"; >`
-      * Amplitude of 32 frequency bands (Index 0 = Low Bass ... Index 31 = High Treble). Great for spectrum visualizations or driving different effects based on frequency\!
-  * `uniform float Listeningway_Beat < source="listeningway_beat"; >`
-      * Beat detection value. Typically pulses to 1.0 on a detected beat and then quickly falls off. Perfect for triggering flashes or movements.
-  * `uniform float Listeningway_TimeSeconds < source="listeningway_timeseconds"; >`
-      * Time elapsed (in seconds) since the addon started. Useful for continuous animations.
-  * `uniform float Listeningway_TimePhase60Hz < source="listeningway_timephase60hz"; >`
-      * Phase (0.0 to 1.0) cycling at 60Hz. Good for smooth, fast oscillations.
-  * `uniform float Listeningway_TimePhase120Hz < source="listeningway_timephase120hz"; >`
-      * Phase (0.0 to 1.0) cycling at 120Hz. Even faster oscillations\!
-  * `uniform float Listeningway_TotalPhases60Hz < source="listeningway_totalphases60hz"; >`
-      * Total number of 60Hz cycles elapsed (float).
-  * `uniform float Listeningway_TotalPhases120Hz < source="listeningway_totalphases120hz"; >`
-      * Total number of 120Hz cycles elapsed (float).
+| Uniform | Description |
+| :------ | :---------- |
+| **Listeningway_Volume** | Current overall audio volume (normalized, good for intensity/brightness). |
+| ```uniform float Listeningway_Volume < source="listeningway_volume"; >;``` | |
+| **Listeningway_FreqBands** | Amplitude of 32 frequency bands (Index 0 = Low Bass ... Index 31 = High Treble). Great for spectrum visualizations or driving different effects based on frequency! |
+| ```uniform float Listeningway_FreqBands[32] < source="listeningway_freqbands"; >;``` | |
+| **Listeningway_Beat** | Beat detection value. Typically pulses to 1.0 on a detected beat and then quickly falls off. Perfect for triggering flashes or movements. |
+| ```uniform float Listeningway_Beat < source="listeningway_beat"; >;``` | |
+| **Listeningway_TimeSeconds** | Time elapsed (in seconds) since the addon started. Useful for continuous animations. |
+| ```uniform float Listeningway_TimeSeconds < source="listeningway_timeseconds"; >;``` | |
+| **Listeningway_TimePhase60Hz** | Phase (0.0 to 1.0) cycling at 60Hz. Good for smooth, fast oscillations. |
+| ```uniform float Listeningway_TimePhase60Hz < source="listeningway_timephase60hz"; >;``` | |
+| **Listeningway_TimePhase120Hz** | Phase (0.0 to 1.0) cycling at 120Hz. Even faster oscillations! |
+| ```uniform float Listeningway_TimePhase120Hz < source="listeningway_timephase120hz"; >;``` | |
+| **Listeningway_TotalPhases60Hz** | Total number of 60Hz cycles elapsed (float). |
+| ```uniform float Listeningway_TotalPhases60Hz < source="listeningway_totalphases60hz"; >;``` | |
+| **Listeningway_TotalPhases120Hz** | Total number of 120Hz cycles elapsed (float). |
+| ```uniform float Listeningway_TotalPhases120Hz < source="listeningway_totalphases120hz"; >;``` | |
+
+**Tip:** For convenience, you can `#include "ListeningwayUniforms.fxh"` which contains all these declarations ready to use.
 
 **Example Shader Snippet:**
 
