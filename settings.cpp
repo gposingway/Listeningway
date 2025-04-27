@@ -122,6 +122,13 @@ void LoadAllTunables() {
     RW_INI_SIZE("Audio", "FFTSize", g_settings.fft_size, DEFAULT_LISTENINGWAY_FFT_SIZE);
     RW_INI_FLOAT("Audio", "FluxAlpha", g_settings.flux_alpha, DEFAULT_LISTENINGWAY_FLUX_ALPHA);
     RW_INI_FLOAT("Audio", "FluxThresholdMultiplier", g_settings.flux_threshold_multiplier, DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER);
+    
+    // Band-limited beat detection settings
+    RW_INI_FLOAT("Audio", "BeatMinFreq", g_settings.beat_min_freq, DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ);
+    RW_INI_FLOAT("Audio", "BeatMaxFreq", g_settings.beat_max_freq, DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ);
+    RW_INI_FLOAT("Audio", "FluxLowAlpha", g_settings.flux_low_alpha, DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA);
+    RW_INI_FLOAT("Audio", "FluxLowThresholdMultiplier", g_settings.flux_low_threshold_multiplier, DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER);
+    
     RW_INI_FLOAT("Audio", "BeatFluxMin", g_settings.beat_flux_min, DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN);
     RW_INI_FLOAT("Audio", "BeatFalloffDefault", g_settings.beat_falloff_default, DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT);
     RW_INI_FLOAT("Audio", "BeatTimeScale", g_settings.beat_time_scale, DEFAULT_LISTENINGWAY_BEAT_TIME_SCALE);
@@ -149,6 +156,13 @@ void SaveAllTunables() {
     WR_INI_SIZE("Audio", "FFTSize", g_settings.fft_size);
     WR_INI_FLOAT("Audio", "FluxAlpha", g_settings.flux_alpha);
     WR_INI_FLOAT("Audio", "FluxThresholdMultiplier", g_settings.flux_threshold_multiplier);
+    
+    // Band-limited beat detection settings
+    WR_INI_FLOAT("Audio", "BeatMinFreq", g_settings.beat_min_freq);
+    WR_INI_FLOAT("Audio", "BeatMaxFreq", g_settings.beat_max_freq);
+    WR_INI_FLOAT("Audio", "FluxLowAlpha", g_settings.flux_low_alpha);
+    WR_INI_FLOAT("Audio", "FluxLowThresholdMultiplier", g_settings.flux_low_threshold_multiplier);
+    
     WR_INI_FLOAT("Audio", "BeatFluxMin", g_settings.beat_flux_min);
     WR_INI_FLOAT("Audio", "BeatFalloffDefault", g_settings.beat_falloff_default);
     WR_INI_FLOAT("Audio", "BeatTimeScale", g_settings.beat_time_scale);

@@ -155,6 +155,13 @@ NumBands=32
 FFTSize=512
 FluxAlpha=0.1
 FluxThresholdMultiplier=1.5
+
+# Band-limited beat detection settings
+BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection
+BeatMaxFreq=200.0        ; Maximum frequency (Hz) for beat detection
+FluxLowAlpha=0.08        ; Smoothing factor for low-frequency flux (smaller = smoother)
+FluxLowThresholdMultiplier=1.4  ; Threshold multiplier for low-frequency flux
+
 BeatFluxMin=0.01
 BeatFalloffDefault=2.0
 BeatTimeScale=0.000000001
@@ -173,6 +180,30 @@ CaptureStaleTimeout=3.0
 AudioAnalysisEnabled=1
 DebugEnabled=0
 ```
+
+**Band-Limited Beat Detection:**
+
+Listeningway now features band-limited spectral flux detection for more accurate beat detection, especially in music with strong bass beats like electronic, hip-hop, and rock. This feature focuses the beat detection on low frequencies (by default 0-200Hz) where kick drums and bass hits typically occur, making it less sensitive to other sounds like vocals, synths, or high-frequency percussion.
+
+You can fine-tune this feature through these settings in `Listeningway.ini`:
+
+```ini
+[Audio]
+# Band-limited beat detection settings
+BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection
+BeatMaxFreq=200.0        ; Maximum frequency (Hz) for beat detection
+FluxLowAlpha=0.08        ; Smoothing factor for low-frequency flux (smaller = smoother)
+FluxLowThresholdMultiplier=1.4  ; Threshold multiplier for low-frequency flux
+```
+
+**Tuning Tips:**
+- For music with deep bass (EDM, dubstep): Try `BeatMinFreq=20.0` and `BeatMaxFreq=150.0`
+- For rock/pop with prominent kick drums: The default range works well
+- For acoustic music: Try `BeatMinFreq=40.0` and `BeatMaxFreq=250.0`
+- Adjust `FluxLowThresholdMultiplier`: Lower values (1.1-1.3) make beat detection more sensitive, higher values (1.5-2.0) make it more selective
+- Adjust `FluxLowAlpha`: Lower values make the detection adapt more slowly to volume changes
+
+The FFT processing now also uses a Hann window function to reduce spectral leakage, resulting in cleaner frequency analysis and more accurate beat detection.
 
 **Frequency Band Mapping (Logarithmic/Linear):**
 

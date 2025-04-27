@@ -15,6 +15,13 @@ struct ListeningwaySettings {
     size_t fft_size = DEFAULT_LISTENINGWAY_FFT_SIZE;
     float flux_alpha = DEFAULT_LISTENINGWAY_FLUX_ALPHA;
     float flux_threshold_multiplier = DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER;
+    
+    // Band-limited beat detection settings
+    float beat_min_freq = DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ;
+    float beat_max_freq = DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ;
+    float flux_low_alpha = DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA;
+    float flux_low_threshold_multiplier = DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER;
+    
     float beat_flux_min = DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN;
     float beat_falloff_default = DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT;
     float beat_time_scale = DEFAULT_LISTENINGWAY_BEAT_TIME_SCALE;

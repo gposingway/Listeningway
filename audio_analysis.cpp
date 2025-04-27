@@ -54,9 +54,9 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
 
     // --- 5. Spectral Flux Beat Detection ---
     float flux = 0.0f;
-    // Define frequency range for beat detection (focusing on low frequencies)
-    float min_beat_freq = 0.0f;
-    float max_beat_freq = 200.0f;
+    // Use configurable frequency range for beat detection from settings
+    float min_beat_freq = g_settings.beat_min_freq;
+    float max_beat_freq = g_settings.beat_max_freq;
     
     // Calculate sample rate from FFT size - assuming 44.1kHz if not available
     float sample_rate = 44100.0f; // Default assumption
@@ -86,18 +86,20 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     }
     
     // Update moving averages for thresholds
+    // Use separate smoothing factors for full-spectrum and band-limited flux
     const float flux_alpha = g_settings.flux_alpha;
+    const float flux_low_alpha = g_settings.flux_low_alpha;
     
     // Full-spectrum flux (kept for backward compatibility)
     if (out._flux_avg == 0.0f) out._flux_avg = flux;
     else out._flux_avg = (1.0f - flux_alpha) * out._flux_avg + flux_alpha * flux;
     
-    // Band-limited flux
+    // Band-limited flux with its own smoothing factor
     if (out._flux_low_avg == 0.0f) out._flux_low_avg = flux_low;
-    else out._flux_low_avg = (1.0f - flux_alpha) * out._flux_low_avg + flux_alpha * flux_low;
+    else out._flux_low_avg = (1.0f - flux_low_alpha) * out._flux_low_avg + flux_low_alpha * flux_low;
     
-    // Dynamic threshold based on band-limited flux
-    float threshold = out._flux_low_avg * g_settings.flux_threshold_multiplier; // Dynamic threshold
+    // Dynamic threshold based on band-limited flux with its own threshold multiplier
+    float threshold = out._flux_low_avg * g_settings.flux_low_threshold_multiplier;
 
     // --- 6. Adaptive beat fade-out ---
     using clock = std::chrono::steady_clock;
