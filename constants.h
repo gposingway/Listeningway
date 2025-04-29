@@ -16,6 +16,13 @@ constexpr float DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ = 400.0f; // Default maximum 
 constexpr float DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA = 0.35f; // Default smoothing factor for low-frequency flux
 constexpr float DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER = 2.0f; // Default threshold multiplier for low-frequency flux
 
+// Spectral Flux with Autocorrelation algorithm defaults
+constexpr int DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM = 0; // Default to SimpleEnergy (0=SimpleEnergy, 1=SpectralFluxAuto)
+constexpr float DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD = 0.05f; // Default threshold for peak picking in spectral flux
+constexpr float DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD = 0.25f; // Default required confidence for tempo change
+constexpr float DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW = 0.1f; // Default window for beat induction in seconds
+constexpr float DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT = 0.6f; // Default weight for resolving octave errors (0.5-1.0)
+
 // Audio analysis tunables
 constexpr float DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN = 0.01f; // Default minimum flux to trigger beat
 constexpr float DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT = 2.0f; // Default beat falloff rate
@@ -28,7 +35,7 @@ constexpr float DEFAULT_LISTENINGWAY_BAND_NORM = 0.1f; // Default frequency band
 constexpr float DEFAULT_LISTENINGWAY_BAND_MIN_FREQ = 20.0f; // Default min frequency for log bands (Hz)
 constexpr float DEFAULT_LISTENINGWAY_BAND_MAX_FREQ = 14000.0f; // Default max frequency for log bands (Hz)
 constexpr bool  DEFAULT_LISTENINGWAY_BAND_LOG_SCALE = true; // Use logarithmic band mapping by default
-constexpr float DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH = 2.0f; // Default log scale strength (1.0 = standard log, >1.0 = more bass detail)
+constexpr float DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH = 1.4f; // Default log scale strength (1.0 = standard log, >1.0 = more bass detail)
 
 // UI/Overlay
 constexpr float DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT = 24.0f; // Default height per frequency band row in overlay
