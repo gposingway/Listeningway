@@ -66,5 +66,13 @@ powershell -Command "Select-String 'FileVersion' listeningway.rc | ForEach-Objec
 REM No DLLs to copy for static build
 
 echo --- Build, Rename, and Move Successful ---
+
+REM Check if deploy.bat exists and run it
+if exist deploy.bat (
+    echo.
+    echo --- Automatically deploying ---
+    call deploy.bat
+)
+
 endlocal
 pause
