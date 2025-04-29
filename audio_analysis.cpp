@@ -10,11 +10,223 @@
 #include <vector>
 #include <algorithm>
 #include <chrono>
+#include <numeric>
 
 // Define M_PI if not already defined
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+/**
+ * Detects beats using the simple energy method (original algorithm)
+ */
+void DetectBeatsSimpleEnergy(const std::vector<float>& magnitudes, const AudioAnalysisConfig& config, 
+                           AudioAnalysisData& out, float flux_low, float dt) {
+    using clock = std::chrono::steady_clock;
+    static auto last_call = clock::now();
+    auto now = clock::now();
+    
+    // Calculate threshold
+    float threshold = out._flux_low_avg * g_settings.flux_low_threshold_multiplier;
+    
+    // Detect beat (if flux exceeds threshold)
+    bool is_beat = (flux_low > threshold) && (flux_low > g_settings.beat_flux_min);
+    if (is_beat) {
+        // Set falloff rate based on time since last beat
+        float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * g_settings.beat_time_scale : g_settings.beat_time_initial;
+        out._falloff_rate = (time_since_last > g_settings.beat_time_min) ? (1.0f / std::max(g_settings.beat_time_divisor, time_since_last)) : g_settings.beat_falloff_default;
+        out.beat = 1.0f;
+        out._last_beat_time = now.time_since_epoch().count();
+    } else {
+        // Fade out beat value
+        out.beat -= out._falloff_rate * dt;
+        if (out.beat < 0.0f) out.beat = 0.0f;
+    }
+}
+
+/**
+ * Computes autocorrelation of the spectral flux buffer for tempo detection
+ */
+std::pair<float, float> ComputeTempoFromAutocorrelation(const std::deque<float>& flux_buffer, 
+                                                      float sample_rate, size_t hop_size) {
+    // We need a substantial buffer for meaningful autocorrelation
+    if (flux_buffer.size() < 256) {
+        return {120.0f, 0.0f}; // Default 120 BPM with zero confidence
+    }
+    
+    // Create a vector from the deque for easier computation
+    std::vector<float> buffer(flux_buffer.begin(), flux_buffer.end());
+    
+    // Calculate frame rate of our ODF (depends on hop size)
+    float frame_rate = sample_rate / hop_size;
+    
+    // Convert BPM range to lag range in frames
+    size_t max_lag = static_cast<size_t>(60.0f * frame_rate / MIN_BPM);
+    size_t min_lag = static_cast<size_t>(60.0f * frame_rate / MAX_BPM);
+    
+    // Clamp lag values to valid range
+    max_lag = std::min(max_lag, buffer.size() / 2);
+    min_lag = std::max(min_lag, size_t(2));
+    
+    // Calculate autocorrelation for each lag
+    std::vector<float> autocorr(max_lag + 1, 0.0f);
+    
+    // Normalize the buffer
+    float sum = 0.0f;
+    for (float val : buffer) sum += val;
+    float mean = sum / buffer.size();
+    
+    std::vector<float> normalized(buffer.size());
+    for (size_t i = 0; i < buffer.size(); ++i) {
+        normalized[i] = buffer[i] - mean;
+    }
+    
+    // Calculate autocorrelation for each lag in our range of interest
+    for (size_t lag = min_lag; lag <= max_lag; ++lag) {
+        float acf = 0.0f;
+        float norm1 = 0.0f;
+        float norm2 = 0.0f;
+        
+        for (size_t i = 0; i < buffer.size() - lag; ++i) {
+            acf += normalized[i] * normalized[i + lag];
+            norm1 += normalized[i] * normalized[i];
+            norm2 += normalized[i + lag] * normalized[i + lag];
+        }
+        
+        // Normalize autocorrelation
+        autocorr[lag] = acf / std::sqrt(norm1 * norm2 + 1e-6f);
+    }
+    
+    // Find peaks in autocorrelation function
+    std::vector<size_t> peaks;
+    for (size_t i = min_lag + 1; i < max_lag; ++i) {
+        if (autocorr[i] > autocorr[i-1] && autocorr[i] > autocorr[i+1] && autocorr[i] > 0.1f) {
+            peaks.push_back(i);
+        }
+    }
+    
+    // No peaks found
+    if (peaks.empty()) {
+        return {120.0f, 0.0f}; 
+    }
+    
+    // Sort peaks by correlation value
+    std::sort(peaks.begin(), peaks.end(), [&autocorr](size_t a, size_t b) {
+        return autocorr[a] > autocorr[b];
+    });
+    
+    // Get the highest peak
+    size_t best_lag = peaks[0]; 
+    float confidence = autocorr[best_lag];
+    
+    // Handle octave errors by checking for related peaks
+    for (size_t i = 1; i < std::min(peaks.size(), size_t(5)); ++i) {
+        size_t lag = peaks[i];
+        
+        // Check if this peak is a multiple/divisor of our best lag
+        for (int multiple = 2; multiple <= 4; ++multiple) {
+            // Check if lag is close to a multiple of best_lag
+            float multiple_ratio = static_cast<float>(lag) / best_lag;
+            if (std::abs(multiple_ratio - multiple) < 0.1f || 
+                std::abs(multiple_ratio - 1.0f/multiple) < 0.1f) {
+                
+                // Adjust our best lag based on octave error weight
+                float weight = g_settings.octave_error_weight;
+                if (multiple_ratio < 1.0f) {
+                    // This peak suggests a faster tempo (smaller lag)
+                    best_lag = static_cast<size_t>(best_lag * ((1.0f - weight) + weight * multiple_ratio));
+                } else {
+                    // This peak suggests a slower tempo (larger lag)
+                    best_lag = static_cast<size_t>(best_lag * (weight + (1.0f - weight) * (1.0f / multiple_ratio)));
+                }
+                
+                // Only consider one related peak
+                break;
+            }
+        }
+    }
+    
+    // Convert lag to BPM
+    float bpm = 60.0f * frame_rate / best_lag;
+    
+    // Clamp BPM to reasonable range
+    bpm = std::max(MIN_BPM, std::min(MAX_BPM, bpm));
+    
+    return {bpm, confidence};
+}
+
+/**
+ * Detects beats using spectral flux + autocorrelation
+ */
+void DetectBeatsSpectralFluxAuto(const std::vector<float>& magnitudes, const AudioAnalysisConfig& config, 
+                               AudioAnalysisData& out, float flux, float dt) {
+    using clock = std::chrono::steady_clock;
+    static auto last_call = clock::now();
+    auto now = clock::now();
+    
+    // Calculate time since last frame for phase tracking
+    float frame_time = now.time_since_epoch().count();
+    float frame_dt = (out._last_frame_time > 0.0f) ? (frame_time - out._last_frame_time) : dt;
+    out._last_frame_time = frame_time;
+    
+    // Store flux in our buffer for tempo analysis
+    out._spectral_flux_buffer.push_back(flux);
+    if (out._spectral_flux_buffer.size() > SPECTRAL_FLUX_BUFFER_SIZE) {
+        out._spectral_flux_buffer.pop_front();
+    }
+    
+    // Run autocorrelation tempo analysis after we have enough data
+    if (out._spectral_flux_buffer.size() >= 256 && 
+        (!out._autocorr_initialized || out._tempo_confidence < 0.4f)) {
+        // Estimate FFT hop size based on frame rate
+        size_t hop_size = config.fft_size / 4;  // A common hop size is FFT size / 4
+        auto [bpm, confidence] = ComputeTempoFromAutocorrelation(out._spectral_flux_buffer, config.sample_rate, hop_size);
+        
+        // Only update tempo if confidence is high enough, or we don't have a tempo yet
+        if (!out._autocorr_initialized || 
+            confidence > out._tempo_confidence + g_settings.tempo_change_threshold) {
+            out._current_tempo_bpm = bpm;
+            out._tempo_confidence = confidence;
+            out._autocorr_initialized = true;
+        }
+    }
+    
+    // Adaptive threshold for peak detection
+    float threshold = out._flux_avg * 1.5f + g_settings.spectral_flux_threshold;
+    
+    // Beat phase tracking - adjust based on current tempo
+    float beat_period = 60.0f / out._current_tempo_bpm;  // Period in seconds
+    out._beat_phase += frame_dt / beat_period;
+    while (out._beat_phase >= 1.0f) out._beat_phase -= 1.0f;
+    
+    // Detect onset (peaks in spectral flux)
+    bool is_flux_peak = (flux > threshold);
+    
+    // Beat induction - if we detect a strong peak, adjust our phase to match it
+    if (is_flux_peak && flux > g_settings.beat_flux_min) {
+        // Determine beat induction window size
+        float induction_window = g_settings.beat_induction_window;
+        
+        // Only adjust phase if we're in a reasonable range from expected beat
+        if (out._beat_phase < induction_window || out._beat_phase > (1.0f - induction_window)) {
+            // Reset phase to 0 (this was a beat)
+            out._beat_phase = 0.0f;
+            out.beat = 1.0f;
+        }
+    } else {
+        // Generate beat events at phase 0 (with some confidence factor)
+        float phase_trigger = 0.03f;  // Small window around phase 0
+        
+        if (out._beat_phase < phase_trigger && out._tempo_confidence > 0.3f) {
+            // This is a predicted beat based on tempo
+            out.beat = 1.0f * out._tempo_confidence;
+        } else {
+            // Fade out beat value
+            out.beat -= (2.0f / beat_period) * dt;  // Rate based on tempo
+            if (out.beat < 0.0f) out.beat = 0.0f;
+        }
+    }
+}
 
 // Analyze a buffer of audio samples and update the analysis data structure.
 // This function extracts volume, frequency bands, and beat information.
@@ -59,7 +271,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     float max_beat_freq = g_settings.beat_max_freq;
     
     // Calculate sample rate from FFT size - assuming 44.1kHz if not available
-    float sample_rate = 44100.0f; // Default assumption
+    float sample_rate = config.sample_rate;
     float freq_resolution = sample_rate / (float)config.fft_size;
     
     // Calculate bin indices for beat frequency range
@@ -72,7 +284,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     float flux_low = 0.0f; // Band-limited flux for beat detection
     
     if (!out._prev_magnitudes.empty() && out._prev_magnitudes.size() == magnitudes.size()) {
-        // Calculate full-spectrum flux (for backward compatibility)
+        // Calculate full-spectrum flux 
         for (size_t i = 0; i < magnitudes.size(); ++i) {
             float diff = magnitudes[i] - out._prev_magnitudes[i];
             if (diff > 0) flux += diff;
@@ -90,7 +302,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     const float flux_alpha = g_settings.flux_alpha;
     const float flux_low_alpha = g_settings.flux_low_alpha;
     
-    // Full-spectrum flux (kept for backward compatibility)
+    // Full-spectrum flux
     if (out._flux_avg == 0.0f) out._flux_avg = flux;
     else out._flux_avg = (1.0f - flux_alpha) * out._flux_avg + flux_alpha * flux;
     
@@ -98,29 +310,26 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     if (out._flux_low_avg == 0.0f) out._flux_low_avg = flux_low;
     else out._flux_low_avg = (1.0f - flux_low_alpha) * out._flux_low_avg + flux_low_alpha * flux_low;
     
-    // Dynamic threshold based on band-limited flux with its own threshold multiplier
-    float threshold = out._flux_low_avg * g_settings.flux_low_threshold_multiplier;
-
-    // --- 6. Adaptive beat fade-out ---
+    // --- 6. Beat Detection ---
     using clock = std::chrono::steady_clock;
     static auto last_call = clock::now();
     auto now = clock::now();
     float dt = std::chrono::duration<float>(now - last_call).count();
     last_call = now;
-
-    // Detect beat (if flux exceeds threshold)
-    bool is_beat = (flux_low > threshold) && (flux_low > g_settings.beat_flux_min);
-    if (is_beat) {
-        // Set falloff rate based on time since last beat
-        float time_since_last = (out._last_beat_time > 0.0f) ? (now.time_since_epoch().count() - out._last_beat_time) * g_settings.beat_time_scale : g_settings.beat_time_initial;
-        out._falloff_rate = (time_since_last > g_settings.beat_time_min) ? (1.0f / std::max(g_settings.beat_time_divisor, time_since_last)) : g_settings.beat_falloff_default;
-        out.beat = 1.0f;
-        out._last_beat_time = now.time_since_epoch().count();
-    } else {
-        // Fade out beat value
-        out.beat -= out._falloff_rate * dt;
-        if (out.beat < 0.0f) out.beat = 0.0f;
+    
+    // Choose beat detection algorithm based on configuration
+    switch (config.beat_algorithm) {
+        case BeatDetectionAlgorithm::SpectralFluxAuto:
+            DetectBeatsSpectralFluxAuto(magnitudes, config, out, flux, dt);
+            break;
+            
+        case BeatDetectionAlgorithm::SimpleEnergy:
+        default:
+            DetectBeatsSimpleEnergy(magnitudes, config, out, flux_low, dt);
+            break;
     }
+    
+    // Keep track of current magnitudes for next frame
     out._prev_magnitudes = magnitudes;
 
     // --- 7. Map FFT bins to frequency bands (log or linear) ---

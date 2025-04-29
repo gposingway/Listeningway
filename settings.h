@@ -33,6 +33,16 @@ struct ListeningwaySettings {
     float freq_band_row_height = DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT;
     float ui_progress_width = DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH;
     float capture_stale_timeout = DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT;
+    
+    // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
+    int beat_detection_algorithm = 0;
+    
+    // Advanced spectral flux autocorrelation settings
+    float spectral_flux_threshold = 0.05f;    // Threshold for peak picking in ODF
+    float tempo_change_threshold = 0.25f;     // Required confidence for tempo change
+    float beat_induction_window = 0.1f;       // Window for beat induction in seconds
+    float octave_error_weight = 0.6f;         // Weight for resolving octave errors (0.5-1.0)
+    
     std::atomic_bool audio_analysis_enabled = true;
     bool debug_enabled = false;
     bool band_log_scale = DEFAULT_LISTENINGWAY_BAND_LOG_SCALE;

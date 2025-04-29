@@ -144,6 +144,15 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "BandMinFreq", g_settings.band_min_freq, DEFAULT_LISTENINGWAY_BAND_MIN_FREQ);
     RW_INI_FLOAT("Audio", "BandMaxFreq", g_settings.band_max_freq, DEFAULT_LISTENINGWAY_BAND_MAX_FREQ);
     RW_INI_FLOAT("Audio", "BandLogStrength", g_settings.band_log_strength, DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH);
+    
+    // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
+    RW_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm, 0);
+    
+    // Advanced spectral flux autocorrelation settings
+    RW_INI_FLOAT("Audio", "SpectralFluxThreshold", g_settings.spectral_flux_threshold, 0.05f);
+    RW_INI_FLOAT("Audio", "TempoChangeThreshold", g_settings.tempo_change_threshold, 0.25f);
+    RW_INI_FLOAT("Audio", "BeatInductionWindow", g_settings.beat_induction_window, 0.1f);
+    RW_INI_FLOAT("Audio", "OctaveErrorWeight", g_settings.octave_error_weight, 0.6f);
 }
 
 /**
@@ -174,6 +183,15 @@ void SaveAllTunables() {
     WR_INI_FLOAT("UI", "FreqBandRowHeight", g_settings.freq_band_row_height);
     WR_INI_FLOAT("UI", "ProgressWidth", g_settings.ui_progress_width);
     WR_INI_FLOAT("UI", "CaptureStaleTimeout", g_settings.capture_stale_timeout);
+    
+    // Beat detection algorithm selection
+    WR_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm);
+    
+    // Advanced spectral flux autocorrelation settings
+    WR_INI_FLOAT("Audio", "SpectralFluxThreshold", g_settings.spectral_flux_threshold);
+    WR_INI_FLOAT("Audio", "TempoChangeThreshold", g_settings.tempo_change_threshold);
+    WR_INI_FLOAT("Audio", "BeatInductionWindow", g_settings.beat_induction_window);
+    WR_INI_FLOAT("Audio", "OctaveErrorWeight", g_settings.octave_error_weight);
 }
 
 /**
@@ -213,4 +231,11 @@ void ResetAllTunablesToDefaults() {
     g_settings.band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
     g_settings.band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
     g_settings.band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
+    
+    // Reset beat detection algorithm settings to defaults
+    g_settings.beat_detection_algorithm = 0; // Default to SimpleEnergy
+    g_settings.spectral_flux_threshold = 0.05f;
+    g_settings.tempo_change_threshold = 0.25f;
+    g_settings.beat_induction_window = 0.1f;
+    g_settings.octave_error_weight = 0.6f;
 }
