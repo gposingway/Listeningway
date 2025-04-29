@@ -52,6 +52,10 @@ void LoadAllTunables();
  */
 void SaveAllTunables();
 /**
+ * @brief Resets all tunables to their default values.
+ */
+void ResetAllTunablesToDefaults();
+/**
  * @brief Loads settings from an .ini file in the same directory as the DLL.
  */
 void LoadSettings();

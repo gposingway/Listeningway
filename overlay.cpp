@@ -75,27 +75,52 @@ static void DrawBeat(const AudioAnalysisData& data) {
 
 // Helper: Draw frequency bands with view mode
 static void DrawFrequencyBands(const AudioAnalysisData& data) {
-    static int band_view_mode = 1; // 0 = Collapsed, 1 = 8-band, 2 = All bands
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Frequency Bands");
-    ImGui::SameLine();
-    if (ImGui::Button(band_view_mode == 0 ? "[Show 8 Bands]" : band_view_mode == 1 ? "[Show All Bands]" : "[Collapse]")) {
-        band_view_mode = (band_view_mode + 1) % 3;
-    }
-    if (band_view_mode == 0) {
-        ImGui::TextDisabled("(Panel collapsed)");
-        return;
-    }
+    
     size_t band_count = data.freq_bands.size();
-    size_t show_bands = (band_view_mode == 1) ? 8 : band_count;
-    ImGui::BeginChild("FreqBandsChild", ImVec2(0, g_settings.freq_band_row_height * show_bands + 5), true, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    
+    // Always use compact visualization with thin horizontal bars stacked vertically
+    // Calculate total height for all bars with no spacing
+    float barHeight = 6.0f; // Thin bar height
+    float totalHeight = barHeight * band_count;
+    
+    // Create a child window to contain all the bars - removed scrollbars
+    ImGui::BeginChild("FreqBandsCompact", ImVec2(0, totalHeight + 15), true, ImGuiWindowFlags_NoScrollbar);
+    
+    // Get starting cursor position for drawing bars
+    ImVec2 startPos = ImGui::GetCursorScreenPos();
+    ImVec2 windowSize = ImGui::GetContentRegionAvail();
+    
+    // Draw each frequency band as a thin bar
     for (size_t i = 0; i < band_count; ++i) {
-        if (band_view_mode == 1 && i >= 8) break;
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("%zu:", i);
-        ImGui::SameLine();
-        ImGui::ProgressBar(data.freq_bands[i], ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
+        float value = data.freq_bands[i];
+        
+        // Calculate bar coordinates - each bar directly below the previous one
+        ImVec2 barStart(startPos.x, startPos.y + i * barHeight);
+        ImVec2 barEnd(startPos.x + value * windowSize.x, barStart.y + barHeight);
+        
+        // Draw filled bar
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            barStart,
+            barEnd,
+            ImGui::GetColorU32(IM_COL32(25 + 230 * (1.0f - (float)i / band_count), // Red gradient (high to low frequencies)
+                                      25 + 230 * ((float)i / band_count),         // Green gradient (low to high frequencies)
+                                      230,                                        // Constant blue
+                                      255)),                                       // Alpha
+            0.0f  // No rounding
+        );
+        
+        // Draw background/outline for the full bar area
+        ImGui::GetWindowDrawList()->AddRect(
+            barStart,
+            ImVec2(startPos.x + windowSize.x, barStart.y + barHeight),
+            ImGui::GetColorU32(IM_COL32(60, 60, 60, 128)), // Dark gray
+            0.0f  // No rounding
+        );
     }
+    
+    ImGui::Dummy(ImVec2(0, totalHeight)); // Reserve space for our custom drawing
     ImGui::EndChild();
 }
 
@@ -145,7 +170,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
             ImGui::SliderFloat("Min Freq (Hz)", &g_settings.band_min_freq, 10.0f, 500.0f, "%.0f");
             ImGui::SliderFloat("Max Freq (Hz)", &g_settings.band_max_freq, 2000.0f, 22050.0f, "%.0f");
         }
-        if (ImGui::Button("Save Band Mapping Settings")) SaveAllTunables();
+        // Removed individual save button
         ImGui::Separator();
         
         // Band-limited Beat Detection Settings
@@ -157,7 +182,39 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         ImGui::TextDisabled("(Lower value = smoother, higher = more responsive)");
         ImGui::SliderFloat("Low Flux Threshold", &g_settings.flux_low_threshold_multiplier, 1.0f, 3.0f, "%.2f");
         ImGui::TextDisabled("(Lower value = more sensitive, higher = less false positives)");
-        if (ImGui::Button("Save Beat Detection Settings")) SaveAllTunables();
+        // Removed individual save button
+        ImGui::Separator();
+        
+        // Consolidated buttons for Save, Load and Default
+        ImGui::Text("Settings Management:");
+        
+        // Use columns to position the buttons side by side with equal width
+        ImGui::Columns(3, "settings_buttons", false);
+        
+        // Save button
+        if (ImGui::Button("Save Settings", ImVec2(-1, 0))) {
+            SaveAllTunables();
+            LOG_DEBUG("[Overlay] Settings saved to file");
+        }
+        ImGui::NextColumn();
+        
+        // Load button
+        if (ImGui::Button("Load Settings", ImVec2(-1, 0))) {
+            LoadAllTunables();
+            LOG_DEBUG("[Overlay] Settings loaded from file");
+        }
+        ImGui::NextColumn();
+        
+        // Default button
+        if (ImGui::Button("Reset to Default", ImVec2(-1, 0))) {
+            // Use the dedicated settings module function to reset defaults
+            ResetAllTunablesToDefaults();
+            LOG_DEBUG("[Overlay] Settings reset to default values");
+        }
+        
+        // Reset columns
+        ImGui::Columns(1);
+        
         ImGui::Separator();
     } catch (const std::exception& ex) {
         LOG_ERROR(std::string("[Overlay] Exception in DrawListeningwayDebugOverlay: ") + ex.what());

@@ -175,3 +175,42 @@ void SaveAllTunables() {
     WR_INI_FLOAT("UI", "ProgressWidth", g_settings.ui_progress_width);
     WR_INI_FLOAT("UI", "CaptureStaleTimeout", g_settings.capture_stale_timeout);
 }
+
+/**
+ * @brief Resets all tunable settings to their default values from constants.h.
+ */
+void ResetAllTunablesToDefaults() {
+    std::lock_guard<std::mutex> lock(g_settings_mutex);
+    
+    // Reset all settings to defaults defined in constants.h
+    g_settings.num_bands = DEFAULT_LISTENINGWAY_NUM_BANDS;
+    g_settings.fft_size = DEFAULT_LISTENINGWAY_FFT_SIZE;
+    g_settings.flux_alpha = DEFAULT_LISTENINGWAY_FLUX_ALPHA;
+    g_settings.flux_threshold_multiplier = DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER;
+    
+    // Band-limited beat detection settings
+    g_settings.beat_min_freq = DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ;
+    g_settings.beat_max_freq = DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ;
+    g_settings.flux_low_alpha = DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA;
+    g_settings.flux_low_threshold_multiplier = DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER;
+    
+    g_settings.beat_flux_min = DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN;
+    g_settings.beat_falloff_default = DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT;
+    g_settings.beat_time_scale = DEFAULT_LISTENINGWAY_BEAT_TIME_SCALE;
+    g_settings.beat_time_initial = DEFAULT_LISTENINGWAY_BEAT_TIME_INITIAL;
+    g_settings.beat_time_min = DEFAULT_LISTENINGWAY_BEAT_TIME_MIN;
+    g_settings.beat_time_divisor = DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR;
+    g_settings.volume_norm = DEFAULT_LISTENINGWAY_VOLUME_NORM;
+    g_settings.band_norm = DEFAULT_LISTENINGWAY_BAND_NORM;
+    g_settings.freq_band_row_height = DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT;
+    g_settings.ui_progress_width = DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH;
+    g_settings.capture_stale_timeout = DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT;
+    
+    // Keep audio_analysis_enabled and debug_enabled at their current values
+    // since these are UI state rather than tuning parameters
+    
+    g_settings.band_log_scale = DEFAULT_LISTENINGWAY_BAND_LOG_SCALE;
+    g_settings.band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
+    g_settings.band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
+    g_settings.band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
+}
