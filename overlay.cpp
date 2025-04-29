@@ -143,10 +143,68 @@ static void DrawTimePhaseInfo() {
     ImGui::Text("  Total 120Hz cycles: %.1f", total_phases_120hz);
 }
 
+// Helper: Draw Beat Detection Algorithm settings
+static void DrawBeatDetectionAlgorithm() {
+    ImGui::Text("Beat Detection Algorithm:");
+    
+    // Create a combo box for algorithm selection
+    const char* algorithms[] = { "Simple Energy (Original)", "Spectral Flux + Autocorrelation (Advanced)" };
+    int algorithm = g_settings.beat_detection_algorithm;
+    if (ImGui::Combo("Algorithm", &g_settings.beat_detection_algorithm, algorithms, IM_ARRAYSIZE(algorithms))) {
+        LOG_DEBUG(std::string("[Overlay] Beat Detection Algorithm changed to ") + 
+                 (g_settings.beat_detection_algorithm == 0 ? "Simple Energy" : "Spectral Flux + Autocorrelation"));
+    }
+    
+    // Provide explanation of the selected algorithm
+    if (g_settings.beat_detection_algorithm == 0) {
+        ImGui::TextDisabled("(Simple, works well with strong bass beats)");
+    } else {
+        ImGui::TextDisabled("(Advanced, better for complex rhythms and various music genres)");
+    }
+    
+    // Show advanced settings for the Spectral Flux + Autocorrelation algorithm
+    if (g_settings.beat_detection_algorithm == 1) {
+        // Create a collapsing section for advanced parameters
+        if (ImGui::CollapsingHeader("Advanced Algorithm Parameters", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Spectral Flux threshold adjustment
+            ImGui::SliderFloat("Spectral Flux Threshold", &g_settings.spectral_flux_threshold, 0.01f, 0.2f, "%.3f");
+            ImGui::TextDisabled("(Lower value = more sensitive to subtle changes)");
+            
+            // Tempo change threshold adjustment
+            ImGui::SliderFloat("Tempo Change Threshold", &g_settings.tempo_change_threshold, 0.1f, 0.5f, "%.2f");
+            ImGui::TextDisabled("(Higher value = more stable tempo, lower = adapts faster)");
+            
+            // Beat induction window adjustment
+            ImGui::SliderFloat("Beat Induction Window", &g_settings.beat_induction_window, 0.05f, 0.2f, "%.2f");
+            ImGui::TextDisabled("(Larger window = more adaptive phase adjustment)");
+            
+            // Octave error weight adjustment
+            ImGui::SliderFloat("Octave Error Weight", &g_settings.octave_error_weight, 0.5f, 0.9f, "%.2f");
+            ImGui::TextDisabled("(Higher values favor base tempo vs half/double detection)");
+            
+            // Display current tempo if we have a valid one
+            if (ImGui::TreeNode("Current Analysis State")) {
+                AudioAnalysisData* data = (AudioAnalysisData*)ImGui::GetIO().UserData; // Cast from void* to our type
+                if (data && data->_autocorr_initialized) {
+                    ImGui::Text("Current Tempo: %.1f BPM (Confidence: %.2f)",
+                               data->_current_tempo_bpm, data->_tempo_confidence);
+                    ImGui::Text("Beat Phase: %.2f", data->_beat_phase);
+                } else {
+                    ImGui::Text("No tempo detected yet");
+                }
+                ImGui::TreePop();
+            }
+        }
+    }
+}
+
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
     try {
+        // Store data pointer for access in UI components (used for displaying current tempo)
+        ImGui::GetIO().UserData = (void*)&data;
+        
         std::lock_guard<std::mutex> lock(data_mutex);
         DrawToggles();
         DrawLogInfo();
@@ -161,6 +219,11 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         ImGui::Separator();
         DrawTimePhaseInfo();
         ImGui::Separator();
+        
+        // Beat Detection Algorithm Selection and Configuration
+        DrawBeatDetectionAlgorithm();
+        ImGui::Separator();
+        
         ImGui::Text("Frequency Band Mapping:");
         ImGui::Checkbox("Logarithmic Bands", &g_settings.band_log_scale);
         ImGui::SameLine();
@@ -170,7 +233,6 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
             ImGui::SliderFloat("Min Freq (Hz)", &g_settings.band_min_freq, 10.0f, 500.0f, "%.0f");
             ImGui::SliderFloat("Max Freq (Hz)", &g_settings.band_max_freq, 2000.0f, 22050.0f, "%.0f");
         }
-        // Removed individual save button
         ImGui::Separator();
         
         // Band-limited Beat Detection Settings
@@ -182,7 +244,6 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         ImGui::TextDisabled("(Lower value = smoother, higher = more responsive)");
         ImGui::SliderFloat("Low Flux Threshold", &g_settings.flux_low_threshold_multiplier, 1.0f, 3.0f, "%.2f");
         ImGui::TextDisabled("(Lower value = more sensitive, higher = less false positives)");
-        // Removed individual save button
         ImGui::Separator();
         
         // Consolidated buttons for Save, Load and Default
