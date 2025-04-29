@@ -149,10 +149,11 @@ void LoadAllTunables() {
     RW_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm, 0);
     
     // Advanced spectral flux autocorrelation settings
-    RW_INI_FLOAT("Audio", "SpectralFluxThreshold", g_settings.spectral_flux_threshold, 0.05f);
-    RW_INI_FLOAT("Audio", "TempoChangeThreshold", g_settings.tempo_change_threshold, 0.25f);
-    RW_INI_FLOAT("Audio", "BeatInductionWindow", g_settings.beat_induction_window, 0.1f);
-    RW_INI_FLOAT("Audio", "OctaveErrorWeight", g_settings.octave_error_weight, 0.6f);
+    RW_INI_FLOAT("Audio", "SpectralFluxThreshold", g_settings.spectral_flux_threshold, DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD);
+    RW_INI_FLOAT("Audio", "TempoChangeThreshold", g_settings.tempo_change_threshold, DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD);
+    RW_INI_FLOAT("Audio", "BeatInductionWindow", g_settings.beat_induction_window, DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW);
+    RW_INI_FLOAT("Audio", "OctaveErrorWeight", g_settings.octave_error_weight, DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT);
+    RW_INI_FLOAT("Audio", "SpectralFluxDecayMultiplier", g_settings.spectral_flux_decay_multiplier, DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER);
 }
 
 /**
@@ -192,6 +193,7 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "TempoChangeThreshold", g_settings.tempo_change_threshold);
     WR_INI_FLOAT("Audio", "BeatInductionWindow", g_settings.beat_induction_window);
     WR_INI_FLOAT("Audio", "OctaveErrorWeight", g_settings.octave_error_weight);
+    WR_INI_FLOAT("Audio", "SpectralFluxDecayMultiplier", g_settings.spectral_flux_decay_multiplier);
 }
 
 /**
@@ -233,9 +235,10 @@ void ResetAllTunablesToDefaults() {
     g_settings.band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
     
     // Reset beat detection algorithm settings to defaults
-    g_settings.beat_detection_algorithm = 0; // Default to SimpleEnergy
-    g_settings.spectral_flux_threshold = 0.05f;
-    g_settings.tempo_change_threshold = 0.25f;
-    g_settings.beat_induction_window = 0.1f;
-    g_settings.octave_error_weight = 0.6f;
+    g_settings.beat_detection_algorithm = DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM;
+    g_settings.spectral_flux_threshold = DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD;
+    g_settings.tempo_change_threshold = DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD;
+    g_settings.beat_induction_window = DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW;
+    g_settings.octave_error_weight = DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT;
+    g_settings.spectral_flux_decay_multiplier = DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER;
 }

@@ -42,6 +42,7 @@ struct ListeningwaySettings {
     float tempo_change_threshold = 0.25f;     // Required confidence for tempo change
     float beat_induction_window = 0.1f;       // Window for beat induction in seconds
     float octave_error_weight = 0.6f;         // Weight for resolving octave errors (0.5-1.0)
+    float spectral_flux_decay_multiplier = 2.0f; // Multiplier for beat decay rate (higher = faster decay)
     
     std::atomic_bool audio_analysis_enabled = true;
     bool debug_enabled = false;

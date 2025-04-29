@@ -198,6 +198,35 @@ static void DrawBeatDetectionAlgorithm() {
     }
 }
 
+// Helper: Draw Beat Decay Settings for both algorithms
+static void DrawBeatDecaySettings() {
+    ImGui::Text("Beat Decay Settings:");
+    ImGui::TextDisabled("(Controls how quickly the beat indicator fades out)");
+    
+    // Different settings based on which algorithm is selected
+    if (g_settings.beat_detection_algorithm == 0) { // SimpleEnergy
+        // SimpleEnergy decay settings
+        ImGui::Text("Simple Energy Algorithm Decay:");
+        ImGui::SliderFloat("Default Falloff Rate", &g_settings.beat_falloff_default, 0.5f, 5.0f, "%.2f");
+        ImGui::TextDisabled("(Higher values = faster decay)");
+        
+        // More advanced adaptive settings
+        if (ImGui::CollapsingHeader("Adaptive Falloff Settings")) {
+            ImGui::SliderFloat("Time Scale", &g_settings.beat_time_scale, 1e-10f, 1e-8f, "%.2e");
+            ImGui::SliderFloat("Initial Time", &g_settings.beat_time_initial, 0.1f, 1.0f, "%.2f");
+            ImGui::SliderFloat("Min Time", &g_settings.beat_time_min, 0.01f, 0.5f, "%.2f");
+            ImGui::SliderFloat("Time Divisor", &g_settings.beat_time_divisor, 0.01f, 1.0f, "%.2f");
+            ImGui::TextDisabled("(These control how decay adapts to beat timing)");
+        }
+    } else { // SpectralFluxAuto
+        // SpectralFluxAuto decay settings
+        ImGui::Text("Spectral Flux Algorithm Decay:");
+        ImGui::SliderFloat("Decay Multiplier", &g_settings.spectral_flux_decay_multiplier, 0.5f, 5.0f, "%.2f");
+        ImGui::TextDisabled("(Higher values = faster decay relative to tempo)");
+        ImGui::TextDisabled("(This algorithm automatically adapts to music tempo)");
+    }
+}
+
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
@@ -222,6 +251,10 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         
         // Beat Detection Algorithm Selection and Configuration
         DrawBeatDetectionAlgorithm();
+        ImGui::Separator();
+        
+        // Beat Decay Settings
+        DrawBeatDecaySettings();
         ImGui::Separator();
         
         ImGui::Text("Frequency Band Mapping:");

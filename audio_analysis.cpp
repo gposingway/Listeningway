@@ -222,7 +222,7 @@ void DetectBeatsSpectralFluxAuto(const std::vector<float>& magnitudes, const Aud
             out.beat = 1.0f * out._tempo_confidence;
         } else {
             // Fade out beat value
-            out.beat -= (2.0f / beat_period) * dt;  // Rate based on tempo
+            out.beat -= (g_settings.spectral_flux_decay_multiplier / beat_period) * dt;  // Rate based on tempo and user-configurable multiplier
             if (out.beat < 0.0f) out.beat = 0.0f;
         }
     }

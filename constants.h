@@ -22,6 +22,7 @@ constexpr float DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD = 0.05f; // Default
 constexpr float DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD = 0.25f; // Default required confidence for tempo change
 constexpr float DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW = 0.1f; // Default window for beat induction in seconds
 constexpr float DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT = 0.6f; // Default weight for resolving octave errors (0.5-1.0)
+constexpr float DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER = 2.0f; // Default decay multiplier for beat value
 
 // Audio analysis tunables
 constexpr float DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN = 0.01f; // Default minimum flux to trigger beat
