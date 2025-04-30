@@ -243,7 +243,7 @@ FluxThresholdMultiplier=1.5
 
 # Band-limited beat detection settings
 BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection (default: 0.0)
-BeatMaxFreq=400.0        ; Maximum frequency (Hz) for beat detection (default: 400.0)
+BeatMaxFreq=400.0        ; Maximum frequency (Hz) for beat detection (default: 0.0)
 FluxLowAlpha=0.35        ; Smoothing factor for low-frequency flux (default: 0.35, smaller = smoother)
 FluxLowThresholdMultiplier=2.0  ; Threshold multiplier for low-frequency flux (default: 2.0)
 
@@ -257,8 +257,6 @@ VolumeNorm=2.0
 BandNorm=0.1
 
 [UI]
-FreqBandRowHeight=24.0
-ProgressWidth=0.9
 CaptureStaleTimeout=3.0
 
 [General]
@@ -305,25 +303,25 @@ BandLogStrength=0.5 ; Log scale strength (default: 0.5, higher values = more bas
 - **BandMinFreq/BandMaxFreq**: Adjust the frequency range covered by the bands. Lower min or higher max can make bands more/less sensitive to certain audio content.
 - **BandLogStrength**: Controls how logarithmic the scaling is. Higher values give more detail to bass frequencies.
 
-**Frequency Band Boosting:**
+**5-Band Equalizer System:**
 
-Listeningway now features bell curve multipliers to enhance the visibility of mid and high frequencies, which are often too dim in audio visualizations. Configure these in the overlay UI or in `Listeningway.ini`:
+Listeningway features a 5-band equalizer system that enhances the visibility of different frequency ranges. Configure these in the overlay UI or in `Listeningway.ini`:
 
 ```ini
 [Audio]
-BandMidBoost=1.64    ; Mid-frequency boost multiplier (default: 1.64)
-BandHighBoost=2.33   ; High-frequency boost multiplier (default: 2.33)
-BandMidCenter=1523   ; Center frequency for mid-range boost in Hz (default: 1523)
-BandHighCenter=9141  ; Center frequency for high-range boost in Hz (default: 9141)
-BandBellWidth=1.94   ; Width of the bell curve in octaves (default: 1.94)
+EqualizerBand1=1.0    ; Bass frequency boost multiplier (default: 1.0)
+EqualizerBand2=1.5    ; Low-mid frequency boost multiplier (default: 1.5)
+EqualizerBand3=2.0    ; Mid frequency boost multiplier (default: 2.0)
+EqualizerBand4=2.5    ; Upper-mid frequency boost multiplier (default: 2.5)
+EqualizerBand5=3.0    ; High frequency boost multiplier (default: 3.0)
+EqualizerWidth=1.5    ; Width of the equalizer bands in octaves (default: 1.5)
 ```
 
-These settings use Gaussian bell curves to boost specific frequency ranges:
-- **BandMidBoost/BandHighBoost**: Multiplier for the mid and high frequency ranges (1.0 = no boost).
-- **BandMidCenter/BandHighCenter**: Center frequencies (in Hz) for the mid and high boosts.
-- **BandBellWidth**: Controls how wide the boost is (in octaves). Larger values create a broader, more gentle boost.
+These settings let you adjust the prominence of different frequency ranges:
+- **EqualizerBand1-5**: Multipliers for five frequency bands from low to high (1.0 = no boost).
+- **EqualizerWidth**: Controls how wide each band's effect is (in octaves). Larger values create smoother transitions between bands.
 
-This makes the visualization more balanced and interesting, especially for music and dynamic audio sources.
+This makes the visualization more balanced and customizable for different types of audio content.
 
 **Architecture Overview:**
 
