@@ -12,10 +12,55 @@
 #include <atomic>
 
 // Tunable variables (populated from .ini or defaults)
-ListeningwaySettings g_settings;
+ListeningwaySettings g_settings = {
+    // Default values from constants.h
+    DEFAULT_LISTENINGWAY_NUM_BANDS,                // num_bands
+    DEFAULT_LISTENINGWAY_FFT_SIZE,                 // fft_size
+    DEFAULT_LISTENINGWAY_FLUX_ALPHA,               // flux_alpha
+    DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER, // flux_threshold_multiplier
+    DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ,            // beat_min_freq
+    DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ,            // beat_max_freq
+    DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA,           // flux_low_alpha
+    DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER, // flux_low_threshold_multiplier
+    DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN,            // beat_flux_min
+    DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT,     // beat_falloff_default
+    DEFAULT_LISTENINGWAY_BEAT_TIME_SCALE,          // beat_time_scale
+    DEFAULT_LISTENINGWAY_BEAT_TIME_INITIAL,        // beat_time_initial
+    DEFAULT_LISTENINGWAY_BEAT_TIME_MIN,            // beat_time_min
+    DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR,        // beat_time_divisor
+    DEFAULT_LISTENINGWAY_VOLUME_NORM,              // volume_norm
+    DEFAULT_LISTENINGWAY_BAND_NORM,                // band_norm
+    DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT,     // freq_band_row_height
+    DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH,        // ui_progress_width
+    DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT,    // capture_stale_timeout
+    DEFAULT_LISTENINGWAY_BAND_LOG_SCALE,           // band_log_scale
+    DEFAULT_LISTENINGWAY_BAND_MIN_FREQ,            // band_min_freq
+    DEFAULT_LISTENINGWAY_BAND_MAX_FREQ,            // band_max_freq
+    DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH,        // band_log_strength
+    DEFAULT_LISTENINGWAY_BAND_MID_BOOST,           // band_mid_boost
+    DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST,          // band_high_boost
+    DEFAULT_LISTENINGWAY_BAND_MID_CENTER,          // band_mid_center
+    DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER,         // band_high_center
+    DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH,          // band_bell_width
+    DEFAULT_LISTENINGWAY_USE_EQUALIZER,            // use_equalizer
+    DEFAULT_LISTENINGWAY_EQUALIZER_BAND1,          // equalizer_band1
+    DEFAULT_LISTENINGWAY_EQUALIZER_BAND2,          // equalizer_band2
+    DEFAULT_LISTENINGWAY_EQUALIZER_BAND3,          // equalizer_band3
+    DEFAULT_LISTENINGWAY_EQUALIZER_BAND4,          // equalizer_band4
+    DEFAULT_LISTENINGWAY_EQUALIZER_BAND5,          // equalizer_band5
+    DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH,          // equalizer_width
+    DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM, // beat_detection_algorithm
+    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD,  // spectral_flux_threshold
+    DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD,   // tempo_change_threshold
+    DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW,    // beat_induction_window
+    DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT,      // octave_error_weight
+    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER,  // spectral_flux_decay_multiplier
+    DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED,   // audio_analysis_enabled
+    DEFAULT_LISTENINGWAY_DEBUG_ENABLED             // debug_enabled
+};
 
-std::atomic_bool g_audio_analysis_enabled = true;
-bool g_listeningway_debug_enabled = false;
+std::atomic_bool g_audio_analysis_enabled = DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED;
+bool g_listeningway_debug_enabled = DEFAULT_LISTENINGWAY_DEBUG_ENABLED;
 
 /**
  * @brief Retrieves the path to the settings .ini file.
@@ -54,6 +99,7 @@ void LoadSettings() {
     std::string ini = GetSettingsPath();
     g_audio_analysis_enabled = GetPrivateProfileIntA("General", "AudioAnalysisEnabled", 1, ini.c_str()) != 0;
     g_listeningway_debug_enabled = GetPrivateProfileIntA("General", "DebugEnabled", 0, ini.c_str()) != 0;
+    g_settings.debug_enabled = g_listeningway_debug_enabled; // Keep both in sync
 }
 
 /**
@@ -120,15 +166,46 @@ void SetDebugEnabled(bool enabled) {
     {
         std::lock_guard<std::mutex> lock(g_settings_mutex);
         g_listeningway_debug_enabled = enabled;
+        g_settings.debug_enabled = enabled; // Ensure both variables are in sync
     }
     SaveSettings();
 }
 
-#define RW_INI_FLOAT(section, key, var, def) var = (float)GetPrivateProfileIntA(section, key, (int)((def)*10000), ini.c_str()) / 10000.0f;
+#define RW_INI_FLOAT(section, key, var, def) var = ReadFloatFromIni(ini.c_str(), section, key, def);
 #define RW_INI_SIZE(section, key, var, def) var = (size_t)GetPrivateProfileIntA(section, key, (int)(def), ini.c_str());
 #define WR_INI_FLOAT(section, key, var) { char buf[32]; sprintf_s(buf, "%.6f", var); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
-#define WR_INI_SIZE(section, key, var) { char buf[32]; sprintf_s(buf, "%zu", var); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
+#define WR_INI_SIZE(section, key, var) { char buf[32]; sprintf_s(buf, "%u", static_cast<unsigned int>(var)); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
 #define RW_INI_BOOL(section, key, var, def) var = (GetPrivateProfileIntA(section, key, (def) ? 1 : 0, ini.c_str()) != 0);
+
+/**
+ * @brief Reads a floating-point value from an INI file.
+ * @param iniFile Path to the INI file.
+ * @param section Section name in the INI file.
+ * @param key Key name in the INI file.
+ * @param defaultValue Default value to use if the key is not found.
+ * @return The floating-point value read from the INI file or the default value.
+ */
+float ReadFloatFromIni(const char* iniFile, const char* section, const char* key, float defaultValue) {
+    char buffer[64] = {0};
+    char defaultBuffer[64] = {0};
+    
+    // Convert default value to string with high precision
+    sprintf_s(defaultBuffer, "%.6f", defaultValue);
+    
+    // Get the string value from INI file
+    GetPrivateProfileStringA(section, key, defaultBuffer, buffer, sizeof(buffer), iniFile);
+    
+    // Convert the string to float
+    float value = defaultValue;
+    try {
+        value = std::stof(buffer);
+    } catch (...) {
+        // If conversion fails, use the default value
+        value = defaultValue;
+    }
+    
+    return value;
+}
 
 /**
  * @brief Loads all tunable settings from the .ini file into the ListeningwaySettings structure.
@@ -167,6 +244,15 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "BandMidCenter", g_settings.band_mid_center, DEFAULT_LISTENINGWAY_BAND_MID_CENTER);
     RW_INI_FLOAT("Audio", "BandHighCenter", g_settings.band_high_center, DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER);
     RW_INI_FLOAT("Audio", "BandBellWidth", g_settings.band_bell_width, DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH);
+    
+    // 5-Band equalizer
+    RW_INI_BOOL("Audio", "UseEqualizer", g_settings.use_equalizer, DEFAULT_LISTENINGWAY_USE_EQUALIZER);
+    RW_INI_FLOAT("Audio", "EqualizerBand1", g_settings.equalizer_band1, DEFAULT_LISTENINGWAY_EQUALIZER_BAND1);
+    RW_INI_FLOAT("Audio", "EqualizerBand2", g_settings.equalizer_band2, DEFAULT_LISTENINGWAY_EQUALIZER_BAND2);
+    RW_INI_FLOAT("Audio", "EqualizerBand3", g_settings.equalizer_band3, DEFAULT_LISTENINGWAY_EQUALIZER_BAND3);
+    RW_INI_FLOAT("Audio", "EqualizerBand4", g_settings.equalizer_band4, DEFAULT_LISTENINGWAY_EQUALIZER_BAND4);
+    RW_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5, DEFAULT_LISTENINGWAY_EQUALIZER_BAND5);
+    RW_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width, DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH);
     
     // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
     RW_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm, DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM);
@@ -227,6 +313,15 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "BandHighCenter", g_settings.band_high_center);
     WR_INI_FLOAT("Audio", "BandBellWidth", g_settings.band_bell_width);
     
+    // 5-Band equalizer
+    WritePrivateProfileStringA("Audio", "UseEqualizer", g_settings.use_equalizer ? "1" : "0", ini.c_str());
+    WR_INI_FLOAT("Audio", "EqualizerBand1", g_settings.equalizer_band1);
+    WR_INI_FLOAT("Audio", "EqualizerBand2", g_settings.equalizer_band2);
+    WR_INI_FLOAT("Audio", "EqualizerBand3", g_settings.equalizer_band3);
+    WR_INI_FLOAT("Audio", "EqualizerBand4", g_settings.equalizer_band4);
+    WR_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5);
+    WR_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width);
+    
     // Beat detection algorithm selection
     WR_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm);
     
@@ -281,6 +376,15 @@ void ResetAllTunablesToDefaults() {
     g_settings.band_mid_center = DEFAULT_LISTENINGWAY_BAND_MID_CENTER;
     g_settings.band_high_center = DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER;
     g_settings.band_bell_width = DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH;
+    
+    // Reset 5-Band equalizer
+    g_settings.use_equalizer = DEFAULT_LISTENINGWAY_USE_EQUALIZER;
+    g_settings.equalizer_band1 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND1;
+    g_settings.equalizer_band2 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND2;
+    g_settings.equalizer_band3 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND3;
+    g_settings.equalizer_band4 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND4;
+    g_settings.equalizer_band5 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND5;
+    g_settings.equalizer_width = DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH;
     
     // Reset beat detection algorithm settings to defaults
     g_settings.beat_detection_algorithm = DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM;

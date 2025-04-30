@@ -44,17 +44,28 @@ struct ListeningwaySettings {
     float octave_error_weight = DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT;         // Weight for resolving octave errors (0.5-1.0)
     float spectral_flux_decay_multiplier = DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER; // Multiplier for beat decay rate (higher = faster decay)
     
-    std::atomic_bool audio_analysis_enabled = true;
-    bool debug_enabled = false;
+    std::atomic_bool audio_analysis_enabled = DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED;
+    bool debug_enabled = DEFAULT_LISTENINGWAY_DEBUG_ENABLED;
     bool band_log_scale = DEFAULT_LISTENINGWAY_BAND_LOG_SCALE;
     float band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
     float band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
     float band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
+    
+    // Legacy frequency boost settings
     float band_mid_boost = DEFAULT_LISTENINGWAY_BAND_MID_BOOST;
     float band_high_boost = DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST;
     float band_mid_center = DEFAULT_LISTENINGWAY_BAND_MID_CENTER;
     float band_high_center = DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER;
     float band_bell_width = DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH;
+    
+    // Frequency band modifiers with 5 bands
+    float equalizer_band1 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND1;
+    float equalizer_band2 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND2;
+    float equalizer_band3 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND3;
+    float equalizer_band4 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND4;
+    float equalizer_band5 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND5;
+    bool use_equalizer = DEFAULT_LISTENINGWAY_USE_EQUALIZER;
+    float equalizer_width = DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH;
 };
 
 extern ListeningwaySettings g_settings;
