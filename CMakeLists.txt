@@ -72,6 +72,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     kissfft::kissfft-float
 )
 
+# Fix LIBCMT conflict warning
+if(MSVC)
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/NODEFAULTLIB:LIBCMT")
+endif()
+
 # --- Output Configuration ---
 # Ensure the output DLL is named correctly (e.g., Listeningway.dll)
 # CMake usually handles this based on the project name, but you can force it:
