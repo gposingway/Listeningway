@@ -27,6 +27,9 @@ add_library(${PROJECT_NAME} SHARED
     logging.cpp
     uniform_manager.cpp
     settings.cpp
+    beat_detector.cpp
+    simple_energy_beat_detector.cpp
+    spectral_flux_auto_beat_detector.cpp
     listeningway.rc
 )
 

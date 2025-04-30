@@ -138,6 +138,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                         (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                     reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
                         (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
+                    
+                    // Initialize and start the audio analyzer with the configured algorithm
+                    g_audio_analyzer.SetBeatDetectionAlgorithm(g_settings.beat_detection_algorithm);
+                    g_audio_analyzer.Start();
+                    LOG_DEBUG("[Addon] Audio analyzer started with algorithm: " + 
+                             std::to_string(g_settings.beat_detection_algorithm));
+                    
+                    // Start the audio capture thread
                     StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
                     LOG_DEBUG("[Addon] Audio capture thread started.");
                     g_addon_enabled = true;
@@ -151,6 +159,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                         (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                     reshade::unregister_event<reshade::addon_event::reshade_reloaded_effects>(
                         (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
+                    
+                    // Stop the audio analyzer
+                    g_audio_analyzer.Stop();
+                    LOG_DEBUG("[Addon] Audio analyzer stopped.");
+                    
+                    // Stop the audio capture thread
                     StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
                     LOG_DEBUG("[Addon] Audio capture thread stopped.");
                     CloseLogFile();

@@ -215,7 +215,12 @@ void StartAudioCaptureThread(const AudioAnalysisConfig& config, std::atomic_bool
                     if (SUCCEEDED(hr)) {
                         if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
                             if (g_settings.audio_analysis_enabled) {
-                                AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), numFramesAvailable, res.pwfx->nChannels, config, data);
+                                // Use the global audio analyzer instead of the standalone function
+                                g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
+                                                                  numFramesAvailable, 
+                                                                  res.pwfx->nChannels, 
+                                                                  config, 
+                                                                  data);
                             } else {
                                 data.volume = 0.0f;
                                 std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
