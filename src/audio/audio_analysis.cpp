@@ -32,6 +32,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     // Resize frequency bands vector if needed
     if (out.freq_bands.size() != config.num_bands) {
         out.freq_bands.resize(config.num_bands, 0.0f);
+        out.raw_freq_bands.resize(config.num_bands, 0.0f);
     }
     
     // Prepare FFT data
@@ -228,14 +229,61 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
             band_value = energy_sum / band_bins[band].size();
         }
         
-        // Apply perceptual weighting based on band center frequency
-        float perceptual_weight = 1.0f;
-        if (use_log_scale) {
-            // Calculate band center frequency
-            float band_center = std::sqrt(band_edges[band] * band_edges[band + 1]);
+        // Store the raw (unmodified) band value for beat detection
+        out.raw_freq_bands[band] = std::min(1.0f, band_value * g_settings.band_norm);
+        
+        // Calculate equalizer multiplier for visualization
+        float equalizer_multiplier = 1.0f;
+        
+        // Calculate band center frequency - needed for both logarithmic and linear modes
+        float band_center = std::sqrt(band_edges[band] * band_edges[band + 1]);
+        
+        // Apply frequency modifiers regardless of scale type if enabled
+        if (g_settings.use_equalizer) {
+            // 5-band equalizer system
+            // Map band to normalized position from 0.0 to 1.0 across the frequency range
+            float normalized_pos = static_cast<float>(band) / (bands - 1);
             
-            // Apply bell curve boosting for mid and high frequencies
-            // This provides better visibility for normally dim frequency ranges
+            // Calculate contributions from each modifier based on position
+            // Apply bell curve (Gaussian) weighting to each modifier's influence
+            
+            // Bell curve centers for 5 bands (evenly distributed)
+            const float centers[5] = { 0.0f, 0.25f, 0.5f, 0.75f, 1.0f };
+            
+            // Width of the bell curve from user settings (smaller = sharper peaks, larger = more overlap)
+            const float bell_width = g_settings.equalizer_width;
+            
+            // Apply bell curves from all 5 modifiers with position-based weighting
+            float total_weight = 0.0f;
+            float weighted_modifier = 0.0f;
+            
+            // Calculate weighted contribution from each modifier
+            for (int i = 0; i < 5; i++) {
+                // Calculate Gaussian weight: e^(-(x^2)/(2*sigma^2))
+                float distance = normalized_pos - centers[i];
+                float bell_value = std::exp(-(distance * distance) / (2.0f * bell_width * bell_width));
+                
+                // Get the corresponding modifier value
+                float modifier_value = 1.0f; // Default
+                switch (i) {
+                    case 0: modifier_value = g_settings.equalizer_band1; break;
+                    case 1: modifier_value = g_settings.equalizer_band2; break;
+                    case 2: modifier_value = g_settings.equalizer_band3; break;
+                    case 3: modifier_value = g_settings.equalizer_band4; break;
+                    case 4: modifier_value = g_settings.equalizer_band5; break;
+                }
+                
+                weighted_modifier += bell_value * modifier_value;
+                total_weight += bell_value;
+            }
+            
+            // Normalize the weighted modifier if we have any weight
+            if (total_weight > 0.0f) {
+                equalizer_multiplier = weighted_modifier / total_weight;
+            }
+        }
+        else if (use_log_scale) {
+            // Legacy boost system with mid and high boosts (only applies in log scale mode)
             
             // Apply mid-frequency bell boost
             if (g_settings.band_mid_boost > 1.0f) {
@@ -246,11 +294,11 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
                 if (mid_distance_oct < g_settings.band_bell_width) {
                     // Bell curve formula: e^(-(x^2)/(2*sigma^2))
                     float bell_value = std::exp(-(mid_distance_oct * mid_distance_oct) / 
-                                              (2.0f * g_settings.band_bell_width * g_settings.band_bell_width * 0.25f));
+                                            (2.0f * g_settings.band_bell_width * g_settings.band_bell_width * 0.25f));
                     
                     // Scale bell value by boost amount - 1.0 and add to base multiplier of 1.0
                     float boost = 1.0f + bell_value * (g_settings.band_mid_boost - 1.0f);
-                    perceptual_weight *= boost;
+                    equalizer_multiplier *= boost;
                 }
             }
             
@@ -262,16 +310,17 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
                 // Apply bell curve with same approach as mid boost
                 if (high_distance_oct < g_settings.band_bell_width) {
                     float bell_value = std::exp(-(high_distance_oct * high_distance_oct) / 
-                                              (2.0f * g_settings.band_bell_width * g_settings.band_bell_width * 0.25f));
+                                            (2.0f * g_settings.band_bell_width * g_settings.band_bell_width * 0.25f));
                     
                     float boost = 1.0f + bell_value * (g_settings.band_high_boost - 1.0f);
-                    perceptual_weight *= boost;
+                    equalizer_multiplier *= boost;
                 }
             }
         }
         
-        // Apply normalization factor and perceptual weighting
-        out.freq_bands[band] = std::min(1.0f, band_value * g_settings.band_norm * perceptual_weight);
+        // Apply the equalizer multiplier to the raw band value for visualization
+        // When equalizer is set to 0, the band will be close to 0 (true multiplier)
+        out.freq_bands[band] = out.raw_freq_bands[band] * equalizer_multiplier;
     }
     
     // Free FFT configuration
@@ -391,6 +440,8 @@ void AudioAnalyzer::AnalyzeAudioBuffer(const float* data, size_t numFrames, size
         float dt = 1.0f / config.sample_rate * numFrames; // Time delta based on sample rate and frames
         
         // Process this frame with the beat detector
+        // Important: We use raw audio analysis data for beat detection rather than
+        // the visualized/equalized data to ensure consistent beat detection
         beat_detector_->Process(out._prev_magnitudes, out._flux_avg, out._flux_low_avg, dt);
         
         // Get beat information from the detector

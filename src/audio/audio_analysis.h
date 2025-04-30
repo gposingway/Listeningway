@@ -17,7 +17,8 @@
  */
 struct AudioAnalysisData {
     float volume = 0.0f;                // Normalized RMS volume [0,1]
-    std::vector<float> freq_bands;      // Normalized frequency band magnitudes
+    std::vector<float> freq_bands;      // Normalized frequency band magnitudes (with equalizer applied)
+    std::vector<float> raw_freq_bands;  // Raw frequency band values (without equalizer)
     float beat = 0.0f;                 // Beat detection value [0,1]
     
     // Advanced info from beat detection
@@ -31,7 +32,7 @@ struct AudioAnalysisData {
     float _flux_avg = 0.0f;             // Moving average of spectral flux
     float _flux_low_avg = 0.0f;         // Moving average of low-frequency spectral flux
 
-    AudioAnalysisData(size_t bands = 8) : freq_bands(bands, 0.0f) {}
+    AudioAnalysisData(size_t bands = 8) : freq_bands(bands, 0.0f), raw_freq_bands(bands, 0.0f) {}
 };
 
 /**
