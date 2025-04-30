@@ -18,18 +18,27 @@ message(STATUS "Using ReShade SDK from: ${RESHADE_SDK_PATH}")
 include_directories(${RESHADE_SDK_PATH})
 
 # --- Project Configuration ---
+# Add project include directories
+include_directories(
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/audio
+    ${CMAKE_SOURCE_DIR}/src/audio/beat_detection
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/utils
+)
+
 # Add source file(s) including the resource file
 add_library(${PROJECT_NAME} SHARED
-    listeningway_addon.cpp
-    audio_capture.cpp
-    audio_analysis.cpp
-    overlay.cpp
-    logging.cpp
-    uniform_manager.cpp
-    settings.cpp
-    beat_detector.cpp
-    simple_energy_beat_detector.cpp
-    spectral_flux_auto_beat_detector.cpp
+    src/core/listeningway_addon.cpp
+    src/audio/audio_capture.cpp src/audio/audio_capture.h
+    src/audio/audio_analysis.cpp src/audio/audio_analysis.h
+    src/core/overlay.cpp src/core/overlay.h
+    src/utils/logging.cpp src/utils/logging.h
+    src/core/uniform_manager.cpp src/core/uniform_manager.h
+    src/core/settings.cpp src/core/settings.h
+    src/audio/beat_detection/beat_detector.cpp src/audio/beat_detection/beat_detector.h
+    src/audio/beat_detection/simple_energy_beat_detector.cpp src/audio/beat_detection/simple_energy_beat_detector.h
+    src/audio/beat_detection/spectral_flux_auto_beat_detector.cpp src/audio/beat_detection/spectral_flux_auto_beat_detector.h
     listeningway.rc
 )
 
