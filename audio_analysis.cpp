@@ -234,16 +234,39 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
             // Calculate band center frequency
             float band_center = std::sqrt(band_edges[band] * band_edges[band + 1]);
             
-            // Apply simplified perceptual correction
-            // Boost both low and high frequencies to compensate for human hearing sensitivity
-            if (band_center < 500.0f) {
-                // Low frequency boost (below 500 Hz)
-                float boost_factor = 1.0f + 1.5f * (1.0f - band_center / 500.0f);
-                perceptual_weight *= boost_factor;
-            } else if (band_center > 4000.0f) {
-                // High frequency boost (above 4 kHz)
-                float boost_factor = 1.0f + 0.75f * ((band_center - 4000.0f) / 16000.0f);
-                perceptual_weight *= boost_factor;
+            // Apply bell curve boosting for mid and high frequencies
+            // This provides better visibility for normally dim frequency ranges
+            
+            // Apply mid-frequency bell boost
+            if (g_settings.band_mid_boost > 1.0f) {
+                // Calculate distance from mid center frequency in octaves
+                float mid_distance_oct = std::abs(std::log2(band_center / g_settings.band_mid_center));
+                
+                // Apply bell curve - Gaussian shape with adjustable width
+                if (mid_distance_oct < g_settings.band_bell_width) {
+                    // Bell curve formula: e^(-(x^2)/(2*sigma^2))
+                    float bell_value = std::exp(-(mid_distance_oct * mid_distance_oct) / 
+                                              (2.0f * g_settings.band_bell_width * g_settings.band_bell_width * 0.25f));
+                    
+                    // Scale bell value by boost amount - 1.0 and add to base multiplier of 1.0
+                    float boost = 1.0f + bell_value * (g_settings.band_mid_boost - 1.0f);
+                    perceptual_weight *= boost;
+                }
+            }
+            
+            // Apply high-frequency bell boost
+            if (g_settings.band_high_boost > 1.0f) {
+                // Calculate distance from high center frequency in octaves
+                float high_distance_oct = std::abs(std::log2(band_center / g_settings.band_high_center));
+                
+                // Apply bell curve with same approach as mid boost
+                if (high_distance_oct < g_settings.band_bell_width) {
+                    float bell_value = std::exp(-(high_distance_oct * high_distance_oct) / 
+                                              (2.0f * g_settings.band_bell_width * g_settings.band_bell_width * 0.25f));
+                    
+                    float boost = 1.0f + bell_value * (g_settings.band_high_boost - 1.0f);
+                    perceptual_weight *= boost;
+                }
             }
         }
         

@@ -144,7 +144,7 @@ static void DrawTimePhaseInfo() {
 }
 
 // Helper: Draw Beat Detection Algorithm settings
-static void DrawBeatDetectionAlgorithm() {
+static void DrawBeatDetectionAlgorithm(const AudioAnalysisData& data) {
     ImGui::Text("Beat Detection Algorithm:");
     
     // Create a combo box for algorithm selection
@@ -153,6 +153,8 @@ static void DrawBeatDetectionAlgorithm() {
     if (ImGui::Combo("Algorithm", &g_settings.beat_detection_algorithm, algorithms, IM_ARRAYSIZE(algorithms))) {
         LOG_DEBUG(std::string("[Overlay] Beat Detection Algorithm changed to ") + 
                  (g_settings.beat_detection_algorithm == 0 ? "Simple Energy" : "Spectral Flux + Autocorrelation"));
+        // Update the audio analyzer with the new algorithm
+        g_audio_analyzer.SetBeatDetectionAlgorithm(g_settings.beat_detection_algorithm);
     }
     
     // Provide explanation of the selected algorithm
@@ -184,11 +186,11 @@ static void DrawBeatDetectionAlgorithm() {
             
             // Display current tempo if we have a valid one
             if (ImGui::TreeNode("Current Analysis State")) {
-                AudioAnalysisData* data = (AudioAnalysisData*)ImGui::GetIO().UserData; // Cast from void* to our type
-                if (data && data->_autocorr_initialized) {
+                // Access the data directly from the parameter
+                if (data.tempo_detected) {
                     ImGui::Text("Current Tempo: %.1f BPM (Confidence: %.2f)",
-                               data->_current_tempo_bpm, data->_tempo_confidence);
-                    ImGui::Text("Beat Phase: %.2f", data->_beat_phase);
+                                data.tempo_bpm, data.tempo_confidence);
+                    ImGui::Text("Beat Phase: %.2f", data.beat_phase);
                 } else {
                     ImGui::Text("No tempo detected yet");
                 }
@@ -250,7 +252,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         ImGui::Separator();
         
         // Beat Detection Algorithm Selection and Configuration
-        DrawBeatDetectionAlgorithm();
+        DrawBeatDetectionAlgorithm(data);
         ImGui::Separator();
         
         // Beat Decay Settings
@@ -265,6 +267,26 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
             ImGui::SliderFloat("Log Strength (Bass Detail)", &g_settings.band_log_strength, 0.2f, 3.0f, "%.2f");
             ImGui::SliderFloat("Min Freq (Hz)", &g_settings.band_min_freq, 10.0f, 500.0f, "%.0f");
             ImGui::SliderFloat("Max Freq (Hz)", &g_settings.band_max_freq, 2000.0f, 22050.0f, "%.0f");
+            
+            // Add Bell Curve Multiplier controls
+            if (ImGui::CollapsingHeader("Frequency Boost Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::TextDisabled("(Boost specific frequency ranges with bell curve multipliers)");
+                
+                // Mid-frequency boost controls
+                ImGui::Text("Mid-Range Boost:");
+                ImGui::SliderFloat("Mid Boost Amount", &g_settings.band_mid_boost, 1.0f, 3.0f, "%.2f");
+                ImGui::SliderFloat("Mid Center Freq (Hz)", &g_settings.band_mid_center, 500.0f, 2000.0f, "%.0f");
+                
+                // High-frequency boost controls
+                ImGui::Text("High-Range Boost:");
+                ImGui::SliderFloat("High Boost Amount", &g_settings.band_high_boost, 1.0f, 3.0f, "%.2f");
+                ImGui::SliderFloat("High Center Freq (Hz)", &g_settings.band_high_center, 3000.0f, 12000.0f, "%.0f");
+                
+                // Bell width (affects both mid and high)
+                ImGui::Text("Bell Shape:");
+                ImGui::SliderFloat("Bell Width (octaves)", &g_settings.band_bell_width, 0.5f, 3.0f, "%.2f");
+                ImGui::TextDisabled("(Wider value = broader frequency boost, narrower = more focused)");
+            }
         }
         ImGui::Separator();
         

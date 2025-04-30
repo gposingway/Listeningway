@@ -50,6 +50,11 @@ struct ListeningwaySettings {
     float band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
     float band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
     float band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
+    float band_mid_boost = DEFAULT_LISTENINGWAY_BAND_MID_BOOST;
+    float band_high_boost = DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST;
+    float band_mid_center = DEFAULT_LISTENINGWAY_BAND_MID_CENTER;
+    float band_high_center = DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER;
+    float band_bell_width = DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH;
 };
 
 extern ListeningwaySettings g_settings;

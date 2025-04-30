@@ -4,6 +4,8 @@
 // ---------------------------------------------
 #include "constants.h"
 #include "settings.h"
+#include "audio_analysis.h"
+#include "logging.h"
 #include <windows.h>
 #include <mutex>
 #include <string>
@@ -82,6 +84,22 @@ void SetAudioAnalysisEnabled(bool enabled) {
         std::lock_guard<std::mutex> lock(g_settings_mutex);
         g_audio_analysis_enabled = enabled;
     }
+    
+    // Start or stop the audio analyzer when toggling audio analysis
+    if (enabled) {
+        // Start the audio analyzer with the current algorithm
+        extern AudioAnalyzer g_audio_analyzer;
+        g_audio_analyzer.SetBeatDetectionAlgorithm(g_settings.beat_detection_algorithm);
+        g_audio_analyzer.Start();
+        LOG_DEBUG("[Settings] Audio analyzer started with algorithm: " + 
+                 std::to_string(g_settings.beat_detection_algorithm));
+    } else {
+        // Stop the audio analyzer
+        extern AudioAnalyzer g_audio_analyzer;
+        g_audio_analyzer.Stop();
+        LOG_DEBUG("[Settings] Audio analyzer stopped");
+    }
+    
     SaveSettings();
 }
 
@@ -144,9 +162,14 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "BandMinFreq", g_settings.band_min_freq, DEFAULT_LISTENINGWAY_BAND_MIN_FREQ);
     RW_INI_FLOAT("Audio", "BandMaxFreq", g_settings.band_max_freq, DEFAULT_LISTENINGWAY_BAND_MAX_FREQ);
     RW_INI_FLOAT("Audio", "BandLogStrength", g_settings.band_log_strength, DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH);
+    RW_INI_FLOAT("Audio", "BandMidBoost", g_settings.band_mid_boost, DEFAULT_LISTENINGWAY_BAND_MID_BOOST);
+    RW_INI_FLOAT("Audio", "BandHighBoost", g_settings.band_high_boost, DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST);
+    RW_INI_FLOAT("Audio", "BandMidCenter", g_settings.band_mid_center, DEFAULT_LISTENINGWAY_BAND_MID_CENTER);
+    RW_INI_FLOAT("Audio", "BandHighCenter", g_settings.band_high_center, DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER);
+    RW_INI_FLOAT("Audio", "BandBellWidth", g_settings.band_bell_width, DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH);
     
     // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
-    RW_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm, 0);
+    RW_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm, DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM);
     
     // Advanced spectral flux autocorrelation settings
     RW_INI_FLOAT("Audio", "SpectralFluxThreshold", g_settings.spectral_flux_threshold, DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD);
@@ -158,10 +181,18 @@ void LoadAllTunables() {
 
 /**
  * @brief Saves all tunable settings from the ListeningwaySettings structure to the .ini file.
+ * Also updates the beat detector if needed.
  */
 void SaveAllTunables() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     std::string ini = GetSettingsPath();
+    
+    // Update beat detector with current settings if audio analysis is enabled
+    if (g_audio_analysis_enabled) {
+        extern AudioAnalyzer g_audio_analyzer;
+        g_audio_analyzer.SetBeatDetectionAlgorithm(g_settings.beat_detection_algorithm);
+    }
+    
     WR_INI_SIZE("Audio", "NumBands", g_settings.num_bands);
     WR_INI_SIZE("Audio", "FFTSize", g_settings.fft_size);
     WR_INI_FLOAT("Audio", "FluxAlpha", g_settings.flux_alpha);
@@ -185,6 +216,17 @@ void SaveAllTunables() {
     WR_INI_FLOAT("UI", "ProgressWidth", g_settings.ui_progress_width);
     WR_INI_FLOAT("UI", "CaptureStaleTimeout", g_settings.capture_stale_timeout);
     
+    // Frequency band settings
+    WritePrivateProfileStringA("Audio", "BandLogScale", g_settings.band_log_scale ? "1" : "0", ini.c_str());
+    WR_INI_FLOAT("Audio", "BandMinFreq", g_settings.band_min_freq);
+    WR_INI_FLOAT("Audio", "BandMaxFreq", g_settings.band_max_freq);
+    WR_INI_FLOAT("Audio", "BandLogStrength", g_settings.band_log_strength);
+    WR_INI_FLOAT("Audio", "BandMidBoost", g_settings.band_mid_boost);
+    WR_INI_FLOAT("Audio", "BandHighBoost", g_settings.band_high_boost);
+    WR_INI_FLOAT("Audio", "BandMidCenter", g_settings.band_mid_center);
+    WR_INI_FLOAT("Audio", "BandHighCenter", g_settings.band_high_center);
+    WR_INI_FLOAT("Audio", "BandBellWidth", g_settings.band_bell_width);
+    
     // Beat detection algorithm selection
     WR_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm);
     
@@ -198,6 +240,7 @@ void SaveAllTunables() {
 
 /**
  * @brief Resets all tunable settings to their default values from constants.h.
+ * Also updates the beat detector to use the default algorithm.
  */
 void ResetAllTunablesToDefaults() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
@@ -233,6 +276,11 @@ void ResetAllTunablesToDefaults() {
     g_settings.band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
     g_settings.band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
     g_settings.band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
+    g_settings.band_mid_boost = DEFAULT_LISTENINGWAY_BAND_MID_BOOST;
+    g_settings.band_high_boost = DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST;
+    g_settings.band_mid_center = DEFAULT_LISTENINGWAY_BAND_MID_CENTER;
+    g_settings.band_high_center = DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER;
+    g_settings.band_bell_width = DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH;
     
     // Reset beat detection algorithm settings to defaults
     g_settings.beat_detection_algorithm = DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM;
@@ -241,4 +289,10 @@ void ResetAllTunablesToDefaults() {
     g_settings.beat_induction_window = DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW;
     g_settings.octave_error_weight = DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT;
     g_settings.spectral_flux_decay_multiplier = DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER;
+    
+    // Update beat detector with default algorithm if audio analysis is enabled
+    if (g_audio_analysis_enabled) {
+        extern AudioAnalyzer g_audio_analyzer;
+        g_audio_analyzer.SetBeatDetectionAlgorithm(DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM);
+    }
 }
