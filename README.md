@@ -297,11 +297,31 @@ By default, Listeningway uses a logarithmic (log-scale) mapping for frequency ba
 ```ini
 [Audio]
 BandLogScale=1      ; 1 = Logarithmic mapping (default), 0 = Linear mapping
-BandMinFreq=50      ; Minimum frequency for band mapping (Hz, default: 50)
-BandMaxFreq=16000   ; Maximum frequency for band mapping (Hz, default: 16000)
+BandMinFreq=80      ; Minimum frequency for band mapping (Hz, default: 80)
+BandMaxFreq=13000   ; Maximum frequency for band mapping (Hz, default: 13000)
+BandLogStrength=0.5 ; Log scale strength (default: 0.5, higher values = more bass detail)
 ```
 - **BandLogScale**: Set to 1 for log-scale (recommended for most music/audio), or 0 for legacy linear mapping.
 - **BandMinFreq/BandMaxFreq**: Adjust the frequency range covered by the bands. Lower min or higher max can make bands more/less sensitive to certain audio content.
+- **BandLogStrength**: Controls how logarithmic the scaling is. Higher values give more detail to bass frequencies.
+
+**Frequency Band Boosting:**
+
+Listeningway now features bell curve multipliers to enhance the visibility of mid and high frequencies, which are often too dim in audio visualizations. Configure these in the overlay UI or in `Listeningway.ini`:
+
+```ini
+[Audio]
+BandMidBoost=1.64    ; Mid-frequency boost multiplier (default: 1.64)
+BandHighBoost=2.33   ; High-frequency boost multiplier (default: 2.33)
+BandMidCenter=1523   ; Center frequency for mid-range boost in Hz (default: 1523)
+BandHighCenter=9141  ; Center frequency for high-range boost in Hz (default: 9141)
+BandBellWidth=1.94   ; Width of the bell curve in octaves (default: 1.94)
+```
+
+These settings use Gaussian bell curves to boost specific frequency ranges:
+- **BandMidBoost/BandHighBoost**: Multiplier for the mid and high frequency ranges (1.0 = no boost).
+- **BandMidCenter/BandHighCenter**: Center frequencies (in Hz) for the mid and high boosts.
+- **BandBellWidth**: Controls how wide the boost is (in octaves). Larger values create a broader, more gentle boost.
 
 This makes the visualization more balanced and interesting, especially for music and dynamic audio sources.
 

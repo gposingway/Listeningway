@@ -42,6 +42,8 @@ Thank you for your interest in contributing to Listeningway! This project is a m
 
 ## Key Extension Points
 - Audio analysis: `AnalyzeAudioBuffer()` in `audio_analysis.cpp` (uses `AudioAnalysisConfig`)
+- Beat detection: Two implementations in `simple_energy_beat_detector.cpp` and `spectral_flux_auto_beat_detector.cpp`
+- Frequency enhancement: Bell curve multipliers for mid and high frequencies in `audio_analysis.cpp`
 - Uniform export: `UniformManager` in `uniform_manager.*`
 - Overlay: `DrawListeningwayDebugOverlay()` in `overlay.cpp`
 - Settings: All tunables are grouped in `ListeningwaySettings` and loaded/saved atomically
