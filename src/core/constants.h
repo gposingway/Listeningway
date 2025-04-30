@@ -37,28 +37,16 @@ constexpr float DEFAULT_LISTENINGWAY_BAND_MIN_FREQ = 34.0f; // Default min frequ
 constexpr float DEFAULT_LISTENINGWAY_BAND_MAX_FREQ = 13000.0f; // Default max frequency for log bands (Hz)
 constexpr bool  DEFAULT_LISTENINGWAY_BAND_LOG_SCALE = true; // Use logarithmic band mapping by default
 constexpr float DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH = 0.47f; // Default log scale strength (1.0 = standard log, >1.0 = more bass detail)
-constexpr float DEFAULT_LISTENINGWAY_BAND_MID_BOOST = 1.64f; // Default mid-frequency boost multiplier
-constexpr float DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST = 2.33f; // Default high-frequency boost multiplier
-constexpr float DEFAULT_LISTENINGWAY_BAND_MID_CENTER = 1523.0f; // Center frequency for mid-range boost (Hz)
-constexpr float DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER = 9141.0f; // Center frequency for high-range boost (Hz)
-constexpr float DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH = 1.94f; // Width of the bell curve (octaves)
 
-// New frequency band modifiers (5 band equalizer)
+// 5-band equalizer
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_BAND1 = 1.00f;  // Low frequencies boost
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_BAND2 = 1.44f;  // Low-mid frequencies boost
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_BAND3 = 2.00f;  // Mid frequencies boost
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_BAND4 = 1.80f;  // Mid-high frequencies boost
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_BAND5 = 1.63f;  // High frequencies boost
-constexpr bool DEFAULT_LISTENINGWAY_USE_EQUALIZER = true; // Use the 5-band eq by default
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH = 0.15f; // Width of the bell curve for all equalizer bands
 
-// UI/Overlay
-constexpr float DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT = 24.0f; // Default height per frequency band row in overlay
-
 // UI/Overlay tunables
-constexpr float DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH = 0.9f; // Default progress bar width multiplier
-
-// General constants
 constexpr float DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT = 1.5f;
 
 // Global feature flags

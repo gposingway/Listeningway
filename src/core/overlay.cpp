@@ -270,6 +270,60 @@ static void DrawBeatDecaySettings() {
     }
 }
 
+// Frequency Boost Settings section
+static void DrawFrequencyBoostSettings() {
+    if (ImGui::CollapsingHeader("Frequency Boost Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        // 5-band equalizer settings
+        ImGui::PushID("Equalizer");
+        
+        // Use the same compact style as Frequency Band Mapping with text on the right
+        ImGui::SliderFloat("##band1", &g_settings.equalizer_band1, 0.0f, 4.0f, "%.2f");
+        ImGui::SameLine();
+        ImGui::Text("Low (Bass)");
+        if (ImGui::IsItemHovered(-1)) {
+            ImGui::SetTooltip("Boost for lowest frequency bands (bass)");
+        }
+        
+        ImGui::SliderFloat("##band2", &g_settings.equalizer_band2, 0.0f, 4.0f, "%.2f");
+        ImGui::SameLine();
+        ImGui::Text("Low-Mid");
+        if (ImGui::IsItemHovered(-1)) {
+            ImGui::SetTooltip("Boost for low-mid frequency bands");
+        }
+        
+        ImGui::SliderFloat("##band3", &g_settings.equalizer_band3, 0.0f, 4.0f, "%.2f");
+        ImGui::SameLine();
+        ImGui::Text("Mid");
+        if (ImGui::IsItemHovered(-1)) {
+            ImGui::SetTooltip("Boost for mid frequency bands");
+        }
+        
+        ImGui::SliderFloat("##band4", &g_settings.equalizer_band4, 0.0f, 4.0f, "%.2f");
+        ImGui::SameLine();
+        ImGui::Text("Mid-High");
+        if (ImGui::IsItemHovered(-1)) {
+            ImGui::SetTooltip("Boost for mid-high frequency bands");
+        }
+        
+        ImGui::SliderFloat("##band5", &g_settings.equalizer_band5, 0.0f, 4.0f, "%.2f");
+        ImGui::SameLine();
+        ImGui::Text("High (Treble)");
+        if (ImGui::IsItemHovered(-1)) {
+            ImGui::SetTooltip("Boost for highest frequency bands (treble)");
+        }
+        
+        ImGui::PopID();
+        
+        // Add the equalizer width slider
+        ImGui::SliderFloat("##EqualizerWidth", &g_settings.equalizer_width, 0.05f, 0.5f, "%.2f");
+        ImGui::SameLine();
+        ImGui::Text("Equalizer Width");
+        if (ImGui::IsItemHovered(-1)) {
+            ImGui::SetTooltip("Controls band influence on neighboring frequencies\nLower = narrow bands with less overlap\nHigher = wider bands with more influence");
+        }
+    }
+}
+
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
@@ -331,96 +385,8 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
             ImGui::SetTooltip("Maximum frequency for frequency bands");
         }
         
-        // Always show frequency boost settings, regardless of log scale
-        if (ImGui::CollapsingHeader("Frequency Boost Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-            // Toggle between old and new frequency modifier systems
-            ImGui::Checkbox("Use 5-Band Equalizer", &g_settings.use_equalizer);
-            if (ImGui::IsItemHovered(-1)) {
-                ImGui::SetTooltip("Toggle between modern 5-band equalizer and legacy boost system");
-            }
-            
-            if (g_settings.use_equalizer) {
-                // Apply standard spacing for the sliders
-                ImGui::PushID("Equalizer");
-                
-                // Use the same compact style as Frequency Band Mapping with text on the right
-                ImGui::SliderFloat("##band1", &g_settings.equalizer_band1, 0.0f, 4.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("Low (Bass)");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Boost for lowest frequency bands (bass)");
-                }
-                
-                ImGui::SliderFloat("##band2", &g_settings.equalizer_band2, 0.0f, 4.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("Low-Mid");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Boost for low-mid frequency bands");
-                }
-                
-                ImGui::SliderFloat("##band3", &g_settings.equalizer_band3, 0.0f, 4.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("Mid");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Boost for mid frequency bands");
-                }
-                
-                ImGui::SliderFloat("##band4", &g_settings.equalizer_band4, 0.0f, 4.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("Mid-High");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Boost for mid-high frequency bands");
-                }
-                
-                ImGui::SliderFloat("##band5", &g_settings.equalizer_band5, 0.0f, 4.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("High (Treble)");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Boost for highest frequency bands (treble)");
-                }
-                
-                ImGui::PopID();
-                
-                // Add the equalizer width slider
-                ImGui::SliderFloat("##EqualizerWidth", &g_settings.equalizer_width, 0.05f, 0.5f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("Equalizer Width");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Controls band influence on neighboring frequencies\nLower = narrow bands with less overlap\nHigher = wider bands with more influence");
-                }
-            }
-            else {
-                // Legacy mid/high boost controls
-                ImGui::Text("Mid-Range Boost:");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Boost specific frequency ranges with bell curve multipliers");
-                }
-                
-                ImGui::SliderFloat("##MidBoostAmount", &g_settings.band_mid_boost, 1.0f, 3.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("Mid Boost Amount");
-                
-                ImGui::SliderFloat("##MidCenterFreq", &g_settings.band_mid_center, 500.0f, 2000.0f, "%.0f");
-                ImGui::SameLine();
-                ImGui::Text("Mid Center Freq (Hz)");
-                
-                ImGui::Text("High-Range Boost:");
-                ImGui::SliderFloat("##HighBoostAmount", &g_settings.band_high_boost, 1.0f, 3.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("High Boost Amount");
-                
-                ImGui::SliderFloat("##HighCenterFreq", &g_settings.band_high_center, 3000.0f, 12000.0f, "%.0f");
-                ImGui::SameLine();
-                ImGui::Text("High Center Freq (Hz)");
-                
-                ImGui::SliderFloat("##BellWidth", &g_settings.band_bell_width, 0.5f, 3.0f, "%.2f");
-                ImGui::SameLine();
-                ImGui::Text("Bell Width (octaves)");
-                if (ImGui::IsItemHovered(-1)) {
-                    ImGui::SetTooltip("Wider value = broader frequency boost, narrower = more focused");
-                }
-            }
-        }
+        // 5-band equalizer settings
+        DrawFrequencyBoostSettings();
         ImGui::Separator();
         
         // Band-limited Beat Detection Settings

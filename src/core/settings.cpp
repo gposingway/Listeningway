@@ -18,10 +18,13 @@ ListeningwaySettings g_settings = {
     DEFAULT_LISTENINGWAY_FFT_SIZE,                 // fft_size
     DEFAULT_LISTENINGWAY_FLUX_ALPHA,               // flux_alpha
     DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER, // flux_threshold_multiplier
+    
+    // Band-limited beat detection settings
     DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ,            // beat_min_freq
     DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ,            // beat_max_freq
     DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA,           // flux_low_alpha
     DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER, // flux_low_threshold_multiplier
+    
     DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN,            // beat_flux_min
     DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT,     // beat_falloff_default
     DEFAULT_LISTENINGWAY_BEAT_TIME_SCALE,          // beat_time_scale
@@ -30,33 +33,32 @@ ListeningwaySettings g_settings = {
     DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR,        // beat_time_divisor
     DEFAULT_LISTENINGWAY_VOLUME_NORM,              // volume_norm
     DEFAULT_LISTENINGWAY_BAND_NORM,                // band_norm
-    DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT,     // freq_band_row_height
-    DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH,        // ui_progress_width
     DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT,    // capture_stale_timeout
+    
+    // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
+    DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM, // beat_detection_algorithm
+    
+    // Advanced spectral flux autocorrelation settings
+    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD,  // spectral_flux_threshold
+    DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD,   // tempo_change_threshold
+    DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW,    // beat_induction_window
+    DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT,      // octave_error_weight
+    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER,  // spectral_flux_decay_multiplier
+    
+    DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED,   // audio_analysis_enabled
+    DEFAULT_LISTENINGWAY_DEBUG_ENABLED,            // debug_enabled
     DEFAULT_LISTENINGWAY_BAND_LOG_SCALE,           // band_log_scale
     DEFAULT_LISTENINGWAY_BAND_MIN_FREQ,            // band_min_freq
     DEFAULT_LISTENINGWAY_BAND_MAX_FREQ,            // band_max_freq
     DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH,        // band_log_strength
-    DEFAULT_LISTENINGWAY_BAND_MID_BOOST,           // band_mid_boost
-    DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST,          // band_high_boost
-    DEFAULT_LISTENINGWAY_BAND_MID_CENTER,          // band_mid_center
-    DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER,         // band_high_center
-    DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH,          // band_bell_width
-    DEFAULT_LISTENINGWAY_USE_EQUALIZER,            // use_equalizer
+    
+    // 5-Band equalizer settings
     DEFAULT_LISTENINGWAY_EQUALIZER_BAND1,          // equalizer_band1
     DEFAULT_LISTENINGWAY_EQUALIZER_BAND2,          // equalizer_band2
     DEFAULT_LISTENINGWAY_EQUALIZER_BAND3,          // equalizer_band3
     DEFAULT_LISTENINGWAY_EQUALIZER_BAND4,          // equalizer_band4
     DEFAULT_LISTENINGWAY_EQUALIZER_BAND5,          // equalizer_band5
     DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH,          // equalizer_width
-    DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM, // beat_detection_algorithm
-    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD,  // spectral_flux_threshold
-    DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD,   // tempo_change_threshold
-    DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW,    // beat_induction_window
-    DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT,      // octave_error_weight
-    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER,  // spectral_flux_decay_multiplier
-    DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED,   // audio_analysis_enabled
-    DEFAULT_LISTENINGWAY_DEBUG_ENABLED             // debug_enabled
 };
 
 std::atomic_bool g_audio_analysis_enabled = DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED;
@@ -232,21 +234,13 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "BeatTimeDivisor", g_settings.beat_time_divisor, DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR);
     RW_INI_FLOAT("Audio", "VolumeNorm", g_settings.volume_norm, DEFAULT_LISTENINGWAY_VOLUME_NORM);
     RW_INI_FLOAT("Audio", "BandNorm", g_settings.band_norm, DEFAULT_LISTENINGWAY_BAND_NORM);
-    RW_INI_FLOAT("UI", "FreqBandRowHeight", g_settings.freq_band_row_height, DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT);
-    RW_INI_FLOAT("UI", "ProgressWidth", g_settings.ui_progress_width, DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH);
     RW_INI_FLOAT("UI", "CaptureStaleTimeout", g_settings.capture_stale_timeout, DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT);
     RW_INI_BOOL("Audio", "BandLogScale", g_settings.band_log_scale, DEFAULT_LISTENINGWAY_BAND_LOG_SCALE);
     RW_INI_FLOAT("Audio", "BandMinFreq", g_settings.band_min_freq, DEFAULT_LISTENINGWAY_BAND_MIN_FREQ);
     RW_INI_FLOAT("Audio", "BandMaxFreq", g_settings.band_max_freq, DEFAULT_LISTENINGWAY_BAND_MAX_FREQ);
     RW_INI_FLOAT("Audio", "BandLogStrength", g_settings.band_log_strength, DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH);
-    RW_INI_FLOAT("Audio", "BandMidBoost", g_settings.band_mid_boost, DEFAULT_LISTENINGWAY_BAND_MID_BOOST);
-    RW_INI_FLOAT("Audio", "BandHighBoost", g_settings.band_high_boost, DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST);
-    RW_INI_FLOAT("Audio", "BandMidCenter", g_settings.band_mid_center, DEFAULT_LISTENINGWAY_BAND_MID_CENTER);
-    RW_INI_FLOAT("Audio", "BandHighCenter", g_settings.band_high_center, DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER);
-    RW_INI_FLOAT("Audio", "BandBellWidth", g_settings.band_bell_width, DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH);
     
     // 5-Band equalizer
-    RW_INI_BOOL("Audio", "UseEqualizer", g_settings.use_equalizer, DEFAULT_LISTENINGWAY_USE_EQUALIZER);
     RW_INI_FLOAT("Audio", "EqualizerBand1", g_settings.equalizer_band1, DEFAULT_LISTENINGWAY_EQUALIZER_BAND1);
     RW_INI_FLOAT("Audio", "EqualizerBand2", g_settings.equalizer_band2, DEFAULT_LISTENINGWAY_EQUALIZER_BAND2);
     RW_INI_FLOAT("Audio", "EqualizerBand3", g_settings.equalizer_band3, DEFAULT_LISTENINGWAY_EQUALIZER_BAND3);
@@ -298,8 +292,6 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "BeatTimeDivisor", g_settings.beat_time_divisor);
     WR_INI_FLOAT("Audio", "VolumeNorm", g_settings.volume_norm);
     WR_INI_FLOAT("Audio", "BandNorm", g_settings.band_norm);
-    WR_INI_FLOAT("UI", "FreqBandRowHeight", g_settings.freq_band_row_height);
-    WR_INI_FLOAT("UI", "ProgressWidth", g_settings.ui_progress_width);
     WR_INI_FLOAT("UI", "CaptureStaleTimeout", g_settings.capture_stale_timeout);
     
     // Frequency band settings
@@ -307,14 +299,8 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "BandMinFreq", g_settings.band_min_freq);
     WR_INI_FLOAT("Audio", "BandMaxFreq", g_settings.band_max_freq);
     WR_INI_FLOAT("Audio", "BandLogStrength", g_settings.band_log_strength);
-    WR_INI_FLOAT("Audio", "BandMidBoost", g_settings.band_mid_boost);
-    WR_INI_FLOAT("Audio", "BandHighBoost", g_settings.band_high_boost);
-    WR_INI_FLOAT("Audio", "BandMidCenter", g_settings.band_mid_center);
-    WR_INI_FLOAT("Audio", "BandHighCenter", g_settings.band_high_center);
-    WR_INI_FLOAT("Audio", "BandBellWidth", g_settings.band_bell_width);
     
     // 5-Band equalizer
-    WritePrivateProfileStringA("Audio", "UseEqualizer", g_settings.use_equalizer ? "1" : "0", ini.c_str());
     WR_INI_FLOAT("Audio", "EqualizerBand1", g_settings.equalizer_band1);
     WR_INI_FLOAT("Audio", "EqualizerBand2", g_settings.equalizer_band2);
     WR_INI_FLOAT("Audio", "EqualizerBand3", g_settings.equalizer_band3);
@@ -360,8 +346,6 @@ void ResetAllTunablesToDefaults() {
     g_settings.beat_time_divisor = DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR;
     g_settings.volume_norm = DEFAULT_LISTENINGWAY_VOLUME_NORM;
     g_settings.band_norm = DEFAULT_LISTENINGWAY_BAND_NORM;
-    g_settings.freq_band_row_height = DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT;
-    g_settings.ui_progress_width = DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH;
     g_settings.capture_stale_timeout = DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT;
     
     // Keep audio_analysis_enabled and debug_enabled at their current values
@@ -371,14 +355,8 @@ void ResetAllTunablesToDefaults() {
     g_settings.band_min_freq = DEFAULT_LISTENINGWAY_BAND_MIN_FREQ;
     g_settings.band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
     g_settings.band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
-    g_settings.band_mid_boost = DEFAULT_LISTENINGWAY_BAND_MID_BOOST;
-    g_settings.band_high_boost = DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST;
-    g_settings.band_mid_center = DEFAULT_LISTENINGWAY_BAND_MID_CENTER;
-    g_settings.band_high_center = DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER;
-    g_settings.band_bell_width = DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH;
     
     // Reset 5-Band equalizer
-    g_settings.use_equalizer = DEFAULT_LISTENINGWAY_USE_EQUALIZER;
     g_settings.equalizer_band1 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND1;
     g_settings.equalizer_band2 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND2;
     g_settings.equalizer_band3 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND3;

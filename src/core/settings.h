@@ -30,8 +30,6 @@ struct ListeningwaySettings {
     float beat_time_divisor = DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR;
     float volume_norm = DEFAULT_LISTENINGWAY_VOLUME_NORM;
     float band_norm = DEFAULT_LISTENINGWAY_BAND_NORM;
-    float freq_band_row_height = DEFAULT_LISTENINGWAY_FREQ_BAND_ROW_HEIGHT;
-    float ui_progress_width = DEFAULT_LISTENINGWAY_UI_PROGRESS_WIDTH;
     float capture_stale_timeout = DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT;
     
     // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
@@ -51,20 +49,12 @@ struct ListeningwaySettings {
     float band_max_freq = DEFAULT_LISTENINGWAY_BAND_MAX_FREQ;
     float band_log_strength = DEFAULT_LISTENINGWAY_BAND_LOG_STRENGTH;
     
-    // Legacy frequency boost settings
-    float band_mid_boost = DEFAULT_LISTENINGWAY_BAND_MID_BOOST;
-    float band_high_boost = DEFAULT_LISTENINGWAY_BAND_HIGH_BOOST;
-    float band_mid_center = DEFAULT_LISTENINGWAY_BAND_MID_CENTER;
-    float band_high_center = DEFAULT_LISTENINGWAY_BAND_HIGH_CENTER;
-    float band_bell_width = DEFAULT_LISTENINGWAY_BAND_BELL_WIDTH;
-    
-    // Frequency band modifiers with 5 bands
+    // 5-band equalizer settings
     float equalizer_band1 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND1;
     float equalizer_band2 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND2;
     float equalizer_band3 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND3;
     float equalizer_band4 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND4;
     float equalizer_band5 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND5;
-    bool use_equalizer = DEFAULT_LISTENINGWAY_USE_EQUALIZER;
     float equalizer_width = DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH;
 };
 
