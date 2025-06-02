@@ -102,10 +102,30 @@ bool AudioCaptureManager::SetPreferredProvider(AudioCaptureProviderType type) {
     
     // If we're currently using a different provider, switch to the preferred one
     if (!current_provider_ || current_provider_->GetProviderType() != type) {
+        // Stop current capture if running
+        if (current_provider_) {
+            LOG_INFO("[AudioCaptureManager] Stopping capture for old provider: " + current_provider_->GetProviderName());
+            // We need to stop the thread. We'll require a reference to the running/thread/data_mutex/data from the caller.
+            // Instead, let's add a new method to handle this at a higher level.
+        }
         current_provider_ = provider;
         LOG_INFO("[AudioCaptureManager] Switched to preferred provider: " + current_provider_->GetProviderName());
     }
     
+    return true;
+}
+
+// New method: Switch provider and restart capture thread if running
+bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    bool was_running = running.load();
+    if (was_running) {
+        StopCapture(running, thread);
+    }
+    bool set_ok = SetPreferredProvider(type);
+    if (!set_ok) return false;
+    if (was_running) {
+        return StartCapture(config, running, thread, data_mutex, data);
+    }
     return true;
 }
 

@@ -107,6 +107,18 @@ public:
                                std::mutex& data_mutex, 
                                AudioAnalysisData& data);
 
+    /**
+     * @brief Switches provider and restarts capture thread if running
+     * @param type Provider type to switch to
+     * @param config Analysis configuration
+     * @param running Atomic flag to control thread lifetime
+     * @param thread Thread object (will be stopped/restarted)
+     * @param data_mutex Mutex protecting the analysis data
+     * @param data Analysis data to be updated by the thread
+     * @return true if switch and restart succeeded
+     */
+    bool SwitchProviderAndRestart(AudioCaptureProviderType type, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+
 private:
     /**
      * @brief Registers all available providers

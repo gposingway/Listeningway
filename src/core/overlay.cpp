@@ -17,6 +17,7 @@
 #include <string>
 #include <chrono>
 #include <cmath>
+#include <algorithm> // For std::clamp
 
 extern std::atomic_bool g_audio_analysis_enabled;
 extern bool g_listeningway_debug_enabled;
@@ -113,12 +114,6 @@ static void DrawToggles() {
                         switch_success = SwitchAudioProvider(selected_provider_type);
                         if (switch_success) {
                             g_settings.audio_capture_provider = selected_provider_type;
-                            // Re-enable audio analysis when switching to a provider
-                            if (!g_settings.audio_analysis_enabled) {
-                                SetAudioAnalysisEnabled(true);
-                                g_settings.audio_analysis_enabled.store(true);
-                                LOG_DEBUG("[Overlay] Audio Analysis re-enabled when switching to provider");
-                            }
                             LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + GetAudioCaptureProviderName(selected_provider_type));
                         } else {
                             LOG_ERROR("[Overlay] Failed to switch audio provider. Reverting selection.");
@@ -446,22 +441,117 @@ static void DrawFrequencyBoostSettings() {
     }
 }
 
+// Helper: Draw spatialization info (left/right volume and pan)
+static void DrawSpatialization(const AudioAnalysisData& data) {
+    // Align all progress bars to the same X position
+    float label_width = ImGui::CalcTextSize("Pan Angle:").x;
+    float bar_start_x = ImGui::GetCursorPosX() + label_width + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+    float bar_width = ImGui::GetContentRegionAvail().x - (bar_start_x - ImGui::GetCursorPosX());
+
+    // Left Volume
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Left:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_left, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_left);
+
+    // Right Volume
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Right:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_right, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_right);
+
+    // Pan Angle
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Pan Angle:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar((data.audio_pan + 180.0f) / 360.0f, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.1f deg", data.audio_pan);
+}
+
+// Helper: Draw all volume, spatialization, and beat info in a single aligned block
+static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
+    // Find the widest label
+    float label_width = ImGui::CalcTextSize("Pan Angle:").x;
+    label_width = std::max(label_width, ImGui::CalcTextSize("Volume:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Left:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Right:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Beat:").x);
+    float bar_start_x = ImGui::GetCursorPosX() + label_width + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+    float bar_width = ImGui::GetContentRegionAvail().x - (bar_start_x - ImGui::GetCursorPosX());
+
+    // Volume (overall)
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Volume:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume);
+
+    // Left
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Left:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_left, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_left);
+
+    // Right
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Right:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_right, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_right);
+
+    // Pan
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Pan:");
+    ImGui::SameLine(bar_start_x);
+    // Clamp pan to [-90, +90] before normalization
+    float pan_clamped = std::clamp(data.audio_pan, -90.0f, 90.0f);
+    float pan_norm = (pan_clamped + 90.0f) / 180.0f;
+    pan_norm = std::clamp(pan_norm, 0.0f, 1.0f); // Ensure always in [0,1]
+    ImVec2 bar_pos = ImGui::GetCursorScreenPos();
+    ImGui::ProgressBar(pan_norm, ImVec2(bar_width, 0.0f), "");
+    // Draw -90 / 0 / +90 labels above the bar
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    float y = bar_pos.y - ImGui::GetTextLineHeightWithSpacing();
+    float x0 = bar_pos.x;
+    float x1 = bar_pos.x + bar_width * 0.5f;
+    float x2 = bar_pos.x + bar_width;
+    ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
+    draw_list->AddText(ImVec2(x0, y), col, "-90");
+    draw_list->AddText(ImVec2(x1 - ImGui::CalcTextSize("0").x * 0.5f, y), col, "0");
+    draw_list->AddText(ImVec2(x2 - ImGui::CalcTextSize("+90").x, y), col, "+90");
+    ImGui::SameLine();
+    ImGui::Text("%.1f deg", data.audio_pan);
+
+    // Beat
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Beat:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.beat, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.beat);
+}
+
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
     try {
-        // Store data pointer for access in UI components (used for displaying current tempo)
         ImGui::GetIO().UserData = (void*)&data;
-        
         std::lock_guard<std::mutex> lock(data_mutex);
         DrawToggles();
         DrawLogInfo();
         ImGui::Separator();
         DrawWebsite();
         ImGui::Separator();
-        DrawVolume(data);
-        ImGui::Separator();
-        DrawBeat(data);
+        DrawVolumeSpatializationBeat(data);
         ImGui::Separator();
         DrawFrequencyBands(data);
         ImGui::Separator();

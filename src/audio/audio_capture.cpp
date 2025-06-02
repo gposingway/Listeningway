@@ -97,3 +97,13 @@ std::string GetAudioCaptureProviderName(int providerType) {
     if (!g_audio_capture_manager) return "Unknown";
     return g_audio_capture_manager->GetProviderName(static_cast<AudioCaptureProviderType>(providerType));
 }
+
+// Overlay API: Switch provider and restart capture thread if running
+bool SwitchAudioCaptureProviderAndRestart(int providerType, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    if (!g_audio_capture_manager) {
+        InitAudioCapture();
+    }
+    if (!g_audio_capture_manager) return false;
+    if (providerType < 0) return false; // -1 is "None (off)"
+    return g_audio_capture_manager->SwitchProviderAndRestart(static_cast<AudioCaptureProviderType>(providerType), config, running, thread, data_mutex, data);
+}
