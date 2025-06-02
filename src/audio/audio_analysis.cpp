@@ -418,12 +418,31 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
             pan_norm = std::clamp(pan_deg / 90.0f, -1.0f, 1.0f); // -1 to +1
         }
     } else {
-        pan_norm = 0.0f;
-    }
+        pan_norm = 0.0f;    }
     // Now normalize for display only
     out.volume_left = std::min(1.0f, rms_left * g_settings.volume_norm);
     out.volume_right = std::min(1.0f, rms_right * g_settings.volume_norm);
-    out.audio_pan = pan_norm;
+    
+    // Apply pan smoothing if enabled
+    static float smoothed_pan = 0.0f;
+    static bool pan_initialized = false;
+    
+    if (g_settings.pan_smoothing > 0.0f) {
+        if (!pan_initialized) {
+            smoothed_pan = pan_norm;
+            pan_initialized = true;
+        } else {
+            // Exponential moving average: smoothed = (1-alpha) * previous + alpha * current
+            // Higher smoothing value = more smoothing (slower response)
+            float alpha = 1.0f / (1.0f + g_settings.pan_smoothing * 10.0f); // Scale smoothing factor
+            smoothed_pan = (1.0f - alpha) * smoothed_pan + alpha * pan_norm;
+        }
+        out.audio_pan = smoothed_pan;
+    } else {
+        // No smoothing, use raw value
+        out.audio_pan = pan_norm;
+        pan_initialized = false; // Reset for when smoothing is re-enabled
+    }
     
     // Free FFT configuration
     kiss_fft_free(fft_cfg);
