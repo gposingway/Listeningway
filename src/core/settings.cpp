@@ -250,9 +250,11 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "EqualizerBand4", g_settings.equalizer_band4, DEFAULT_LISTENINGWAY_EQUALIZER_BAND4);
     RW_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5, DEFAULT_LISTENINGWAY_EQUALIZER_BAND5);
     RW_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width, DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH);
-    
-    // Audio capture provider selection (0 = System Audio, 1 = Process Audio)
+      // Audio capture provider selection (0 = System Audio, 1 = Process Audio)
     g_settings.audio_capture_provider = GetPrivateProfileIntA("Audio", "CaptureProvider", DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER, ini.c_str());
+    
+    // Pan smoothing setting
+    RW_INI_FLOAT("Audio", "PanSmoothing", g_settings.pan_smoothing, DEFAULT_LISTENINGWAY_PAN_SMOOTHING);
     
     // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
     RW_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm, DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM);
@@ -313,9 +315,11 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "EqualizerBand4", g_settings.equalizer_band4);
     WR_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5);
     WR_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width);
-    
-    // Audio capture provider selection
+      // Audio capture provider selection
     WR_INI_SIZE("Audio", "CaptureProvider", g_settings.audio_capture_provider);
+    
+    // Pan smoothing setting
+    WR_INI_FLOAT("Audio", "PanSmoothing", g_settings.pan_smoothing);
     
     // Beat detection algorithm selection
     WR_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm);
@@ -370,8 +374,10 @@ void ResetAllTunablesToDefaults() {
     g_settings.equalizer_band2 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND2;
     g_settings.equalizer_band3 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND3;
     g_settings.equalizer_band4 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND4;
-    g_settings.equalizer_band5 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND5;
-    g_settings.equalizer_width = DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH;
+    g_settings.equalizer_band5 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND5;    g_settings.equalizer_width = DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH;
+    
+    // Reset pan smoothing
+    g_settings.pan_smoothing = DEFAULT_LISTENINGWAY_PAN_SMOOTHING;
     
     // Reset beat detection algorithm settings to defaults
     g_settings.beat_detection_algorithm = DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM;
