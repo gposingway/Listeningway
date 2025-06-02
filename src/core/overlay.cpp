@@ -108,12 +108,17 @@ static void DrawToggles() {
                             SetAudioAnalysisEnabled(false);
                             g_settings.audio_analysis_enabled.store(false);
                             LOG_DEBUG("[Overlay] Audio Analysis toggled OFF via dropdown");
-                        }
-                    } else {
+                        }                    } else {
                         int selected_provider_type = available_providers[i - 1];
                         switch_success = SwitchAudioProvider(selected_provider_type);
                         if (switch_success) {
                             g_settings.audio_capture_provider = selected_provider_type;
+                            // Re-enable audio analysis when switching to a provider
+                            if (!g_settings.audio_analysis_enabled) {
+                                SetAudioAnalysisEnabled(true);
+                                g_settings.audio_analysis_enabled.store(true);
+                                LOG_DEBUG("[Overlay] Audio Analysis re-enabled when switching to provider");
+                            }
                             LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + GetAudioCaptureProviderName(selected_provider_type));
                         } else {
                             LOG_ERROR("[Overlay] Failed to switch audio provider. Reverting selection.");

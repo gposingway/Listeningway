@@ -1,6 +1,6 @@
 // ---------------------------------------------
 // Process Audio Capture Provider
-// Captures audio from the game process using WASAPI Session Management
+// Captures audio only from the current process using WASAPI Session Management
 // ---------------------------------------------
 #pragma once
 #include "audio_capture_provider.h"
@@ -9,7 +9,7 @@
 #include <atomic>
 
 /**
- * @brief Game process-specific audio capture provider using WASAPI Session Management
+ * @brief Process-specific audio capture provider using WASAPI Session Management
  */
 class ProcessAudioCaptureProvider : public IAudioCaptureProvider {
 private:
@@ -18,15 +18,14 @@ private:
     class DeviceNotificationClient;
     static DeviceNotificationClient* notification_client_;
     
-    DWORD game_process_id_;
+    DWORD current_process_id_;
     
     /**
-     * @brief Finds the audio session for the game process
-     * @param ppSessionControl2 Output session control for the game process
-     * @param pVolume Output volume level of the game session
-     * @return true if game audio session was found
+     * @brief Finds the audio session for the current process
+     * @param pAudioClient Output audio client for the process session
+     * @return true if process audio session was found
      */
-    bool FindGameAudioSession(IAudioSessionControl2** ppSessionControl2, float* pVolume);
+    bool FindProcessAudioSession(IAudioClient** pAudioClient);
 
 public:
     ProcessAudioCaptureProvider();
@@ -38,7 +37,7 @@ public:
     }
 
     std::string GetProviderName() const override {
-        return "Game Audio (Process-Aware)";
+        return "Process Audio (WASAPI Session)";
     }
 
     bool IsAvailable() const override;

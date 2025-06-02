@@ -70,6 +70,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Ole32           # For COM
     Propsys         # For IMMDeviceEnumerator property store access (safer)
     Avrt            # For audio thread priority management (optional but good)
+    Psapi           # For process enumeration and information
     # Add other Windows libs if needed (e.g., Winmm)
 )
 
