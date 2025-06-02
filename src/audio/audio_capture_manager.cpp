@@ -9,6 +9,7 @@
 
 AudioCaptureManager::AudioCaptureManager() 
     : preferred_provider_type_(AudioCaptureProviderType::SYSTEM_AUDIO),
+      current_provider_(nullptr),
       initialized_(false) {
 }
 
@@ -31,9 +32,8 @@ bool AudioCaptureManager::Initialize() {
             LOG_WARNING("[AudioCaptureManager] Failed to initialize provider: " + provider->GetProviderName());
         }
     }
-    
-    // Select the initial provider
-    current_provider_.reset(SelectBestProvider());
+      // Select the initial provider
+    current_provider_ = SelectBestProvider();
     if (!current_provider_) {
         LOG_ERROR("[AudioCaptureManager] No available audio capture providers");
         return false;
@@ -47,11 +47,9 @@ bool AudioCaptureManager::Initialize() {
 void AudioCaptureManager::Uninitialize() {
     if (!initialized_) {
         return;
-    }
-
-    LOG_DEBUG("[AudioCaptureManager] Uninitializing audio capture manager");
+    }    LOG_DEBUG("[AudioCaptureManager] Uninitializing audio capture manager");
     
-    current_provider_.reset();
+    current_provider_ = nullptr;
     
     // Uninitialize all providers
     for (auto& provider : providers_) {
@@ -104,17 +102,8 @@ bool AudioCaptureManager::SetPreferredProvider(AudioCaptureProviderType type) {
     
     // If we're currently using a different provider, switch to the preferred one
     if (!current_provider_ || current_provider_->GetProviderType() != type) {
-        // Don't transfer ownership - just point to the provider in the vector
-        current_provider_ = nullptr;  // Clear current first
-        for (auto& owned_provider : providers_) {
-            if (owned_provider->GetProviderType() == type) {
-                current_provider_ = std::unique_ptr<IAudioCaptureProvider>(owned_provider.get());
-                break;
-            }
-        }
-        if (current_provider_) {
-            LOG_INFO("[AudioCaptureManager] Switched to preferred provider: " + current_provider_->GetProviderName());
-        }
+        current_provider_ = provider;
+        LOG_INFO("[AudioCaptureManager] Switched to preferred provider: " + current_provider_->GetProviderName());
     }
     
     return true;
@@ -196,11 +185,10 @@ void AudioCaptureManager::CheckAndRestartCapture(const AudioAnalysisConfig& conf
     }
     
     // Check if we should switch to a different provider
-    IAudioCaptureProvider* best_provider = SelectBestProvider();
-    if (best_provider && best_provider != current_provider_.get()) {
+    IAudioCaptureProvider* best_provider = SelectBestProvider();    if (best_provider && best_provider != current_provider_) {
         LOG_INFO("[AudioCaptureManager] Switching to better provider: " + best_provider->GetProviderName());
         StopCapture(running, thread);
-        current_provider_.reset(best_provider);
+        current_provider_ = best_provider;
         StartCapture(config, running, thread, data_mutex, data);
     }
 }

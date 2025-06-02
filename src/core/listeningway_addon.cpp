@@ -203,8 +203,10 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
     std::lock_guard<std::mutex> lock(g_provider_switch_mutex);
     g_switching_provider = true;
     LOG_DEBUG("[Addon] SwitchAudioProvider: Begin switch to provider " + std::to_string(providerType));
+    
     bool was_enabled = g_audio_analysis_enabled;
     if (was_enabled) {
+        LOG_DEBUG("[Addon] SwitchAudioProvider: Stopping audio capture thread");
         g_audio_analysis_enabled = false;
         StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
         // Wait for thread to fully stop, up to timeout
@@ -217,18 +219,29 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
                 return false;
             }
         }
+        LOG_DEBUG("[Addon] SwitchAudioProvider: Audio capture thread stopped");
     }
+    
+    LOG_DEBUG("[Addon] SwitchAudioProvider: Setting audio capture provider");
     bool provider_set = SetAudioCaptureProvider(providerType);
-    g_settings.audio_capture_provider = providerType;
-    if (was_enabled && provider_set) {
-        g_audio_analysis_enabled = true;
-        StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
-    }
     if (!provider_set) {
         LOG_ERROR("[Addon] SwitchAudioProvider: Failed to set provider type " + std::to_string(providerType));
         g_switching_provider = false;
         return false;
     }
+    
+    // Update settings
+    g_settings.audio_capture_provider = providerType;
+    LOG_DEBUG("[Addon] SwitchAudioProvider: Updated settings with provider " + std::to_string(providerType));
+    
+    if (was_enabled) {
+        LOG_DEBUG("[Addon] SwitchAudioProvider: Restarting audio capture thread");
+        g_audio_analysis_enabled = true;
+        g_settings.audio_analysis_enabled.store(true);
+        StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+        LOG_DEBUG("[Addon] SwitchAudioProvider: Audio capture thread restarted");
+    }
+    
     LOG_DEBUG("[Addon] SwitchAudioProvider: Completed switch to provider " + std::to_string(providerType));
     g_switching_provider = false;
     return true;

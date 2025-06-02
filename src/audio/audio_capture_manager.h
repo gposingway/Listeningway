@@ -17,7 +17,7 @@
 class AudioCaptureManager {
 private:
     std::vector<std::unique_ptr<IAudioCaptureProvider>> providers_;
-    std::unique_ptr<IAudioCaptureProvider> current_provider_;
+    IAudioCaptureProvider* current_provider_;  // Raw pointer to avoid ownership issues
     AudioCaptureProviderType preferred_provider_type_;
     
     bool initialized_;
