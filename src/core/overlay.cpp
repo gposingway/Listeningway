@@ -512,24 +512,23 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Pan:");
     ImGui::SameLine(bar_start_x);
-    // Clamp pan to [-90, +90] before normalization
-    float pan_clamped = std::clamp(data.audio_pan, -90.0f, 90.0f);
-    float pan_norm = (pan_clamped + 90.0f) / 180.0f;
-    pan_norm = std::clamp(pan_norm, 0.0f, 1.0f); // Ensure always in [0,1]
+    // Clamp pan to [-1, +1] before normalization
+    float pan_clamped = std::clamp(data.audio_pan, -1.0f, 1.0f);
+    float pan_norm = (pan_clamped + 1.0f) * 0.5f; // -1 maps to 0, +1 maps to 1
     ImVec2 bar_pos = ImGui::GetCursorScreenPos();
     ImGui::ProgressBar(pan_norm, ImVec2(bar_width, 0.0f), "");
-    // Draw -90 / 0 / +90 labels above the bar
+    // Draw -1 / 0 / +1 labels above the bar
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     float y = bar_pos.y - ImGui::GetTextLineHeightWithSpacing();
     float x0 = bar_pos.x;
     float x1 = bar_pos.x + bar_width * 0.5f;
     float x2 = bar_pos.x + bar_width;
     ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
-    draw_list->AddText(ImVec2(x0, y), col, "-90");
+    draw_list->AddText(ImVec2(x0, y), col, "-1");
     draw_list->AddText(ImVec2(x1 - ImGui::CalcTextSize("0").x * 0.5f, y), col, "0");
-    draw_list->AddText(ImVec2(x2 - ImGui::CalcTextSize("+90").x, y), col, "+90");
+    draw_list->AddText(ImVec2(x2 - ImGui::CalcTextSize("+1").x, y), col, "+1");
     ImGui::SameLine();
-    ImGui::Text("%.1f deg", data.audio_pan);
+    ImGui::Text("%.2f", data.audio_pan);
 
     // Beat
     ImGui::AlignTextToFramePadding();
