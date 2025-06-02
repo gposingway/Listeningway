@@ -344,20 +344,18 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     // Normalize (use same normalization as main volume)
     out.volume_left = std::min(1.0f, rms_left * g_settings.volume_norm);
     out.volume_right = std::min(1.0f, rms_right * g_settings.volume_norm);
-    // --- Calculate pan angle ---
-    float pan = 0.0f;
+    // --- Calculate pan value in [-1, +1] for uniform ---
+    float pan_norm = 0.0f;
     if (numChannels == 1) {
-        pan = 0.0f;
+        pan_norm = 0.0f;
     } else if (numChannels == 2) {
-        // Stereo: -90 (left) to +90 (right)
         float l = out.volume_left;
         float r = out.volume_right;
         if (l + r > 0.0001f) {
-            // Constant power pan law
             float norm = l / (l + r);
-            pan = (norm - 0.5f) * 180.0f; // -90 to +90
+            pan_norm = (norm - 0.5f) * 2.0f; // -1 (left) to +1 (right)
         } else {
-            pan = 0.0f;
+            pan_norm = 0.0f;
         }
     } else if (numChannels == 6 || numChannels == 8) {
         // Surround: weighted vector sum of channel angles
@@ -377,15 +375,15 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
             x += c.rms * std::cos(rad);
             y += c.rms * std::sin(rad);
         }
+        float pan_deg = 0.0f;
         if (x != 0.0f || y != 0.0f) {
-            pan = std::atan2(y, x) * 180.0f / 3.14159265f;
-        } else {
-            pan = 0.0f;
+            pan_deg = std::atan2(y, x) * 180.0f / 3.14159265f;
         }
+        pan_norm = std::clamp(pan_deg / 90.0f, -1.0f, 1.0f); // -1 to +1
     } else {
-        pan = 0.0f;
+        pan_norm = 0.0f;
     }
-    out.audio_pan = pan;
+    out.audio_pan = pan_norm;
     
     // Free FFT configuration
     kiss_fft_free(fft_cfg);
