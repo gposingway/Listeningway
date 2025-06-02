@@ -56,14 +56,16 @@ struct ListeningwaySettings {
     float equalizer_band4 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND4;
     float equalizer_band5 = DEFAULT_LISTENINGWAY_EQUALIZER_BAND5;
     float equalizer_width = DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH;
-    
-    // Audio capture provider selection (0 = System Audio, 1 = Process Audio)
+      // Audio capture provider selection (0 = System Audio, 1 = Process Audio)
     // This is the actual provider used if audio_analysis_enabled is true.
     int audio_capture_provider = DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER;
 
     // User's selection for audio provider in the overlay.
     // -1 for "None (Audio Analysis Off)", 0 for System, 1 for Process, etc.
     int audio_capture_provider_selection = DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER_SELECTION; // New setting
+    
+    // Pan smoothing factor (0.0 = no smoothing, higher values = more smoothing)
+    float pan_smoothing = DEFAULT_LISTENINGWAY_PAN_SMOOTHING;
 };
 
 extern ListeningwaySettings g_settings;
