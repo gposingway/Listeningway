@@ -474,13 +474,14 @@ static void DrawSpatialization(const AudioAnalysisData& data) {
 }
 
 // Helper: Draw all volume, spatialization, and beat info in a single aligned block
-static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
-    // Find the widest label
+static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // Find the widest label
     float label_width = ImGui::CalcTextSize("Pan Angle:").x;
     label_width = std::max(label_width, ImGui::CalcTextSize("Volume:").x);
     label_width = std::max(label_width, ImGui::CalcTextSize("Left:").x);
     label_width = std::max(label_width, ImGui::CalcTextSize("Right:").x);
     label_width = std::max(label_width, ImGui::CalcTextSize("Beat:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Format:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Pan Smooth:").x);
     float bar_start_x = ImGui::GetCursorPosX() + label_width + ImGui::GetStyle().ItemSpacing.x * 2.0f;
     float bar_width = ImGui::GetContentRegionAvail().x - (bar_start_x - ImGui::GetCursorPosX());
 
@@ -537,9 +538,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::SameLine(bar_start_x);
     ImGui::ProgressBar(data.beat, ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
-    ImGui::Text("%.2f", data.beat);
-
-    // Audio Format
+    ImGui::Text("%.2f", data.beat);    // Audio Format
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Format:");
     ImGui::SameLine(bar_start_x);
@@ -553,6 +552,15 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
         default: format_name = "Unknown"; break;
     }
     ImGui::Text("%s (%.0f)", format_name, data.audio_format);
+
+    // Pan Smoothing
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Pan Smooth:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::SliderFloat("##PanSmoothing", &g_settings.pan_smoothing, 0.0f, 1.0f, "%.2f");
+    if (ImGui::IsItemHovered(-1)) {
+        ImGui::SetTooltip("Reduces pan jitter. 0.0 = no smoothing (current behavior), higher values = more smoothing");
+    }
 }
 
 // Draws the Listeningway debug overlay using ImGui.
@@ -565,8 +573,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         DrawLogInfo();
         ImGui::Separator();
         DrawWebsite();
-        ImGui::Separator();
-        DrawVolumeSpatializationBeat(data);
+        ImGui::Separator();        DrawVolumeSpatializationBeat(data);
         ImGui::Separator();
         DrawFrequencyBands(data);
         ImGui::Separator();
