@@ -50,6 +50,9 @@ constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH = 0.15f; // Width of the be
 constexpr int DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER = 0; // Default to System Audio (0 = System, 1 = Process)
 constexpr int DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER_SELECTION = 0; // Default to "None (Audio Analysis Off)"
 
+// Pan smoothing (0.0 = no smoothing, higher values = more smoothing)
+constexpr float DEFAULT_LISTENINGWAY_PAN_SMOOTHING = 0.1f; // Default: no smoothing to preserve current behavior
+
 // UI/Overlay tunables
 constexpr float DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT = 1.5f;
 
