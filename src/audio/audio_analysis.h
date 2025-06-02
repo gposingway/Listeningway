@@ -30,12 +30,12 @@ struct AudioAnalysisData {
     // --- Internal state for analysis (not for API consumers) ---
     std::vector<float> _prev_magnitudes; // Previous FFT magnitudes (for spectral flux)
     float _flux_avg = 0.0f;             // Moving average of spectral flux
-    float _flux_low_avg = 0.0f;         // Moving average of low-frequency spectral flux
-
+    float _flux_low_avg = 0.0f;         // Moving average of low-frequency spectral flux    
     // Additional fields for stereo analysis
     float volume_left = 0.0f;         // Normalized RMS/peak volume for left channel(s)
     float volume_right = 0.0f;        // Normalized RMS/peak volume for right channel(s)
     float audio_pan = 0.0f;           // Calculated pan value in [-1, +1]
+    float audio_format = 0.0f;        // Detected audio format (0=none, 1=mono, 2=stereo, 6=5.1, 8=7.1)
 
     AudioAnalysisData(size_t bands = 8) : freq_bands(bands, 0.0f), raw_freq_bands(bands, 0.0f) {}
 };

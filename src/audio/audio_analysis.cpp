@@ -340,9 +340,12 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     float rms_side_left = count_side_left ? std::sqrt(sum_side_left / count_side_left) : 0.0f;
     float rms_side_right = count_side_right ? std::sqrt(sum_side_right / count_side_right) : 0.0f;
     float rms_rear_left = count_rear_left ? std::sqrt(sum_rear_left / count_rear_left) : 0.0f;    float rms_rear_right = count_rear_right ? std::sqrt(sum_rear_right / count_rear_right) : 0.0f;
-    
-    // --- Calculate pan value in [-1, +1] for uniform ---
+      // --- Calculate pan value in [-1, +1] for uniform ---
     float pan_norm = 0.0f;
+    
+    // Set audio format for uniform exposure
+    out.audio_format = static_cast<float>(numChannels);
+    
     if (numChannels == 1) {
         pan_norm = 0.0f;    } else if (numChannels == 2) {
         // Use enhanced difference-based pan calculation with exponential scaling

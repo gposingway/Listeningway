@@ -530,8 +530,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
         pan_text
     );
     ImGui::SameLine();
-    ImGui::Dummy(ImVec2(text_size.x + 8.0f, 0.0f)); // Reserve space so next item doesn't overlap
-
+    ImGui::Dummy(ImVec2(text_size.x + 8.0f, 0.0f)); // Reserve space so next item doesn't overlap    
     // Beat
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Beat:");
@@ -539,6 +538,21 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::ProgressBar(data.beat, ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
     ImGui::Text("%.2f", data.beat);
+
+    // Audio Format
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Format:");
+    ImGui::SameLine(bar_start_x);
+    const char* format_name = "None";
+    switch (static_cast<int>(data.audio_format)) {
+        case 0: format_name = "None"; break;
+        case 1: format_name = "Mono"; break;
+        case 2: format_name = "Stereo"; break;
+        case 6: format_name = "5.1"; break;
+        case 8: format_name = "7.1"; break;
+        default: format_name = "Unknown"; break;
+    }
+    ImGui::Text("%s (%.0f)", format_name, data.audio_format);
 }
 
 // Draws the Listeningway debug overlay using ImGui.

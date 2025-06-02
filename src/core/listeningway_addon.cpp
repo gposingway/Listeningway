@@ -47,11 +47,10 @@ std::mutex g_provider_switch_mutex;
  * @brief Updates all Listeningway_* uniforms in all loaded effects.
  * @param runtime The ReShade effect runtime.
  */
-static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
-    float volume_to_set;
+static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {    float volume_to_set;
     std::vector<float> freq_bands_to_set;
     float beat_to_set;
-    float volume_left, volume_right, audio_pan;
+    float volume_left, volume_right, audio_pan, audio_format;
     {
         std::lock_guard<std::mutex> lock(g_audio_data_mutex);
         volume_to_set = g_audio_data.volume;
@@ -60,6 +59,7 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
         volume_left = g_audio_data.volume_left;
         volume_right = g_audio_data.volume_right;
         audio_pan = g_audio_data.audio_pan;
+        audio_format = g_audio_data.audio_format;
     }
     // Time/phase calculations
     auto now = std::chrono::steady_clock::now();
@@ -68,10 +68,9 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
     float phase_60hz = std::fmod(time_seconds * 60.0f, 1.0f);
     float phase_120hz = std::fmod(time_seconds * 120.0f, 1.0f);
     float total_phases_60hz = time_seconds * 60.0f;
-    float total_phases_120hz = time_seconds * 120.0f;
-    g_uniform_manager.update_uniforms(runtime, volume_to_set, freq_bands_to_set, beat_to_set,
+    float total_phases_120hz = time_seconds * 120.0f;    g_uniform_manager.update_uniforms(runtime, volume_to_set, freq_bands_to_set, beat_to_set,
         time_seconds, phase_60hz, phase_120hz, total_phases_60hz, total_phases_120hz,
-        volume_left, volume_right, audio_pan);
+        volume_left, volume_right, audio_pan, audio_format);
 }
 
 /**
