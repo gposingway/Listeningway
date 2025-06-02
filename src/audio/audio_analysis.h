@@ -35,7 +35,7 @@ struct AudioAnalysisData {
     // Additional fields for stereo analysis
     float volume_left = 0.0f;         // Normalized RMS/peak volume for left channel(s)
     float volume_right = 0.0f;        // Normalized RMS/peak volume for right channel(s)
-    float audio_pan = 0.0f;           // Calculated pan angle in degrees (-180 to +180)
+    float audio_pan = 0.0f;           // Calculated pan value in [-1, +1]
 
     AudioAnalysisData(size_t bands = 8) : freq_bands(bands, 0.0f), raw_freq_bands(bands, 0.0f) {}
 };

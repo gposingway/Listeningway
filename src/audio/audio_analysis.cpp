@@ -339,50 +339,87 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     float rms_center = count_center ? std::sqrt(sum_center / count_center) : 0.0f;
     float rms_side_left = count_side_left ? std::sqrt(sum_side_left / count_side_left) : 0.0f;
     float rms_side_right = count_side_right ? std::sqrt(sum_side_right / count_side_right) : 0.0f;
-    float rms_rear_left = count_rear_left ? std::sqrt(sum_rear_left / count_rear_left) : 0.0f;
-    float rms_rear_right = count_rear_right ? std::sqrt(sum_rear_right / count_rear_right) : 0.0f;
-    // Normalize (use same normalization as main volume)
-    out.volume_left = std::min(1.0f, rms_left * g_settings.volume_norm);
-    out.volume_right = std::min(1.0f, rms_right * g_settings.volume_norm);
+    float rms_rear_left = count_rear_left ? std::sqrt(sum_rear_left / count_rear_left) : 0.0f;    float rms_rear_right = count_rear_right ? std::sqrt(sum_rear_right / count_rear_right) : 0.0f;
+    
     // --- Calculate pan value in [-1, +1] for uniform ---
     float pan_norm = 0.0f;
     if (numChannels == 1) {
-        pan_norm = 0.0f;
-    } else if (numChannels == 2) {
-        float l = out.volume_left;
-        float r = out.volume_right;
-        if (l + r > 0.0001f) {
-            float norm = l / (l + r);
-            pan_norm = (norm - 0.5f) * 2.0f; // -1 (left) to +1 (right)
+        pan_norm = 0.0f;    } else if (numChannels == 2) {
+        // Use enhanced difference-based pan calculation with exponential scaling
+        float l = rms_left;
+        float r = rms_right;        if (l + r > 0.0001f) {            // Simple difference-based pan calculation that should give full range
+            // When one channel is silent and other has signal, this should give ±1.0
+            float basic_pan = (r - l) / (l + r);
+            
+            // For debugging: if one channel is nearly zero, force to extreme
+            if (l < 0.001f && r > 0.01f) {
+                pan_norm = 1.0f; // Right dominant, pan right
+            } else if (r < 0.001f && l > 0.01f) {
+                pan_norm = -1.0f;  // Left dominant, pan left
+            } else {
+                // Use the calculated value with slight amplification for subtle differences
+                pan_norm = std::clamp(basic_pan * 1.5f, -1.0f, 1.0f);
+            }
         } else {
             pan_norm = 0.0f;
+        }} else if (numChannels == 6 || numChannels == 8) {
+        // Check if this is effectively stereo content (only FL/FR have significant energy)
+        float front_left_right_energy = rms_left + rms_right;
+        float other_channels_energy = rms_center + rms_side_left + rms_side_right + rms_rear_left + rms_rear_right;
+        float total_energy = front_left_right_energy + other_channels_energy;
+        
+        // If 95% or more of the energy is in FL/FR channels, treat as stereo
+        bool is_effectively_stereo = (total_energy > 0.001f) && 
+                                   ((front_left_right_energy / total_energy) >= 0.95f);
+          if (is_effectively_stereo) {
+            // Use stereo calculation for full [-1, +1] range
+            float l = rms_left;
+            float r = rms_right;
+              if (l + r > 0.0001f) {
+                float basic_pan = (r - l) / (l + r);
+                
+                // For debugging: if one channel is nearly zero, force to extreme
+                if (l < 0.001f && r > 0.01f) {
+                    pan_norm = 1.0f; // Right dominant, pan right
+                } else if (r < 0.001f && l > 0.01f) {
+                    pan_norm = -1.0f;  // Left dominant, pan left
+                } else {
+                    // Use the calculated value with slight amplification for subtle differences
+                    pan_norm = std::clamp(basic_pan * 1.5f, -1.0f, 1.0f);
+                }
+            } else {
+                pan_norm = 0.0f;
+            }
+        } else {
+            // True surround content - use vector sum with ITU-R BS.775 angles
+            // Angles (degrees): FL=-30, FR=+30, C=0, SL=-90, SR=+90, RL=-150, RR=+150
+            struct ChanAngle { float rms; float deg; } chans[7] = {
+                { rms_left, -30.0f },
+                { rms_right, +30.0f },
+                { rms_center, 0.0f },
+                { rms_side_left, -90.0f },
+                { rms_side_right, +90.0f },
+                { rms_rear_left, -150.0f },
+                { rms_rear_right, +150.0f }
+            };
+            float x = 0.0f, y = 0.0f;
+            for (const auto& c : chans) {
+                float rad = c.deg * 3.14159265f / 180.0f;
+                x += c.rms * std::cos(rad);
+                y += c.rms * std::sin(rad);
+            }
+            float pan_deg = 0.0f;
+            if (x != 0.0f || y != 0.0f) {
+                pan_deg = std::atan2(y, x) * 180.0f / 3.14159265f;
+            }
+            pan_norm = std::clamp(pan_deg / 90.0f, -1.0f, 1.0f); // -1 to +1
         }
-    } else if (numChannels == 6 || numChannels == 8) {
-        // Surround: weighted vector sum of channel angles
-        // ITU-R BS.775 angles (degrees): FL=-30, FR=+30, C=0, SL=-90, SR=+90, RL=-150, RR=+150
-        struct ChanAngle { float rms; float deg; } chans[7] = {
-            { rms_left, -30.0f },
-            { rms_right, +30.0f },
-            { rms_center, 0.0f },
-            { rms_side_left, -90.0f },
-            { rms_side_right, +90.0f },
-            { rms_rear_left, -150.0f },
-            { rms_rear_right, +150.0f }
-        };
-        float x = 0.0f, y = 0.0f;
-        for (const auto& c : chans) {
-            float rad = c.deg * 3.14159265f / 180.0f;
-            x += c.rms * std::cos(rad);
-            y += c.rms * std::sin(rad);
-        }
-        float pan_deg = 0.0f;
-        if (x != 0.0f || y != 0.0f) {
-            pan_deg = std::atan2(y, x) * 180.0f / 3.14159265f;
-        }
-        pan_norm = std::clamp(pan_deg / 90.0f, -1.0f, 1.0f); // -1 to +1
     } else {
         pan_norm = 0.0f;
     }
+    // Now normalize for display only
+    out.volume_left = std::min(1.0f, rms_left * g_settings.volume_norm);
+    out.volume_right = std::min(1.0f, rms_right * g_settings.volume_norm);
     out.audio_pan = pan_norm;
     
     // Free FFT configuration

@@ -464,13 +464,13 @@ static void DrawSpatialization(const AudioAnalysisData& data) {
     ImGui::SameLine();
     ImGui::Text("%.2f", data.volume_right);
 
-    // Pan Angle
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Pan Angle:");
-    ImGui::SameLine(bar_start_x);
-    ImGui::ProgressBar((data.audio_pan + 180.0f) / 360.0f, ImVec2(bar_width, 0.0f));
-    ImGui::SameLine();
-    ImGui::Text("%.1f deg", data.audio_pan);
+    // Pan Angle (legacy, remove or update to new range)
+    // ImGui::AlignTextToFramePadding();
+    // ImGui::Text("Pan Angle:");
+    // ImGui::SameLine(bar_start_x);
+    // ImGui::ProgressBar((data.audio_pan + 180.0f) / 360.0f, ImVec2(bar_width, 0.0f));
+    // ImGui::SameLine();
+    // ImGui::Text("%.1f deg", data.audio_pan);
 }
 
 // Helper: Draw all volume, spatialization, and beat info in a single aligned block
@@ -517,18 +517,20 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     float pan_norm = (pan_clamped + 1.0f) * 0.5f; // -1 maps to 0, +1 maps to 1
     ImVec2 bar_pos = ImGui::GetCursorScreenPos();
     ImGui::ProgressBar(pan_norm, ImVec2(bar_width, 0.0f), "");
-    // Draw -1 / 0 / +1 labels above the bar
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    float y = bar_pos.y - ImGui::GetTextLineHeightWithSpacing();
-    float x0 = bar_pos.x;
-    float x1 = bar_pos.x + bar_width * 0.5f;
-    float x2 = bar_pos.x + bar_width;
-    ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
-    draw_list->AddText(ImVec2(x0, y), col, "-1");
-    draw_list->AddText(ImVec2(x1 - ImGui::CalcTextSize("0").x * 0.5f, y), col, "0");
-    draw_list->AddText(ImVec2(x2 - ImGui::CalcTextSize("+1").x, y), col, "+1");
+    // Overlay the pan value centered on the bar
+    ImVec2 bar_center = bar_pos;
+    bar_center.x += bar_width * 0.5f;
+    bar_center.y += ImGui::GetFontSize() * 0.15f; // Slight vertical offset for centering
+    char pan_text[16];
+    snprintf(pan_text, sizeof(pan_text), "%.2f", data.audio_pan);
+    ImVec2 text_size = ImGui::CalcTextSize(pan_text);
+    ImGui::GetWindowDrawList()->AddText(
+        ImVec2(bar_center.x - text_size.x * 0.5f, bar_center.y),
+        ImGui::GetColorU32(ImGuiCol_Text),
+        pan_text
+    );
     ImGui::SameLine();
-    ImGui::Text("%.2f", data.audio_pan);
+    ImGui::Dummy(ImVec2(text_size.x + 8.0f, 0.0f)); // Reserve space so next item doesn't overlap
 
     // Beat
     ImGui::AlignTextToFramePadding();
