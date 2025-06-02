@@ -59,6 +59,9 @@ ListeningwaySettings g_settings = {
     DEFAULT_LISTENINGWAY_EQUALIZER_BAND4,          // equalizer_band4
     DEFAULT_LISTENINGWAY_EQUALIZER_BAND5,          // equalizer_band5
     DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH,          // equalizer_width
+    
+    // Audio capture provider selection
+    DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER,   // audio_capture_provider
 };
 
 std::atomic_bool g_audio_analysis_enabled = DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED;
@@ -248,6 +251,9 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5, DEFAULT_LISTENINGWAY_EQUALIZER_BAND5);
     RW_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width, DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH);
     
+    // Audio capture provider selection (0 = System Audio, 1 = Process Audio)
+    g_settings.audio_capture_provider = GetPrivateProfileIntA("Audio", "CaptureProvider", DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER, ini.c_str());
+    
     // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
     RW_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm, DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM);
     
@@ -307,6 +313,9 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "EqualizerBand4", g_settings.equalizer_band4);
     WR_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5);
     WR_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width);
+    
+    // Audio capture provider selection
+    WR_INI_SIZE("Audio", "CaptureProvider", g_settings.audio_capture_provider);
     
     // Beat detection algorithm selection
     WR_INI_SIZE("Audio", "BeatDetectionAlgorithm", g_settings.beat_detection_algorithm);

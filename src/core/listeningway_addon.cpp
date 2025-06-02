@@ -40,6 +40,8 @@ static UniformManager g_uniform_manager;
 static std::chrono::steady_clock::time_point g_last_audio_update = std::chrono::steady_clock::now();
 static float g_last_volume = 0.0f;
 static std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
+std::atomic_bool g_switching_provider = false;
+std::mutex g_provider_switch_mutex;
 
 /**
  * @brief Updates all Listeningway_* uniforms in all loaded effects.
@@ -196,4 +198,39 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
  *
  * The flow is: Audio Capture (thread) -> Analysis -> Uniform Update -> Shader/Overlay
  */
+// Asynchronous, robust provider switch. Returns true on success, false on failure.
+extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
+    std::lock_guard<std::mutex> lock(g_provider_switch_mutex);
+    g_switching_provider = true;
+    LOG_DEBUG("[Addon] SwitchAudioProvider: Begin switch to provider " + std::to_string(providerType));
+    bool was_enabled = g_audio_analysis_enabled;
+    if (was_enabled) {
+        g_audio_analysis_enabled = false;
+        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+        // Wait for thread to fully stop, up to timeout
+        auto start = std::chrono::steady_clock::now();
+        while (g_audio_thread_running) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() > timeout_ms) {
+                LOG_ERROR("[Addon] SwitchAudioProvider: Timeout waiting for audio thread to stop");
+                g_switching_provider = false;
+                return false;
+            }
+        }
+    }
+    bool provider_set = SetAudioCaptureProvider(providerType);
+    g_settings.audio_capture_provider = providerType;
+    if (was_enabled && provider_set) {
+        g_audio_analysis_enabled = true;
+        StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+    }
+    if (!provider_set) {
+        LOG_ERROR("[Addon] SwitchAudioProvider: Failed to set provider type " + std::to_string(providerType));
+        g_switching_provider = false;
+        return false;
+    }
+    LOG_DEBUG("[Addon] SwitchAudioProvider: Completed switch to provider " + std::to_string(providerType));
+    g_switching_provider = false;
+    return true;
+}
 

@@ -46,6 +46,10 @@ constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_BAND4 = 1.80f;  // Mid-high frequ
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_BAND5 = 1.63f;  // High frequencies boost
 constexpr float DEFAULT_LISTENINGWAY_EQUALIZER_WIDTH = 0.15f; // Width of the bell curve for all equalizer bands
 
+// Audio capture provider selection
+constexpr int DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER = 0; // Default to System Audio (0 = System, 1 = Process)
+constexpr int DEFAULT_LISTENINGWAY_AUDIO_CAPTURE_PROVIDER_SELECTION = 0; // Default to "None (Audio Analysis Off)"
+
 // UI/Overlay tunables
 constexpr float DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT = 1.5f;
 
