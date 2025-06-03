@@ -483,55 +483,134 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // 
     label_width = std::max(label_width, ImGui::CalcTextSize("Format:").x);
     label_width = std::max(label_width, ImGui::CalcTextSize("Pan Smooth:").x);
     float bar_start_x = ImGui::GetCursorPosX() + label_width + ImGui::GetStyle().ItemSpacing.x * 2.0f;
-    float bar_width = ImGui::GetContentRegionAvail().x - (bar_start_x - ImGui::GetCursorPosX());
-
-    // Volume (overall)
+    float bar_width = ImGui::GetContentRegionAvail().x - (bar_start_x - ImGui::GetCursorPosX());    // Volume (overall)
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Volume:");
     ImGui::SameLine(bar_start_x);
+    
+    // Get the screen position right after the progress bar for proper alignment
+    ImVec2 progress_bar_screen_pos = ImGui::GetCursorScreenPos();
     ImGui::ProgressBar(data.volume, ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
-    ImGui::Text("%.2f", data.volume);
-
-    // Left
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Left:");
-    ImGui::SameLine(bar_start_x);
-    ImGui::ProgressBar(data.volume_left, ImVec2(bar_width, 0.0f));
-    ImGui::SameLine();
-    ImGui::Text("%.2f", data.volume_left);
-
-    // Right
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Right:");
-    ImGui::SameLine(bar_start_x);
-    ImGui::ProgressBar(data.volume_right, ImVec2(bar_width, 0.0f));
-    ImGui::SameLine();
-    ImGui::Text("%.2f", data.volume_right);
-
-    // Pan
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Pan:");
-    ImGui::SameLine(bar_start_x);
-    // Clamp pan to [-1, +1] before normalization
-    float pan_clamped = std::clamp(data.audio_pan, -1.0f, 1.0f);
-    float pan_norm = (pan_clamped + 1.0f) * 0.5f; // -1 maps to 0, +1 maps to 1
-    ImVec2 bar_pos = ImGui::GetCursorScreenPos();
-    ImGui::ProgressBar(pan_norm, ImVec2(bar_width, 0.0f), "");
-    // Overlay the pan value centered on the bar
-    ImVec2 bar_center = bar_pos;
-    bar_center.x += bar_width * 0.5f;
-    bar_center.y += ImGui::GetFontSize() * 0.15f; // Slight vertical offset for centering
-    char pan_text[16];
-    snprintf(pan_text, sizeof(pan_text), "%.2f", data.audio_pan);
-    ImVec2 text_size = ImGui::CalcTextSize(pan_text);
-    ImGui::GetWindowDrawList()->AddText(
-        ImVec2(bar_center.x - text_size.x * 0.5f, bar_center.y),
-        ImGui::GetColorU32(ImGuiCol_Text),
-        pan_text
+    ImGui::Text("%.2f", data.volume);    // Compact Left/Right display under the main volume bar
+    const float thin_bar_height = 6.0f;  // Same height as frequency bands
+    const float small_spacing = 2.0f;    // Small gap between left and right bars
+    const float half_bar_width = (bar_width - small_spacing) * 0.5f;
+    
+    // Use the captured progress bar position for perfect alignment
+    ImVec2 start_pos = progress_bar_screen_pos;
+    start_pos.y += ImGui::GetFrameHeight() + 2.0f;  // Position below the progress bar
+    
+    // Calculate center point for both bars
+    float center_x = start_pos.x + bar_width * 0.5f;
+    
+    // Draw Left volume bar (grows from center leftward)
+    ImVec2 left_bar_bg_min = ImVec2(start_pos.x, start_pos.y);
+    ImVec2 left_bar_bg_max = ImVec2(center_x - small_spacing * 0.5f, start_pos.y + thin_bar_height);
+    ImVec2 left_bar_fill_min = ImVec2(center_x - small_spacing * 0.5f - data.volume_left * half_bar_width, start_pos.y);
+    ImVec2 left_bar_fill_max = ImVec2(center_x - small_spacing * 0.5f, start_pos.y + thin_bar_height);
+      // Draw Left bar background
+    ImGui::GetWindowDrawList()->AddRectFilled(
+        left_bar_bg_min, left_bar_bg_max,
+        ImGui::GetColorU32(IM_COL32(40, 40, 40, 128)),  // Dark background
+        0.0f  // No rounding
     );
-    ImGui::SameLine();
-    ImGui::Dummy(ImVec2(text_size.x + 8.0f, 0.0f)); // Reserve space so next item doesn't overlap    
+    
+    // Draw Left bar fill (grows from right edge leftward)
+    if (data.volume_left > 0.0f) {
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            left_bar_fill_min, left_bar_fill_max,
+            ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
+            0.0f  // No rounding
+        );
+    }
+    
+    // Draw Right volume bar (grows from center rightward)
+    ImVec2 right_bar_bg_min = ImVec2(center_x + small_spacing * 0.5f, start_pos.y);
+    ImVec2 right_bar_bg_max = ImVec2(start_pos.x + bar_width, start_pos.y + thin_bar_height);
+    ImVec2 right_bar_fill_min = ImVec2(center_x + small_spacing * 0.5f, start_pos.y);
+    ImVec2 right_bar_fill_max = ImVec2(center_x + small_spacing * 0.5f + data.volume_right * half_bar_width, start_pos.y + thin_bar_height);
+    
+    // Draw Right bar background
+    ImGui::GetWindowDrawList()->AddRectFilled(
+        right_bar_bg_min, right_bar_bg_max,
+        ImGui::GetColorU32(IM_COL32(40, 40, 40, 128)),  // Dark background
+        0.0f  // No rounding
+    );
+    
+    // Draw Right bar fill (grows from left edge rightward)
+    if (data.volume_right > 0.0f) {
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            right_bar_fill_min, right_bar_fill_max,
+            ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
+            0.0f  // No rounding
+        );    }    // Reserve space for the custom drawn left/right bars and move cursor down
+    // Use minimal spacing between the left/right bars and the pan bar
+    // This should be just enough to visually separate the bars (2-4 pixels)
+    ImGui::Dummy(ImVec2(0, 4.0f)); // Small spacing after left/right bars
+    
+    // Pan bar (without label and without text overlay)
+    // Use invisible dummy element for alignment with bars above
+    ImGui::Dummy(ImVec2(0, 0));
+    ImGui::SameLine(bar_start_x); // Align exactly with the bars above
+    
+    // Now get cursor position after alignment
+    ImVec2 pan_cursor_pos = ImGui::GetCursorScreenPos();
+    float pan_clamped = std::clamp(data.audio_pan, -1.0f, 1.0f);
+    
+    // Draw pan bar background - full width to match other bars
+    ImVec2 pan_bar_bg_min = ImVec2(pan_cursor_pos.x, pan_cursor_pos.y);
+    ImVec2 pan_bar_bg_max = ImVec2(pan_cursor_pos.x + bar_width, pan_cursor_pos.y + thin_bar_height);
+    
+    ImGui::GetWindowDrawList()->AddRectFilled(
+        pan_bar_bg_min, pan_bar_bg_max,
+        ImGui::GetColorU32(IM_COL32(40, 40, 40, 128)),  // Dark background (same as other bars)
+        0.0f  // No rounding
+    );
+    
+    // Calculate center position
+    float pan_center_x = pan_cursor_pos.x + (bar_width * 0.5f);
+    
+    // Draw pan bar fill based on value
+    // For negative values (-1 to 0), extend from center to left
+    // For positive values (0 to +1), extend from center to right
+    if (pan_clamped < 0.0f) {
+        // Extend to the left for negative values
+        float width = -pan_clamped * (bar_width * 0.5f); // Scale to half width
+        ImVec2 pan_bar_fill_min = ImVec2(pan_center_x - width, pan_cursor_pos.y);
+        ImVec2 pan_bar_fill_max = ImVec2(pan_center_x, pan_cursor_pos.y + thin_bar_height);
+        
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            pan_bar_fill_min, pan_bar_fill_max,
+            ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
+            0.0f  // No rounding
+        );
+    } else if (pan_clamped > 0.0f) {
+        // Extend to the right for positive values
+        float width = pan_clamped * (bar_width * 0.5f); // Scale to half width
+        ImVec2 pan_bar_fill_min = ImVec2(pan_center_x, pan_cursor_pos.y);
+        ImVec2 pan_bar_fill_max = ImVec2(pan_center_x + width, pan_cursor_pos.y + thin_bar_height);
+        
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            pan_bar_fill_min, pan_bar_fill_max,
+            ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
+            0.0f  // No rounding
+        );
+    }
+    
+    // Add center marker line
+    ImGui::GetWindowDrawList()->AddLine(
+        ImVec2(pan_center_x, pan_cursor_pos.y),
+        ImVec2(pan_center_x, pan_cursor_pos.y + thin_bar_height),
+        ImGui::GetColorU32(IM_COL32(255, 255, 255, 180)),  // White semi-transparent
+        1.0f
+    );
+    
+    // Reserve space for the pan bar (using Dummy to advance cursor)
+    ImGui::Dummy(ImVec2(bar_width, thin_bar_height));
+    
+    // Add spacing after the pan bar (same as other bars)
+    ImGui::Dummy(ImVec2(0, 4.0f));
     // Beat
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Beat:");
