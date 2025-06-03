@@ -156,13 +156,40 @@ Here's the data Listeningway provides:
   </tr>
   <tr>
     <td colspan="2"><code>uniform float Listeningway_TotalPhases60Hz &lt; source="listeningway_totalphases60hz"; &gt;;</code></td>
-  </tr>
-  <tr>
+  </tr>  <tr>
     <td><strong>Listeningway_TotalPhases120Hz</strong></td>
     <td>Total number of 120Hz cycles elapsed (float).</td>
   </tr>
   <tr>
     <td colspan="2"><code>uniform float Listeningway_TotalPhases120Hz &lt; source="listeningway_totalphases120hz"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_VolumeLeft</strong></td>
+    <td>Volume level for left audio channels (0.0 to 1.0). Great for stereo-aware effects.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_VolumeLeft &lt; source="listeningway_volumeleft"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_VolumeRight</strong></td>
+    <td>Volume level for right audio channels (0.0 to 1.0). Perfect for stereo spatialization effects.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_VolumeRight &lt; source="listeningway_volumeright"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_AudioPan</strong></td>
+    <td>Stereo pan position (-1.0 = full left, 0.0 = center, +1.0 = full right). Enables positional audio effects.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_AudioPan &lt; source="listeningway_audiopan"; &gt;;</code></td>
+  </tr>
+  <tr>
+    <td><strong>Listeningway_AudioFormat</strong></td>
+    <td>Detected audio format (0.0=none, 1.0=mono, 2.0=stereo, 6.0=5.1 surround, 8.0=7.1 surround). Useful for format-specific effects.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><code>uniform float Listeningway_AudioFormat &lt; source="listeningway_audioformat"; &gt;;</code></td>
   </tr>
 </table>
 
@@ -177,21 +204,36 @@ Here’s a super basic example of using some uniforms in your shader's main pixe
 
 float4 PS_MyAudioReactiveEffect(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
-    // Simple example: Use Bass, Volume, and Beat to drive Red color intensity
-    float intensity = Listeningway_FreqBands[0] * 0.5 // Bass contribution
-                    + Listeningway_Volume * 0.5      // Overall volume contribution
-                    + Listeningway_Beat * 1.0;       // Flash red on beat!
-
-    // Make sure intensity stays in a visible range
-    intensity = saturate(intensity);
-
-    // Get original pixel color
+    // Enhanced example: Use stereo spatialization for more dynamic effects
+    float bass_intensity = Listeningway_FreqBands[0] * 0.5;  // Bass contribution
+    float overall_volume = Listeningway_Volume * 0.5;        // Overall volume
+    float beat_flash = Listeningway_Beat * 1.0;              // Beat flash effect
+    
+    // NEW: Use stereo information for spatial effects
+    float left_volume = Listeningway_VolumeLeft;
+    float right_volume = Listeningway_VolumeRight;
+    float pan_position = Listeningway_AudioPan; // -1.0 (left) to +1.0 (right)
+    
+    // Create a stereo-aware color effect
     float3 color = tex2D(ReShade::BackBuffer, uv).rgb;
+    
+    // Apply different colors based on stereo pan
+    if (pan_position < -0.1) {
+        // Left-heavy audio: Blue tint
+        color = lerp(color, float3(0.2, 0.4, 1.0), left_volume * 0.3);
+    } else if (pan_position > 0.1) {
+        // Right-heavy audio: Red tint
+        color = lerp(color, float3(1.0, 0.2, 0.4), right_volume * 0.3);
+    } else {
+        // Centered audio: Green tint
+        color = lerp(color, float3(0.2, 1.0, 0.4), overall_volume * 0.3);
+    }
+    
+    // Add beat flash that respects stereo positioning
+    float beat_contribution = beat_flash * (0.5 + abs(pan_position) * 0.5);
+    color += float3(1.0, 1.0, 1.0) * beat_contribution * 0.2;
 
-    // Mix original color with red based on intensity
-    color = lerp(color, float3(1.0, 0.0, 0.0), intensity * 0.5); // Mix 50% red at max intensity
-
-    return float4(color, 1.0);
+    return float4(saturate(color), 1.0);
 }
 
 technique MyAudioReactiveEffect {
@@ -255,6 +297,7 @@ BeatTimeMin=0.05
 BeatTimeDivisor=0.1
 VolumeNorm=2.0
 BandNorm=0.1
+PanSmoothing=0.0         ; Pan smoothing factor (0.0 = no smoothing, higher = more smoothing)
 
 [UI]
 CaptureStaleTimeout=3.0
@@ -302,6 +345,30 @@ BandLogStrength=0.5 ; Log scale strength (default: 0.5, higher values = more bas
 - **BandLogScale**: Set to 1 for log-scale (recommended for most music/audio), or 0 for legacy linear mapping.
 - **BandMinFreq/BandMaxFreq**: Adjust the frequency range covered by the bands. Lower min or higher max can make bands more/less sensitive to certain audio content.
 - **BandLogStrength**: Controls how logarithmic the scaling is. Higher values give more detail to bass frequencies.
+
+**Stereo Spatialization & Audio Format Detection:**
+
+Listeningway now provides enhanced stereo audio analysis, enabling sophisticated spatial audio effects. The system detects audio formats (mono, stereo, 5.1, 7.1) and provides per-channel volume analysis and stereo pan information:
+
+```ini
+[Audio]
+PanSmoothing=0.0    ; Pan smoothing factor (0.0 = no smoothing, higher values = more smoothing)
+```
+
+**Key Features:**
+- **Left/Right Volume**: Separate volume analysis for left and right audio channels
+- **Audio Pan**: Real-time stereo pan position (-1.0 = full left, +1.0 = full right)
+- **Format Detection**: Automatic detection of mono, stereo, and surround sound formats
+- **Pan Smoothing**: Configurable smoothing to reduce jitter in pan calculations
+
+**Pan Smoothing:**
+The pan calculation can sometimes be jittery due to rapid audio changes. The `PanSmoothing` setting helps reduce this:
+- **0.0**: No smoothing (default, preserves current behavior)
+- **0.1-0.3**: Light smoothing for subtle stabilization
+- **0.4-0.7**: Medium smoothing for stable pan values
+- **0.8-1.0**: Heavy smoothing for very stable but slower-responding pan
+
+This is especially useful for music visualization where smooth pan movements are more visually appealing than rapid jitter.
 
 **5-Band Equalizer System:**
 
