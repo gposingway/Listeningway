@@ -544,13 +544,10 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // 
             right_bar_fill_min, right_bar_fill_max,
             ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
             0.0f  // No rounding
-        );
-    }    // Reserve space for the custom drawn left/right bars and move cursor down
-    // ImGui::Dummy(ImVec2(0, thin_bar_height + 4.0f));  // Extra spacing after bars
-    
-    // Add vertical spacing - same as from Volume to Left/Right bars
-    //ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() + 2.0f - 4.0f)); // Adjust to match spacing
-    ImGui::Dummy(ImVec2(0, ImGui::GetFrameHeight() - 4.0f)); // Adjust to match spacing
+        );    }    // Reserve space for the custom drawn left/right bars and move cursor down
+    // Use minimal spacing between the left/right bars and the pan bar
+    // This should be just enough to visually separate the bars (2-4 pixels)
+    ImGui::Dummy(ImVec2(0, 4.0f)); // Small spacing after left/right bars
     
     // Pan bar (without label and without text overlay)
     // Use invisible dummy element for alignment with bars above
