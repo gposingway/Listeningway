@@ -151,7 +151,7 @@ Here's the data Listeningway provides:
   </tr>
   <tr>
     <td><strong>Listeningway_TimePhase120Hz</strong></td>
-    <td>Phase (0.0 to 1.0) cycling at 120Hz. Even faster oscillations!</td>
+    <td>Phase (0.0 to 1.0) cycling at 120Hz.</td>
     <td>0.0 to 1.0 (cycling)</td>
   </tr>
   <tr>
