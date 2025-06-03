@@ -4,9 +4,14 @@
 
 **Real-time audio visualization for ReShade shaders**
 
-![Listeningway Showcase](https://github.com/user-attachments/assets/3e52442d-4b7d-41bc-acaf-861fefe14198)
+![Listeningway Showcase](https://github.com/user-attachments/assets/8a11d6b6-bdea-4c31-9614-dbfb7ad8819f)
 
 [<img src="https://github.com/user-attachments/assets/20794810-9e43-4167-bb0e-faf46275186e">](https://github.com/gposingway/Listeningway/releases/latest)
+
+
+
+
+
 
 </div>
 
