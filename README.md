@@ -115,15 +115,15 @@ Here's the data Listeningway provides:
     <td>0.0 to 1.0</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_Volume &lt; source="listeningway_volume"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_Volume &lt; source="listeningway_volume"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_FreqBands</strong></td>
-    <td>Amplitude of 32 frequency bands (Index 0 = Low Bass ... Index 31 = High Treble). Great for spectrum visualizations or driving different effects based on frequency!</td>
+    <td>Amplitude of 32 frequency bands (Index 0 = Low Bass ... Index 31 = High Treble). Great for spectrum visualizations or driving different effects based on frequency.</td>
     <td>0.0 to 1.0 (per band)</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_FreqBands[32] &lt; source="listeningway_freqbands"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_FreqBands[32] &lt; source="listeningway_freqbands"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_Beat</strong></td>
@@ -131,7 +131,7 @@ Here's the data Listeningway provides:
     <td>0.0 to 1.0</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_Beat &lt; source="listeningway_beat"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_Beat &lt; source="listeningway_beat"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_TimeSeconds</strong></td>
@@ -139,7 +139,7 @@ Here's the data Listeningway provides:
     <td>0.0 to ∞</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_TimeSeconds &lt; source="listeningway_timeseconds"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_TimeSeconds &lt; source="listeningway_timeseconds"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_TimePhase60Hz</strong></td>
@@ -147,7 +147,7 @@ Here's the data Listeningway provides:
     <td>0.0 to 1.0 (cycling)</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_TimePhase60Hz &lt; source="listeningway_timephase60hz"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_TimePhase60Hz &lt; source="listeningway_timephase60hz"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_TimePhase120Hz</strong></td>
@@ -155,7 +155,7 @@ Here's the data Listeningway provides:
     <td>0.0 to 1.0 (cycling)</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_TimePhase120Hz &lt; source="listeningway_timephase120hz"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_TimePhase120Hz &lt; source="listeningway_timephase120hz"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_TotalPhases60Hz</strong></td>
@@ -163,30 +163,30 @@ Here's the data Listeningway provides:
     <td>0.0 to ∞</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_TotalPhases60Hz &lt; source="listeningway_totalphases60hz"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_TotalPhases60Hz &lt; source="listeningway_totalphases60hz"; &gt;;</code><br/><br/></td>
   </tr>  <tr>
     <td><strong>Listeningway_TotalPhases120Hz</strong></td>
     <td>Total number of 120Hz cycles elapsed (float).</td>
     <td>0.0 to ∞</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_TotalPhases120Hz &lt; source="listeningway_totalphases120hz"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_TotalPhases120Hz &lt; source="listeningway_totalphases120hz"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_VolumeLeft</strong></td>
-    <td>Volume level for left audio channels (0.0 to 1.0). Great for stereo-aware effects.</td>
+    <td>Volume level for left audio channels (0.0 to 1.0).</td>
     <td>0.0 to 1.0</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_VolumeLeft &lt; source="listeningway_volumeleft"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_VolumeLeft &lt; source="listeningway_volumeleft"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_VolumeRight</strong></td>
-    <td>Volume level for right audio channels (0.0 to 1.0). Perfect for stereo spatialization effects.</td>
+    <td>Volume level for right audio channels (0.0 to 1.0).</td>
     <td>0.0 to 1.0</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_VolumeRight &lt; source="listeningway_volumeright"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_VolumeRight &lt; source="listeningway_volumeright"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_AudioPan</strong></td>
@@ -194,7 +194,7 @@ Here's the data Listeningway provides:
     <td>-1.0 to +1.0</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_AudioPan &lt; source="listeningway_audiopan"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_AudioPan &lt; source="listeningway_audiopan"; &gt;;</code><br/><br/></td>
   </tr>
   <tr>
     <td><strong>Listeningway_AudioFormat</strong></td>
@@ -202,7 +202,7 @@ Here's the data Listeningway provides:
     <td>0.0, 1.0, 2.0, 6.0, 8.0</td>
   </tr>
   <tr>
-    <td colspan="3"><code>uniform float Listeningway_AudioFormat &lt; source="listeningway_audioformat"; &gt;;</code></td>
+    <td colspan="3"><code>uniform float Listeningway_AudioFormat &lt; source="listeningway_audioformat"; &gt;;</code><br/><br/></td>
   </tr>
 </table>
 
