@@ -29,6 +29,14 @@ void LogToFile(const std::string& message, LogLevel level = LogLevel::Debug);
  * @brief Macro for logging error messages.
  */
 #define LOG_ERROR(msg) LogToFile(msg, LogLevel::Error)
+/**
+ * @brief Macro for logging warning messages.
+ */
+#define LOG_WARNING(msg) LogToFile(msg, LogLevel::Debug)
+/**
+ * @brief Macro for logging info messages.
+ */
+#define LOG_INFO(msg) LogToFile(msg, LogLevel::Debug)
 
 /**
  * @brief Opens the log file for writing (call at startup).

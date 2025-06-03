@@ -11,24 +11,141 @@
 #include "constants.h"
 #include "settings.h"
 #include "logging.h"
+#include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
 #include <windows.h>
 #include <shellapi.h>
 #include <string>
 #include <chrono>
 #include <cmath>
+#include <algorithm> // For std::clamp
 
 extern std::atomic_bool g_audio_analysis_enabled;
 extern bool g_listeningway_debug_enabled;
 
+// External declarations for global variables used in overlay
+extern std::atomic_bool g_switching_provider;
+extern std::mutex g_provider_switch_mutex;
+
+// Declare SwitchAudioProvider for use in overlay.cpp
+extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000);
+
 // Helper: Draw toggles (audio analysis, debug logging)
 static void DrawToggles() {
-    bool enabled = g_settings.audio_analysis_enabled;
-    if (ImGui::Checkbox("Enable Audio Analysis", &enabled)) {
-        SetAudioAnalysisEnabled(enabled);
-        g_settings.audio_analysis_enabled.store(enabled);
-        LOG_DEBUG(std::string("[Overlay] Audio Analysis toggled ") + (enabled ? "ON" : "OFF"));
+    // Audio Provider Selection Dropdown
+    std::vector<int> available_providers = GetAvailableAudioCaptureProviders();
+    std::vector<std::string> provider_name_storage;
+    std::vector<const char*> provider_names;
+    provider_name_storage.push_back("None (Audio Analysis Off)");
+    provider_names.push_back(provider_name_storage[0].c_str());
+
+    for (int provider_type : available_providers) {
+        provider_name_storage.push_back(GetAudioCaptureProviderName(provider_type));
+        provider_names.push_back(provider_name_storage.back().c_str());
+    }
+
+    // Determine current selection text
+    // The g_settings.audio_capture_provider_selection stores the *index* in our constructed list
+    // -1 (None) -> index 0
+    // provider_type 0 (System) -> index 1 (if available)
+    // provider_type 1 (Process) -> index 2 (if available, or 1 if System is not)
+    // etc.
+
+    int current_selection_index = 0; // Default to "None"
+    if (g_settings.audio_analysis_enabled) {
+        int current_provider_type = GetAudioCaptureProvider();
+        bool found = false;
+        for (size_t i = 0; i < available_providers.size(); ++i) {
+            if (available_providers[i] == current_provider_type) {
+                current_selection_index = i + 1; // +1 because "None" is at index 0
+                found = true;
+                break;
+            }
+        }
+        if (!found) { // Should not happen if provider is valid
+            LOG_WARNING("[Overlay] Current audio provider not in available list. Defaulting to None.");
+            current_selection_index = 0;
+            SetAudioAnalysisEnabled(false); // Disable if current is somehow invalid
+            g_settings.audio_analysis_enabled.store(false);
+            g_settings.audio_capture_provider_selection = 0; // Store index for "None"
+        }
+    } else {
+        current_selection_index = 0; // "None"
     }
     
+    // Ensure g_settings.audio_capture_provider_selection reflects the actual state at startup or after external changes.
+    // This is a bit redundant with the logic above but ensures consistency if settings were manually edited.
+    if (g_settings.audio_analysis_enabled) {
+        int actual_provider = GetAudioCaptureProvider();
+        bool provider_matched = false;
+        for(size_t i = 0; i < available_providers.size(); ++i) {
+            if (available_providers[i] == actual_provider) {
+                g_settings.audio_capture_provider_selection = i + 1;
+                provider_matched = true;
+                break;
+            }
+        }
+        if (!provider_matched) { // If current provider is not in the list (e.g. became unavailable)
+             g_settings.audio_capture_provider_selection = 0; // "None"
+             SetAudioAnalysisEnabled(false);
+             g_settings.audio_analysis_enabled.store(false);
+        }
+    } else {
+        g_settings.audio_capture_provider_selection = 0; // "None"
+    }
+
+
+    if (ImGui::BeginCombo("Audio Analysis", provider_names[g_settings.audio_capture_provider_selection])) {
+        int previous_selection = g_settings.audio_capture_provider_selection;
+        bool switching_provider = g_switching_provider;
+        for (int i = 0; i < provider_names.size(); ++i) {
+            const bool is_selected = (g_settings.audio_capture_provider_selection == i);
+            bool selectable = !switching_provider;
+            if (ImGui::Selectable(provider_names[i], is_selected, selectable ? 0 : ImGuiSelectableFlags_Disabled)) {
+                if (previous_selection != i && !switching_provider) { // Only act if changed and not already switching
+                    // Removed overlay-side set/clear of g_switching_provider; rely on SwitchAudioProvider only
+                    bool switch_success = true;
+                    if (i == 0) { // "None (Audio Analysis Off)"
+                        if (g_settings.audio_analysis_enabled) {
+                            SetAudioAnalysisEnabled(false);
+                            g_settings.audio_analysis_enabled.store(false);
+                            LOG_DEBUG("[Overlay] Audio Analysis toggled OFF via dropdown");
+                        }                    } else {
+                        int selected_provider_type = available_providers[i - 1];
+                        switch_success = SwitchAudioProvider(selected_provider_type);
+                        if (switch_success) {
+                            g_settings.audio_capture_provider = selected_provider_type;
+                            LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + GetAudioCaptureProviderName(selected_provider_type));
+                        } else {
+                            LOG_ERROR("[Overlay] Failed to switch audio provider. Reverting selection.");
+                            g_settings.audio_capture_provider_selection = previous_selection;
+                        }
+                    }
+                    // After switching, re-query the actual provider and update the selection index
+                    if (i != 0) {
+                        int actual_provider = GetAudioCaptureProvider();
+                        bool found = false;
+                        for (size_t j = 0; j < available_providers.size(); ++j) {
+                            if (available_providers[j] == actual_provider) {
+                                g_settings.audio_capture_provider_selection = j + 1;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            g_settings.audio_capture_provider_selection = 0;
+                        }
+                    } else {
+                        g_settings.audio_capture_provider_selection = 0;
+                    }
+                }
+            }
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
     // Use the global debug flag directly, then synchronize with g_settings through SetDebugEnabled
     bool debug_enabled = g_listeningway_debug_enabled;
     if (ImGui::Checkbox("Enable Debug Logging", &debug_enabled)) {
@@ -324,22 +441,139 @@ static void DrawFrequencyBoostSettings() {
     }
 }
 
+// Helper: Draw spatialization info (left/right volume and pan)
+static void DrawSpatialization(const AudioAnalysisData& data) {
+    // Align all progress bars to the same X position
+    float label_width = ImGui::CalcTextSize("Pan Angle:").x;
+    float bar_start_x = ImGui::GetCursorPosX() + label_width + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+    float bar_width = ImGui::GetContentRegionAvail().x - (bar_start_x - ImGui::GetCursorPosX());
+
+    // Left Volume
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Left:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_left, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_left);
+
+    // Right Volume
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Right:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_right, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_right);
+
+    // Pan Angle (legacy, remove or update to new range)
+    // ImGui::AlignTextToFramePadding();
+    // ImGui::Text("Pan Angle:");
+    // ImGui::SameLine(bar_start_x);
+    // ImGui::ProgressBar((data.audio_pan + 180.0f) / 360.0f, ImVec2(bar_width, 0.0f));
+    // ImGui::SameLine();
+    // ImGui::Text("%.1f deg", data.audio_pan);
+}
+
+// Helper: Draw all volume, spatialization, and beat info in a single aligned block
+static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // Find the widest label
+    float label_width = ImGui::CalcTextSize("Pan Angle:").x;
+    label_width = std::max(label_width, ImGui::CalcTextSize("Volume:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Left:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Right:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Beat:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Format:").x);
+    label_width = std::max(label_width, ImGui::CalcTextSize("Pan Smooth:").x);
+    float bar_start_x = ImGui::GetCursorPosX() + label_width + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+    float bar_width = ImGui::GetContentRegionAvail().x - (bar_start_x - ImGui::GetCursorPosX());
+
+    // Volume (overall)
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Volume:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume);
+
+    // Left
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Left:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_left, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_left);
+
+    // Right
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Right:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.volume_right, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.volume_right);
+
+    // Pan
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Pan:");
+    ImGui::SameLine(bar_start_x);
+    // Clamp pan to [-1, +1] before normalization
+    float pan_clamped = std::clamp(data.audio_pan, -1.0f, 1.0f);
+    float pan_norm = (pan_clamped + 1.0f) * 0.5f; // -1 maps to 0, +1 maps to 1
+    ImVec2 bar_pos = ImGui::GetCursorScreenPos();
+    ImGui::ProgressBar(pan_norm, ImVec2(bar_width, 0.0f), "");
+    // Overlay the pan value centered on the bar
+    ImVec2 bar_center = bar_pos;
+    bar_center.x += bar_width * 0.5f;
+    bar_center.y += ImGui::GetFontSize() * 0.15f; // Slight vertical offset for centering
+    char pan_text[16];
+    snprintf(pan_text, sizeof(pan_text), "%.2f", data.audio_pan);
+    ImVec2 text_size = ImGui::CalcTextSize(pan_text);
+    ImGui::GetWindowDrawList()->AddText(
+        ImVec2(bar_center.x - text_size.x * 0.5f, bar_center.y),
+        ImGui::GetColorU32(ImGuiCol_Text),
+        pan_text
+    );
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(text_size.x + 8.0f, 0.0f)); // Reserve space so next item doesn't overlap    
+    // Beat
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Beat:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::ProgressBar(data.beat, ImVec2(bar_width, 0.0f));
+    ImGui::SameLine();
+    ImGui::Text("%.2f", data.beat);    // Audio Format
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Format:");
+    ImGui::SameLine(bar_start_x);
+    const char* format_name = "None";
+    switch (static_cast<int>(data.audio_format)) {
+        case 0: format_name = "None"; break;
+        case 1: format_name = "Mono"; break;
+        case 2: format_name = "Stereo"; break;
+        case 6: format_name = "5.1"; break;
+        case 8: format_name = "7.1"; break;
+        default: format_name = "Unknown"; break;
+    }
+    ImGui::Text("%s (%.0f)", format_name, data.audio_format);
+
+    // Pan Smoothing
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Pan Smooth:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::SliderFloat("##PanSmoothing", &g_settings.pan_smoothing, 0.0f, 1.0f, "%.2f");
+    if (ImGui::IsItemHovered(-1)) {
+        ImGui::SetTooltip("Reduces pan jitter. 0.0 = no smoothing (current behavior), higher values = more smoothing");
+    }
+}
+
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
 void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
     try {
-        // Store data pointer for access in UI components (used for displaying current tempo)
         ImGui::GetIO().UserData = (void*)&data;
-        
         std::lock_guard<std::mutex> lock(data_mutex);
         DrawToggles();
         DrawLogInfo();
         ImGui::Separator();
         DrawWebsite();
-        ImGui::Separator();
-        DrawVolume(data);
-        ImGui::Separator();
-        DrawBeat(data);
+        ImGui::Separator();        DrawVolumeSpatializationBeat(data);
         ImGui::Separator();
         DrawFrequencyBands(data);
         ImGui::Separator();
@@ -453,6 +687,5 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
     } catch (const std::exception& ex) {
         LOG_ERROR(std::string("[Overlay] Exception in DrawListeningwayDebugOverlay: ") + ex.what());
     } catch (...) {
-        LOG_ERROR("[Overlay] Unknown exception in DrawListeningwayDebugOverlay.");
-    }
+        LOG_ERROR("[Overlay] Unknown exception in DrawListeningwayDebugOverlay.");    }
 }

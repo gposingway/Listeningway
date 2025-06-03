@@ -24,3 +24,11 @@ uniform float Listeningway_TimePhase60Hz < source = "listeningway_timephase60hz"
 uniform float Listeningway_TimePhase120Hz < source = "listeningway_timephase120hz"; >;
 uniform float Listeningway_TotalPhases60Hz < source = "listeningway_totalphases60hz"; >;
 uniform float Listeningway_TotalPhases120Hz < source = "listeningway_totalphases120hz"; >;
+
+// Stereo spatialization uniforms
+uniform float Listeningway_VolumeLeft < source = "listeningway_volumeleft"; >;
+uniform float Listeningway_VolumeRight < source = "listeningway_volumeright"; >;
+uniform float Listeningway_AudioPan < source = "listeningway_audiopan"; >;
+
+// Audio format uniform (0=none, 1=mono, 2=stereo, 6=5.1, 8=7.1)
+uniform float Listeningway_AudioFormat < source = "listeningway_audioformat"; >;

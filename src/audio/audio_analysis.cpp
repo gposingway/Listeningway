@@ -285,6 +285,165 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
         out.freq_bands[band] = out.raw_freq_bands[band] * equalizer_multiplier;
     }
     
+    // --- Audio Spatialization: Calculate left/right volume and pan ---
+    // Calculate per-channel RMS for left/right (and pan)
+    float sum_left = 0.0f, sum_right = 0.0f, sum_center = 0.0f;
+    float sum_side_left = 0.0f, sum_side_right = 0.0f;
+    float sum_rear_left = 0.0f, sum_rear_right = 0.0f;
+    float sum_total = 0.0f;
+    size_t count_left = 0, count_right = 0, count_center = 0;
+    size_t count_side_left = 0, count_side_right = 0, count_rear_left = 0, count_rear_right = 0;
+    // Channel mapping: FL=0, FR=1, C=2, LFE=3, SL=4, SR=5, RL=6, RR=7 (ITU-R BS.775)
+    for (size_t i = 0; i < numFrames; ++i) {
+        for (size_t ch = 0; ch < numChannels; ++ch) {
+            float sample = data[i * numChannels + ch];
+            sum_total += sample * sample;
+            switch (numChannels) {
+                case 1: // Mono
+                    sum_left += sample * sample;
+                    sum_right += sample * sample;
+                    count_left++;
+                    count_right++;
+                    break;
+                case 2: // Stereo
+                    if (ch == 0) { sum_left += sample * sample; count_left++; }
+                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
+                    break;
+                case 6: // 5.1 Surround (FL, FR, C, LFE, SL, SR)
+                    if (ch == 0) { sum_left += sample * sample; count_left++; }
+                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
+                    else if (ch == 2) { sum_center += sample * sample; count_center++; }
+                    else if (ch == 4) { sum_side_left += sample * sample; count_side_left++; }
+                    else if (ch == 5) { sum_side_right += sample * sample; count_side_right++; }
+                    break;
+                case 8: // 7.1 Surround (FL, FR, C, LFE, RL, RR, SL, SR)
+                    if (ch == 0) { sum_left += sample * sample; count_left++; }
+                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
+                    else if (ch == 2) { sum_center += sample * sample; count_center++; }
+                    else if (ch == 4) { sum_rear_left += sample * sample; count_rear_left++; }
+                    else if (ch == 5) { sum_rear_right += sample * sample; count_rear_right++; }
+                    else if (ch == 6) { sum_side_left += sample * sample; count_side_left++; }
+                    else if (ch == 7) { sum_side_right += sample * sample; count_side_right++; }
+                    break;
+                default:
+                    // Fallback: treat first two channels as L/R
+                    if (ch == 0) { sum_left += sample * sample; count_left++; }
+                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
+                    break;
+            }
+        }
+    }
+    // Calculate RMS for each channel group
+    float rms_left = count_left ? std::sqrt(sum_left / count_left) : 0.0f;
+    float rms_right = count_right ? std::sqrt(sum_right / count_right) : 0.0f;
+    float rms_center = count_center ? std::sqrt(sum_center / count_center) : 0.0f;
+    float rms_side_left = count_side_left ? std::sqrt(sum_side_left / count_side_left) : 0.0f;
+    float rms_side_right = count_side_right ? std::sqrt(sum_side_right / count_side_right) : 0.0f;
+    float rms_rear_left = count_rear_left ? std::sqrt(sum_rear_left / count_rear_left) : 0.0f;    float rms_rear_right = count_rear_right ? std::sqrt(sum_rear_right / count_rear_right) : 0.0f;
+      // --- Calculate pan value in [-1, +1] for uniform ---
+    float pan_norm = 0.0f;
+    
+    // Set audio format for uniform exposure
+    out.audio_format = static_cast<float>(numChannels);
+    
+    if (numChannels == 1) {
+        pan_norm = 0.0f;    } else if (numChannels == 2) {
+        // Use enhanced difference-based pan calculation with exponential scaling
+        float l = rms_left;
+        float r = rms_right;        if (l + r > 0.0001f) {            // Simple difference-based pan calculation that should give full range
+            // When one channel is silent and other has signal, this should give ±1.0
+            float basic_pan = (r - l) / (l + r);
+            
+            // For debugging: if one channel is nearly zero, force to extreme
+            if (l < 0.001f && r > 0.01f) {
+                pan_norm = 1.0f; // Right dominant, pan right
+            } else if (r < 0.001f && l > 0.01f) {
+                pan_norm = -1.0f;  // Left dominant, pan left
+            } else {
+                // Use the calculated value with slight amplification for subtle differences
+                pan_norm = std::clamp(basic_pan * 1.5f, -1.0f, 1.0f);
+            }
+        } else {
+            pan_norm = 0.0f;
+        }} else if (numChannels == 6 || numChannels == 8) {
+        // Check if this is effectively stereo content (only FL/FR have significant energy)
+        float front_left_right_energy = rms_left + rms_right;
+        float other_channels_energy = rms_center + rms_side_left + rms_side_right + rms_rear_left + rms_rear_right;
+        float total_energy = front_left_right_energy + other_channels_energy;
+        
+        // If 95% or more of the energy is in FL/FR channels, treat as stereo
+        bool is_effectively_stereo = (total_energy > 0.001f) && 
+                                   ((front_left_right_energy / total_energy) >= 0.95f);
+          if (is_effectively_stereo) {
+            // Use stereo calculation for full [-1, +1] range
+            float l = rms_left;
+            float r = rms_right;
+              if (l + r > 0.0001f) {
+                float basic_pan = (r - l) / (l + r);
+                
+                // For debugging: if one channel is nearly zero, force to extreme
+                if (l < 0.001f && r > 0.01f) {
+                    pan_norm = 1.0f; // Right dominant, pan right
+                } else if (r < 0.001f && l > 0.01f) {
+                    pan_norm = -1.0f;  // Left dominant, pan left
+                } else {
+                    // Use the calculated value with slight amplification for subtle differences
+                    pan_norm = std::clamp(basic_pan * 1.5f, -1.0f, 1.0f);
+                }
+            } else {
+                pan_norm = 0.0f;
+            }
+        } else {
+            // True surround content - use vector sum with ITU-R BS.775 angles
+            // Angles (degrees): FL=-30, FR=+30, C=0, SL=-90, SR=+90, RL=-150, RR=+150
+            struct ChanAngle { float rms; float deg; } chans[7] = {
+                { rms_left, -30.0f },
+                { rms_right, +30.0f },
+                { rms_center, 0.0f },
+                { rms_side_left, -90.0f },
+                { rms_side_right, +90.0f },
+                { rms_rear_left, -150.0f },
+                { rms_rear_right, +150.0f }
+            };
+            float x = 0.0f, y = 0.0f;
+            for (const auto& c : chans) {
+                float rad = c.deg * 3.14159265f / 180.0f;
+                x += c.rms * std::cos(rad);
+                y += c.rms * std::sin(rad);
+            }
+            float pan_deg = 0.0f;
+            if (x != 0.0f || y != 0.0f) {
+                pan_deg = std::atan2(y, x) * 180.0f / 3.14159265f;
+            }
+            pan_norm = std::clamp(pan_deg / 90.0f, -1.0f, 1.0f); // -1 to +1
+        }
+    } else {
+        pan_norm = 0.0f;    }
+    // Now normalize for display only
+    out.volume_left = std::min(1.0f, rms_left * g_settings.volume_norm);
+    out.volume_right = std::min(1.0f, rms_right * g_settings.volume_norm);
+    
+    // Apply pan smoothing if enabled
+    static float smoothed_pan = 0.0f;
+    static bool pan_initialized = false;
+    
+    if (g_settings.pan_smoothing > 0.0f) {
+        if (!pan_initialized) {
+            smoothed_pan = pan_norm;
+            pan_initialized = true;
+        } else {
+            // Exponential moving average: smoothed = (1-alpha) * previous + alpha * current
+            // Higher smoothing value = more smoothing (slower response)
+            float alpha = 1.0f / (1.0f + g_settings.pan_smoothing * 10.0f); // Scale smoothing factor
+            smoothed_pan = (1.0f - alpha) * smoothed_pan + alpha * pan_norm;
+        }
+        out.audio_pan = smoothed_pan;
+    } else {
+        // No smoothing, use raw value
+        out.audio_pan = pan_norm;
+        pan_initialized = false; // Reset for when smoothing is re-enabled
+    }
+    
     // Free FFT configuration
     kiss_fft_free(fft_cfg);
     
