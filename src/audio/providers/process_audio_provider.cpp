@@ -544,6 +544,7 @@ AudioProviderInfo ProcessAudioCaptureProvider::GetProviderInfo() const {
         "game", // code as string
         "Game", // name
         false, // is_default
-        1 // order
+        1, // order
+        true // activates_capture
     };
 }

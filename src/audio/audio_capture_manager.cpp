@@ -7,6 +7,8 @@
 #include "providers/process_audio_provider.h"
 #include "providers/off_audio_provider.h"
 #include "../utils/logging.h"
+#include <algorithm>
+#include <climits>
 
 AudioCaptureManager::AudioCaptureManager() 
     : preferred_provider_type_(AudioCaptureProviderType::SYSTEM_AUDIO),
@@ -93,6 +95,12 @@ std::vector<AudioProviderInfo> AudioCaptureManager::GetAvailableProviderInfos() 
             infos.push_back(provider->GetProviderInfo());
         }
     }
+    
+    // Sort providers by their order field
+    std::sort(infos.begin(), infos.end(), [](const AudioProviderInfo& a, const AudioProviderInfo& b) {
+        return a.order < b.order;
+    });
+    
     return infos;
 }
 
@@ -129,6 +137,18 @@ bool AudioCaptureManager::SetPreferredProvider(AudioCaptureProviderType type) {
     return true;
 }
 
+bool AudioCaptureManager::SetPreferredProviderByCode(const std::string& providerCode) {
+    // Find provider by code
+    for (const auto& provider : providers_) {
+        if (provider->GetProviderInfo().code == providerCode) {
+            return SetPreferredProvider(provider->GetProviderType());
+        }
+    }
+    
+    LOG_WARNING("[AudioCaptureManager] Provider with code '" + providerCode + "' not found");
+    return false;
+}
+
 // New method: Switch provider and restart capture thread if running
 bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
     bool was_running = running.load();
@@ -141,6 +161,35 @@ bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type
         return StartCapture(config, running, thread, data_mutex, data);
     }
     return true;
+}
+
+// New method: Switch provider by code and restart capture thread if running
+bool AudioCaptureManager::SwitchProviderByCodeAndRestart(const std::string& providerCode, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    // Handle "off" code specially - stop capture and don't switch to any provider
+    if (providerCode == "off") {
+        if (running.load()) {
+            StopCapture(running, thread);
+        }
+        LOG_DEBUG("[AudioCaptureManager] Switched to 'off' - audio analysis disabled");
+        return true;
+    }
+    
+    // Find provider by code
+    IAudioCaptureProvider* target_provider = nullptr;
+    for (const auto& provider : providers_) {
+        if (provider->IsAvailable() && provider->GetProviderInfo().code == providerCode) {
+            target_provider = provider.get();
+            break;
+        }
+    }
+    
+    if (!target_provider) {
+        LOG_ERROR("[AudioCaptureManager] Provider with code '" + providerCode + "' not found or not available");
+        return false;
+    }
+    
+    // Use the existing method with the provider type
+    return SwitchProviderAndRestart(target_provider->GetProviderType(), config, running, thread, data_mutex, data);
 }
 
 AudioCaptureProviderType AudioCaptureManager::GetCurrentProvider() const {
@@ -167,12 +216,31 @@ IAudioCaptureProvider* AudioCaptureManager::SelectBestProvider() {
         return preferred;
     }
     
-    // Fall back to any available provider, prioritizing system audio
+    // If no preferred provider, look for a provider marked as default
     for (const auto& provider : providers_) {
-        if (provider->IsAvailable()) {
-            LOG_DEBUG("[AudioCaptureManager] Selected fallback provider: " + provider->GetProviderName());
+        if (provider->IsAvailable() && provider->GetProviderInfo().is_default) {
+            LOG_DEBUG("[AudioCaptureManager] Selected default provider: " + provider->GetProviderName());
             return provider.get();
         }
+    }
+    
+    // Fall back to any available provider, prioritizing by order
+    IAudioCaptureProvider* best_provider = nullptr;
+    int best_order = INT_MAX;
+    
+    for (const auto& provider : providers_) {
+        if (provider->IsAvailable()) {
+            const auto& info = provider->GetProviderInfo();
+            if (info.order < best_order) {
+                best_provider = provider.get();
+                best_order = info.order;
+            }
+        }
+    }
+    
+    if (best_provider) {
+        LOG_DEBUG("[AudioCaptureManager] Selected fallback provider: " + best_provider->GetProviderName());
+        return best_provider;
     }
     
     LOG_ERROR("[AudioCaptureManager] No available providers found");

@@ -24,9 +24,7 @@ public:
 
     std::string GetProviderName() const override {
         return "System Audio (WASAPI Loopback)";
-    }
-
-    bool IsAvailable() const override;
+    }    bool IsAvailable() const override;
     
     bool StartCapture(const AudioAnalysisConfig& config, 
                      std::atomic_bool& running, 

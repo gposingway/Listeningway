@@ -321,6 +321,7 @@ AudioProviderInfo SystemAudioCaptureProvider::GetProviderInfo() const {
         "system", // code as string
         "System Audio", // name
         true, // is_default
-        2 // order
+        2, // order
+        true // activates_capture
     };
 }

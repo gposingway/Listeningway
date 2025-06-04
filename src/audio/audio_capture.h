@@ -41,3 +41,6 @@ std::string GetAudioCaptureProviderName(const std::string& providerCode);
 
 // Overlay API: Switch provider and restart capture thread if running
 bool SwitchAudioCaptureProviderAndRestart(int providerType, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+
+// Overlay API: Switch provider by code and restart capture thread if running
+bool SwitchAudioCaptureProviderByCodeAndRestart(const std::string& providerCode, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);

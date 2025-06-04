@@ -49,6 +49,13 @@ public:
     bool SetPreferredProvider(AudioCaptureProviderType type);
 
     /**
+     * @brief Sets the preferred provider by code string
+     * @param providerCode Provider code string (e.g., "system", "game", "off")
+     * @return true if the provider is available and was set successfully
+     */
+    bool SetPreferredProviderByCode(const std::string& providerCode);
+
+    /**
      * @brief Gets the current preferred provider type
      * @return Current preferred provider type
      */
@@ -109,6 +116,18 @@ public:
      * @return true if switch and restart succeeded
      */
     bool SwitchProviderAndRestart(AudioCaptureProviderType type, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+
+    /**
+     * @brief Switches provider by code and restarts capture thread if running
+     * @param providerCode Provider code string (e.g., "off", "system", "game")
+     * @param config Analysis configuration
+     * @param running Atomic flag to control thread lifetime
+     * @param thread Thread object (will be stopped/restarted)
+     * @param data_mutex Mutex protecting the analysis data
+     * @param data Analysis data to be updated by the thread
+     * @return true if switch and restart succeeded
+     */
+    bool SwitchProviderByCodeAndRestart(const std::string& providerCode, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
 
     /**
      * @brief Gets all available provider infos (for UI and config)

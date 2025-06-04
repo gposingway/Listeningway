@@ -25,6 +25,7 @@ struct AudioProviderInfo {
     std::string name;        // Human-readable name for UI
     bool is_default;         // Is this the default provider?
     int order;               // Order for display/UI
+    bool activates_capture;  // Whether this provider activates actual audio capture
 };
 
 /**
@@ -47,9 +48,7 @@ public:
      * @brief Gets the provider name
      * @return Human-readable provider name
      */
-    virtual std::string GetProviderName() const = 0;
-
-    /**
+    virtual std::string GetProviderName() const = 0;    /**
      * @brief Checks if this provider is available on the current system
      * @return true if the provider can be used
      */

@@ -211,14 +211,12 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
         }
         g_switching_provider = false;
         return true;
-    }
-
-    // Otherwise, robustly switch provider and restart thread if needed
+    }    // Otherwise, robustly switch provider and restart thread if needed
     bool switch_ok = SwitchAudioCaptureProviderAndRestart(providerType, g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
     if (switch_ok) {
         g_audio_analysis_enabled = true;
         g_settings.audio_analysis_enabled.store(true);
-        g_settings.audio_capture_provider = providerType;
+        // Note: We could save the provider code here if needed, but it's handled in the switch function
         LOG_DEBUG("[Addon] SwitchAudioProvider: Switched and restarted to provider " + std::to_string(providerType));
     } else {
         LOG_ERROR("[Addon] SwitchAudioProvider: Failed to switch/restart to provider " + std::to_string(providerType));

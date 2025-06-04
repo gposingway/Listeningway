@@ -41,9 +41,7 @@ public:
 
     std::string GetProviderName() const override {
         return "Game Audio (Process-Aware)";
-    }
-
-    bool IsAvailable() const override;
+    }    bool IsAvailable() const override;
     
     bool StartCapture(const AudioAnalysisConfig& config, 
                      std::atomic_bool& running, 

@@ -47,12 +47,8 @@ struct ListeningwaySettings {
     float equalizer_band4 = DEFAULT_EQUALIZER_BAND4;
     float equalizer_band5 = DEFAULT_EQUALIZER_BAND5;
     float equalizer_width = DEFAULT_EQUALIZER_WIDTH;
-    
-    // Audio capture provider (0 = System Audio, 1 = Process Audio)
-    int audio_capture_provider = DEFAULT_AUDIO_CAPTURE_PROVIDER;
-    
-    // User selection in overlay (-1 = None/Off, 0 = System, 1 = Process)
-    int audio_capture_provider_selection = DEFAULT_AUDIO_CAPTURE_PROVIDER_SELECTION;
+      // Audio capture provider code (e.g., "system", "game", "off")
+    std::string audio_capture_provider_code = ""; // Empty means use default provider
     
     // Pan smoothing factor (0.0 = no smoothing, higher values = more smoothing)
     float pan_smoothing = DEFAULT_PAN_SMOOTHING;

@@ -17,10 +17,12 @@ void InitAudioCapture() {
     if (!g_audio_capture_manager) {
         g_audio_capture_manager = std::make_unique<AudioCaptureManager>();
         g_audio_capture_manager->Initialize();
-        // Set preferred provider from settings
-        g_audio_capture_manager->SetPreferredProvider(
-            static_cast<AudioCaptureProviderType>(g_settings.audio_capture_provider)
-        );
+        
+        // Set preferred provider from settings if specified
+        if (!g_settings.audio_capture_provider_code.empty()) {
+            g_audio_capture_manager->SetPreferredProviderByCode(g_settings.audio_capture_provider_code);
+        }
+        // If no provider code is set, let the manager use its default selection logic
     }
 }
 
@@ -122,4 +124,13 @@ bool SwitchAudioCaptureProviderAndRestart(int providerType, const AudioAnalysisC
     if (!g_audio_capture_manager) return false;
     if (providerType < 0) return false; // -1 is "None (off)"
     return g_audio_capture_manager->SwitchProviderAndRestart(static_cast<AudioCaptureProviderType>(providerType), config, running, thread, data_mutex, data);
+}
+
+// Overlay API: Switch provider by code and restart capture thread if running
+bool SwitchAudioCaptureProviderByCodeAndRestart(const std::string& providerCode, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    if (!g_audio_capture_manager) {
+        InitAudioCapture();
+    }
+    if (!g_audio_capture_manager) return false;
+    return g_audio_capture_manager->SwitchProviderByCodeAndRestart(providerCode, config, running, thread, data_mutex, data);
 }

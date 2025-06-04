@@ -44,8 +44,7 @@ ListeningwaySettings g_settings = {
     DEFAULT_BAND_MIN_FREQ,            // band_min_freq
     DEFAULT_BAND_MAX_FREQ,            // band_max_freq
     DEFAULT_BAND_LOG_STRENGTH,        // band_log_strength
-    
-    // 5-Band equalizer settings
+      // 5-Band equalizer settings
     DEFAULT_EQUALIZER_BAND1,          // equalizer_band1
     DEFAULT_EQUALIZER_BAND2,          // equalizer_band2
     DEFAULT_EQUALIZER_BAND3,          // equalizer_band3
@@ -53,8 +52,10 @@ ListeningwaySettings g_settings = {
     DEFAULT_EQUALIZER_BAND5,          // equalizer_band5
     DEFAULT_EQUALIZER_WIDTH,          // equalizer_width
     
-    // Audio capture provider selection
-    DEFAULT_AUDIO_CAPTURE_PROVIDER,   // audio_capture_provider
+    // Audio capture provider code (empty string means use default from provider metadata)
+    "",                               // audio_capture_provider_code
+    
+    DEFAULT_PAN_SMOOTHING,            // pan_smoothing
 };
 
 std::atomic_bool g_audio_analysis_enabled = DEFAULT_AUDIO_ANALYSIS_ENABLED;
@@ -174,6 +175,8 @@ void SetDebugEnabled(bool enabled) {
 #define WR_INI_FLOAT(section, key, var) { char buf[32]; sprintf_s(buf, "%.6f", var); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
 #define WR_INI_SIZE(section, key, var) { char buf[32]; sprintf_s(buf, "%u", static_cast<unsigned int>(var)); WritePrivateProfileStringA(section, key, buf, ini.c_str()); }
 #define RW_INI_BOOL(section, key, var, def) var = (GetPrivateProfileIntA(section, key, (def) ? 1 : 0, ini.c_str()) != 0);
+#define RW_INI_STRING(section, key, var, def) { char buf[256]; GetPrivateProfileStringA(section, key, def, buf, sizeof(buf), ini.c_str()); var = std::string(buf); }
+#define WR_INI_STRING(section, key, var) WritePrivateProfileStringA(section, key, var.c_str(), ini.c_str());
 
 /**
  * @brief Reads a floating-point value from an INI file.
@@ -241,10 +244,10 @@ void LoadAllTunables() {
     RW_INI_FLOAT("Audio", "EqualizerBand2", g_settings.equalizer_band2, DEFAULT_EQUALIZER_BAND2);
     RW_INI_FLOAT("Audio", "EqualizerBand3", g_settings.equalizer_band3, DEFAULT_EQUALIZER_BAND3);
     RW_INI_FLOAT("Audio", "EqualizerBand4", g_settings.equalizer_band4, DEFAULT_EQUALIZER_BAND4);
-    RW_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5, DEFAULT_EQUALIZER_BAND5);
-    RW_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width, DEFAULT_EQUALIZER_WIDTH);
-      // Audio capture provider selection (0 = System Audio, 1 = Process Audio)
-    g_settings.audio_capture_provider = GetPrivateProfileIntA("Audio", "CaptureProvider", DEFAULT_AUDIO_CAPTURE_PROVIDER, ini.c_str());
+    RW_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5, DEFAULT_EQUALIZER_BAND5);    RW_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width, DEFAULT_EQUALIZER_WIDTH);
+    
+    // Audio capture provider selection (string-based)
+    RW_INI_STRING("Audio", "CaptureProviderCode", g_settings.audio_capture_provider_code, "");
     
     // Pan smoothing setting
     RW_INI_FLOAT("Audio", "PanSmoothing", g_settings.pan_smoothing, DEFAULT_PAN_SMOOTHING);
@@ -306,10 +309,10 @@ void SaveAllTunables() {
     WR_INI_FLOAT("Audio", "EqualizerBand2", g_settings.equalizer_band2);
     WR_INI_FLOAT("Audio", "EqualizerBand3", g_settings.equalizer_band3);
     WR_INI_FLOAT("Audio", "EqualizerBand4", g_settings.equalizer_band4);
-    WR_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5);
-    WR_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width);
-      // Audio capture provider selection
-    WR_INI_SIZE("Audio", "CaptureProvider", g_settings.audio_capture_provider);
+    WR_INI_FLOAT("Audio", "EqualizerBand5", g_settings.equalizer_band5);    WR_INI_FLOAT("Audio", "EqualizerWidth", g_settings.equalizer_width);
+    
+    // Audio capture provider selection (string-based)
+    WR_INI_STRING("Audio", "CaptureProviderCode", g_settings.audio_capture_provider_code);
     
     // Pan smoothing setting
     WR_INI_FLOAT("Audio", "PanSmoothing", g_settings.pan_smoothing);

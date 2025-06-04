@@ -59,13 +59,30 @@ static void DrawToggles() {
         bool switching_provider = g_switching_provider;
         for (int i = 0; i < provider_names.size(); ++i) {
             const bool is_selected = (display_selection_index == i);
-            bool selectable = !switching_provider;
-            if (ImGui::Selectable(provider_names[i], is_selected, selectable ? 0 : ImGuiSelectableFlags_Disabled)) {
+            bool selectable = !switching_provider;            if (ImGui::Selectable(provider_names[i], is_selected, selectable ? 0 : ImGuiSelectableFlags_Disabled)) {
                 if (previous_selection != i && !switching_provider) {
                     const auto& selected_info = available_providers[i];
                     config.audio.captureProviderCode = selected_info.code;
                     g_configManager.NotifyConfigurationChanged();
-                    LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + selected_info.name);
+                    
+                    // Map provider code to provider type for existing SwitchAudioProvider function
+                    int provider_type = -1; // Default to "None/Off"
+                    if (selected_info.code == "system") {
+                        provider_type = 0; // SYSTEM_AUDIO
+                    } else if (selected_info.code == "game") {
+                        provider_type = 1; // PROCESS_AUDIO
+                    }
+                    // "off" code stays as -1 for None
+                    
+                    // Switch the provider using the existing robust function
+                    bool switch_ok = SwitchAudioProvider(provider_type, 2000);
+                    
+                    if (switch_ok) {
+                        LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + selected_info.name + 
+                                 " (code: " + selected_info.code + ", type: " + std::to_string(provider_type) + ")");
+                    } else {
+                        LOG_ERROR(std::string("[Overlay] Failed to switch to provider: ") + selected_info.name);
+                    }
                 }
             }
             if (is_selected) {

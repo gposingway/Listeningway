@@ -70,9 +70,6 @@ constexpr float DEFAULT_EQUALIZER_BAND5 = 1.63f;
 constexpr float DEFAULT_EQUALIZER_WIDTH = 0.15f;
 
 // Audio Capture
-constexpr int DEFAULT_AUDIO_CAPTURE_PROVIDER = 0; // 0 = System, 1 = Process
-constexpr int DEFAULT_AUDIO_CAPTURE_PROVIDER_SELECTION = 0; // 0 = None (Audio Analysis Off)
-
 // Pan smoothing (0.0 = no smoothing, higher values = more smoothing)
 constexpr float DEFAULT_PAN_SMOOTHING = 0.1f; // Default: no smoothing to preserve current behavior
 
