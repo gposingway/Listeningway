@@ -1,5 +1,5 @@
 #include "ConfigurationManager.h"
-#include "logging.h"
+#include "../logging.h"
 
 ConfigurationManager& ConfigurationManager::Instance() {
     static ConfigurationManager instance;
@@ -58,7 +58,7 @@ void ConfigurationManager::ResetToDefaults() {
 
 void ConfigurationManager::AddChangeListener(std::shared_ptr<IConfigurationChangeListener> listener) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_listeners.push_back(std::weak_ptr<IConfigurationChangeListener>(listener));
+    m_listeners.push_back(listener);
 }
 
 void ConfigurationManager::RemoveChangeListener(std::shared_ptr<IConfigurationChangeListener> listener) {
@@ -86,10 +86,11 @@ void ConfigurationManager::NotifyListeners() {
             }
         }
     }
-      // Notify listeners outside the lock to avoid deadlocks
+    
+    // Notify listeners outside the lock to avoid deadlocks
     for (auto& listener : listeners_copy) {
         try {
-            listener->OnConfigurationChanged("*", "", "");
+            listener->OnConfigurationChanged("*", ConfigValue(), ConfigValue());
         } catch (const std::exception& e) {
             LOG_ERROR("[ConfigurationManager] Exception in listener notification: " + std::string(e.what()));
         }

@@ -85,7 +85,7 @@ private:
     
     mutable std::mutex m_mutex;
     mutable Listeningway::Configuration m_config;
-    std::vector<std::weak_ptr<IConfigurationChangeListener>> m_listeners;
+    std::vector<std::shared_ptr<IConfigurationChangeListener>> m_listeners;
     
     void NotifyListeners();
 };

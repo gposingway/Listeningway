@@ -24,6 +24,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/audio
     ${CMAKE_SOURCE_DIR}/src/audio/beat_detection
     ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/core/configuration
     ${CMAKE_SOURCE_DIR}/src/utils
 )
 
@@ -38,6 +39,9 @@ add_library(${PROJECT_NAME} SHARED
     src/utils/logging.cpp src/utils/logging.h
     src/core/uniform_manager.cpp src/core/uniform_manager.h
     src/core/settings.cpp src/core/settings.h
+    src/core/configuration/ConfigurationManager.cpp src/core/configuration/ConfigurationManager.h
+    src/core/configuration/Configuration.cpp src/core/configuration/Configuration.h
+    src/core/configuration/ConfigValue.cpp src/core/configuration/ConfigValue.h
     src/audio/beat_detection/beat_detector.cpp src/audio/beat_detection/beat_detector.h
     src/audio/beat_detection/simple_energy_beat_detector.cpp src/audio/beat_detection/simple_energy_beat_detector.h
     src/audio/beat_detection/spectral_flux_auto_beat_detector.cpp src/audio/beat_detection/spectral_flux_auto_beat_detector.h
