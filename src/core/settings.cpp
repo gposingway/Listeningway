@@ -1,7 +1,3 @@
-// ---------------------------------------------
-// @file settings.cpp
-// @brief Implementation of settings management for Listeningway
-// ---------------------------------------------
 #include "constants.h"
 #include "settings.h"
 #include "audio_analysis.h"
@@ -11,39 +7,36 @@
 #include <string>
 #include <atomic>
 
-// Tunable variables (populated from .ini or defaults)
+// Global settings with default values
 ListeningwaySettings g_settings = {
-    // Default values from constants.h
-    DEFAULT_LISTENINGWAY_NUM_BANDS,                // num_bands
-    DEFAULT_LISTENINGWAY_FFT_SIZE,                 // fft_size
-    DEFAULT_LISTENINGWAY_FLUX_ALPHA,               // flux_alpha
-    DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER, // flux_threshold_multiplier
+    DEFAULT_LISTENINGWAY_NUM_BANDS,
+    DEFAULT_LISTENINGWAY_FFT_SIZE,
+    DEFAULT_LISTENINGWAY_FLUX_ALPHA,
+    DEFAULT_LISTENINGWAY_FLUX_THRESHOLD_MULTIPLIER,
     
-    // Band-limited beat detection settings
-    DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ,            // beat_min_freq
-    DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ,            // beat_max_freq
-    DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA,           // flux_low_alpha
-    DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER, // flux_low_threshold_multiplier
+    // Beat detection settings
+    DEFAULT_LISTENINGWAY_BEAT_MIN_FREQ,
+    DEFAULT_LISTENINGWAY_BEAT_MAX_FREQ,
+    DEFAULT_LISTENINGWAY_FLUX_LOW_ALPHA,
+    DEFAULT_LISTENINGWAY_FLUX_LOW_THRESHOLD_MULTIPLIER,    
+    DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN,
+    DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT,
+    DEFAULT_LISTENINGWAY_BEAT_TIME_SCALE,
+    DEFAULT_LISTENINGWAY_BEAT_TIME_INITIAL,
+    DEFAULT_LISTENINGWAY_BEAT_TIME_MIN,
+    DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR,
+    DEFAULT_LISTENINGWAY_VOLUME_NORM,
+    DEFAULT_LISTENINGWAY_BAND_NORM,
+    DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT,
     
-    DEFAULT_LISTENINGWAY_BEAT_FLUX_MIN,            // beat_flux_min
-    DEFAULT_LISTENINGWAY_BEAT_FALLOFF_DEFAULT,     // beat_falloff_default
-    DEFAULT_LISTENINGWAY_BEAT_TIME_SCALE,          // beat_time_scale
-    DEFAULT_LISTENINGWAY_BEAT_TIME_INITIAL,        // beat_time_initial
-    DEFAULT_LISTENINGWAY_BEAT_TIME_MIN,            // beat_time_min
-    DEFAULT_LISTENINGWAY_BEAT_TIME_DIVISOR,        // beat_time_divisor
-    DEFAULT_LISTENINGWAY_VOLUME_NORM,              // volume_norm
-    DEFAULT_LISTENINGWAY_BAND_NORM,                // band_norm
-    DEFAULT_LISTENINGWAY_CAPTURE_STALE_TIMEOUT,    // capture_stale_timeout
+    DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM, // 0 = SimpleEnergy, 1 = SpectralFluxAuto
     
-    // Beat detection algorithm selection (0 = SimpleEnergy, 1 = SpectralFluxAuto)
-    DEFAULT_LISTENINGWAY_BEAT_DETECTION_ALGORITHM, // beat_detection_algorithm
-    
-    // Advanced spectral flux autocorrelation settings
-    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD,  // spectral_flux_threshold
-    DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD,   // tempo_change_threshold
-    DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW,    // beat_induction_window
-    DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT,      // octave_error_weight
-    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER,  // spectral_flux_decay_multiplier
+    // Spectral flux autocorrelation settings
+    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_THRESHOLD,
+    DEFAULT_LISTENINGWAY_TEMPO_CHANGE_THRESHOLD,
+    DEFAULT_LISTENINGWAY_BEAT_INDUCTION_WINDOW,
+    DEFAULT_LISTENINGWAY_OCTAVE_ERROR_WEIGHT,
+    DEFAULT_LISTENINGWAY_SPECTRAL_FLUX_DECAY_MULTIPLIER,
     
     DEFAULT_LISTENINGWAY_AUDIO_ANALYSIS_ENABLED,   // audio_analysis_enabled
     DEFAULT_LISTENINGWAY_DEBUG_ENABLED,            // debug_enabled

@@ -1,7 +1,3 @@
-// ---------------------------------------------
-// @file listeningway_addon.cpp
-// @brief Main entry point and DLL logic for Listeningway ReShade Addon
-// ---------------------------------------------
 #include <algorithm>
 #include <unordered_map>
 #include <string_view>
@@ -31,7 +27,7 @@
 
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
-static std::atomic_bool g_audio_analysis_enabled = true; // Toggle for audio analysis
+static std::atomic_bool g_audio_analysis_enabled = true;
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
@@ -43,10 +39,7 @@ static std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_
 std::atomic_bool g_switching_provider = false;
 std::mutex g_provider_switch_mutex;
 
-/**
- * @brief Updates all Listeningway_* uniforms in all loaded effects.
- * @param runtime The ReShade effect runtime.
- */
+// Updates all Listeningway_* uniforms in loaded effects
 static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {    float volume_to_set;
     std::vector<float> freq_bands_to_set;
     float beat_to_set;

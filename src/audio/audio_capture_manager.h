@@ -1,7 +1,3 @@
-// ---------------------------------------------
-// Audio Capture Manager
-// Manages audio capture providers and handles provider selection
-// ---------------------------------------------
 #pragma once
 #include "providers/audio_capture_provider.h"
 #include "audio_analysis.h"
@@ -11,13 +7,11 @@
 #include <thread>
 #include <mutex>
 
-/**
- * @brief Audio capture manager that handles provider selection and management
- */
+// Manages audio capture providers and provider selection
 class AudioCaptureManager {
 private:
     std::vector<std::unique_ptr<IAudioCaptureProvider>> providers_;
-    IAudioCaptureProvider* current_provider_;  // Raw pointer to avoid ownership issues
+    IAudioCaptureProvider* current_provider_;
     AudioCaptureProviderType preferred_provider_type_;
     
     bool initialized_;
@@ -26,10 +20,7 @@ public:
     AudioCaptureManager();
     ~AudioCaptureManager();
 
-    /**
-     * @brief Initializes the audio capture manager and registers providers
-     * @return true if initialization succeeded
-     */
+    // Initialize manager and register providers
     bool Initialize();
 
     /**

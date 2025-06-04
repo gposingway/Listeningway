@@ -1,15 +1,9 @@
-// ---------------------------------------------
-// System Audio Capture Provider
-// Captures system-wide audio using WASAPI loopback
-// ---------------------------------------------
 #pragma once
 #include "audio_capture_provider.h"
 #include <mmdeviceapi.h>
 #include <atomic>
 
-/**
- * @brief System-wide audio capture provider using WASAPI loopback
- */
+// System-wide audio capture using WASAPI loopback
 class SystemAudioCaptureProvider : public IAudioCaptureProvider {
 private:
     class DeviceNotificationClient;
@@ -22,7 +16,6 @@ public:
     SystemAudioCaptureProvider() = default;
     ~SystemAudioCaptureProvider() override = default;
 
-    // IAudioCaptureProvider implementation
     AudioCaptureProviderType GetProviderType() const override {
         return AudioCaptureProviderType::SYSTEM_AUDIO;
     }

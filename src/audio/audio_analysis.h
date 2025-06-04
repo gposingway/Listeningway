@@ -1,7 +1,3 @@
-// ---------------------------------------------
-// Audio Analysis Module
-// Provides real-time audio feature extraction for Listeningway
-// ---------------------------------------------
 #pragma once
 #include <vector>
 #include <cstddef>
@@ -11,38 +7,34 @@
 #include "settings.h"
 #include "beat_detector.h"
 
-/**
- * @brief Holds the results of audio analysis for one frame.
- * Contains normalized volume, frequency bands, and beat value.
- */
+// Audio analysis results for one frame
 struct AudioAnalysisData {
     float volume = 0.0f;                // Normalized RMS volume [0,1]
-    std::vector<float> freq_bands;      // Normalized frequency band magnitudes (with equalizer applied)
-    std::vector<float> raw_freq_bands;  // Raw frequency band values (without equalizer)
+    std::vector<float> freq_bands;      // Normalized frequency bands (with equalizer)
+    std::vector<float> raw_freq_bands;  // Raw frequency bands (without equalizer)
     float beat = 0.0f;                 // Beat detection value [0,1]
     
-    // Advanced info from beat detection
-    float tempo_bpm = 0.0f;            // Detected tempo in BPM (if available)
+    // Beat detection info
+    float tempo_bpm = 0.0f;            // Detected tempo in BPM
     float tempo_confidence = 0.0f;     // Confidence in tempo estimate [0,1]
     float beat_phase = 0.0f;           // Current phase in beat cycle [0,1]
     bool tempo_detected = false;       // Whether tempo has been detected
 
-    // --- Internal state for analysis (not for API consumers) ---
+    // Internal analysis state (not for API consumers)
     std::vector<float> _prev_magnitudes; // Previous FFT magnitudes (for spectral flux)
     float _flux_avg = 0.0f;             // Moving average of spectral flux
     float _flux_low_avg = 0.0f;         // Moving average of low-frequency spectral flux    
-    // Additional fields for stereo analysis
-    float volume_left = 0.0f;         // Normalized RMS/peak volume for left channel(s)
-    float volume_right = 0.0f;        // Normalized RMS/peak volume for right channel(s)
-    float audio_pan = 0.0f;           // Calculated pan value in [-1, +1]
-    float audio_format = 0.0f;        // Detected audio format (0=none, 1=mono, 2=stereo, 6=5.1, 8=7.1)
+    
+    // Stereo analysis
+    float volume_left = 0.0f;         // Left channel volume
+    float volume_right = 0.0f;        // Right channel volume
+    float audio_pan = 0.0f;           // Pan value [-1, +1]
+    float audio_format = 0.0f;        // Audio format (0=none, 1=mono, 2=stereo, 6=5.1, 8=7.1)
 
     AudioAnalysisData(size_t bands = 8) : freq_bands(bands, 0.0f), raw_freq_bands(bands, 0.0f) {}
 };
 
-/**
- * @brief Configuration for audio analysis (FFT size, bands, etc.).
- */
+// Audio analysis configuration
 struct AudioAnalysisConfig {
     size_t num_bands;
     size_t fft_size;
