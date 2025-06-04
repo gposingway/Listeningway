@@ -24,6 +24,7 @@
 #include "uniform_manager.h"
 #include "constants.h"
 #include "settings.h"
+#include "configuration/ConfigurationManager.h"
 
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
@@ -40,10 +41,12 @@ std::atomic_bool g_switching_provider = false;
 std::mutex g_provider_switch_mutex;
 
 // Updates all Listeningway_* uniforms in loaded effects
-static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {    float volume_to_set;
+static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
+    float volume_to_set;
     std::vector<float> freq_bands_to_set;
     float beat_to_set;
     float volume_left, volume_right, audio_pan, audio_format;
+    float amplifier = 1.0f;
     {
         std::lock_guard<std::mutex> lock(g_audio_data_mutex);
         volume_to_set = g_audio_data.volume;
@@ -54,6 +57,14 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {    flo
         audio_pan = g_audio_data.audio_pan;
         audio_format = g_audio_data.audio_format;
     }
+    // Get amplifier from config (thread-safe)
+    amplifier = ConfigurationManager::Instance().GetConfig().frequency.amplifier;
+    // Apply amplifier to all relevant values
+    volume_to_set *= amplifier;
+    beat_to_set *= amplifier;
+    for (auto& v : freq_bands_to_set) v *= amplifier;
+    volume_left *= amplifier;
+    volume_right *= amplifier;
     // Time/phase calculations
     auto now = std::chrono::steady_clock::now();
     std::chrono::duration<float> elapsed = now - g_start_time;

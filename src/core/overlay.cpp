@@ -98,6 +98,48 @@ static void DrawToggles() {
         SetDebugEnabled(debug_enabled);
         LOG_DEBUG(std::string("[Overlay] Debug Logging toggled ") + (debug_enabled ? "ON" : "OFF"));
     }
+    // Pan Smoothing
+    float pan_smoothing = config.audio.panSmoothing;
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::SliderFloat("##PanSmoothing", &pan_smoothing, 0.0f, 1.0f, "%.2f")) {
+        config.audio.panSmoothing = pan_smoothing;
+        g_configManager.NotifyConfigurationChanged();
+    }
+    ImGui::PopItemWidth();
+    if (ImGui::IsItemHovered(-1)) {
+        ImGui::SetTooltip("Reduces pan jitter. 0.0 = no smoothing (current behavior), higher values = more smoothing");
+    }
+    // Amplifier slider for visualization scaling (under Pan Smooth, with label)
+    float amplifier = config.frequency.amplifier;
+    bool amp_is_spinal = amplifier > 10.0f;
+    if (amp_is_spinal) {
+        float t = std::clamp((amplifier - 10.0f) / 1.0f, 0.0f, 1.0f);
+        ImVec4 base = ImGui::GetStyleColorVec4(ImGuiCol_SliderGrabActive);
+        ImVec4 red = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
+        ImVec4 lerped = ImVec4(
+            base.x * (1.0f - t) + red.x * t,
+            base.y * (1.0f - t) + red.y * t,
+            base.z * (1.0f - t) + red.z * t,
+            base.w * (1.0f - t) + red.w * t
+        );
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab, lerped);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, lerped);
+    }
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Amplifier:");
+    ImGui::SameLine();
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::SliderFloat("##Amplifier", &amplifier, 1.0f, 11.0f, "%.2f")) {
+        config.frequency.amplifier = amplifier;
+        g_configManager.NotifyConfigurationChanged();
+    }
+    ImGui::PopItemWidth();
+    if (amp_is_spinal) {
+        ImGui::PopStyleColor(2);
+    }
+    if (ImGui::IsItemHovered(-1)) {
+        ImGui::SetTooltip("Scales all visualization values (volume, beat, bands). Useful for low-volume systems.");
+    }
 }
 
 // Helper: Draw log file info
@@ -125,22 +167,28 @@ static void DrawWebsite() {
 
 // Helper: Draw volume meter
 static void DrawVolume(const AudioAnalysisData& data) {
+    auto& config = g_configManager.GetConfig();
+    float amp = config.frequency.amplifier;
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Volume:");
     ImGui::SameLine();
-    ImGui::ProgressBar(data.volume, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
+    ImGui::ProgressBar(std::clamp(data.volume * amp, 0.0f, 1.0f), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
 }
 
 // Helper: Draw beat meter
 static void DrawBeat(const AudioAnalysisData& data) {
+    auto& config = g_configManager.GetConfig();
+    float amp = config.frequency.amplifier;
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Beat:");
     ImGui::SameLine();
-    ImGui::ProgressBar(data.beat, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
+    ImGui::ProgressBar(std::clamp(data.beat * amp, 0.0f, 1.0f), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
 }
 
 // Helper: Draw frequency bands with view mode
 static void DrawFrequencyBands(const AudioAnalysisData& data) {
+    auto& config = g_configManager.GetConfig();
+    float amp = config.frequency.amplifier;
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Frequency Bands");
     
@@ -160,7 +208,7 @@ static void DrawFrequencyBands(const AudioAnalysisData& data) {
     
     // Draw each frequency band as a thin bar
     for (size_t i = 0; i < band_count; ++i) {
-        float value = data.freq_bands[i];
+        float value = std::clamp(data.freq_bands[i] * amp, 0.0f, 1.0f);
         
         // Calculate bar coordinates - each bar directly below the previous one
         ImVec2 barStart(startPos.x, startPos.y + i * barHeight);
@@ -470,7 +518,10 @@ static void DrawSpatialization(const AudioAnalysisData& data) {
 }
 
 // Helper: Draw all volume, spatialization, and beat info in a single aligned block
-static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // Find the widest label
+static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
+    auto& config = g_configManager.GetConfig();
+    float amp = config.frequency.amplifier;
+    // Find the widest label
     float label_width = ImGui::CalcTextSize("Pan Angle:").x;
     label_width = std::max(label_width, ImGui::CalcTextSize("Volume:").x);
     label_width = std::max(label_width, ImGui::CalcTextSize("Left:").x);
@@ -488,7 +539,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // 
     ImVec2 progress_bar_screen_pos = ImGui::GetCursorScreenPos();
     ImGui::ProgressBar(data.volume, ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
-    ImGui::Text("%.2f", data.volume);    // Compact Left/Right display under the main volume bar
+    ImGui::Text("%.2f", data.volume * amp);    // Compact Left/Right display under the main volume bar
     const float thin_bar_height = 6.0f;  // Same height as frequency bands
     const float small_spacing = 2.0f;    // Small gap between left and right bars
     const float half_bar_width = (bar_width - small_spacing) * 0.5f;
@@ -503,7 +554,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // 
     // Draw Left volume bar (grows from center leftward)
     ImVec2 left_bar_bg_min = ImVec2(start_pos.x, start_pos.y);
     ImVec2 left_bar_bg_max = ImVec2(center_x - small_spacing * 0.5f, start_pos.y + thin_bar_height);
-    ImVec2 left_bar_fill_min = ImVec2(center_x - small_spacing * 0.5f - data.volume_left * half_bar_width, start_pos.y);
+    ImVec2 left_bar_fill_min = ImVec2(center_x - small_spacing * 0.5f - std::clamp(data.volume_left * amp, 0.0f, 1.0f) * half_bar_width, start_pos.y);
     ImVec2 left_bar_fill_max = ImVec2(center_x - small_spacing * 0.5f, start_pos.y + thin_bar_height);
       // Draw Left bar background
     ImGui::GetWindowDrawList()->AddRectFilled(
@@ -525,7 +576,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // 
     ImVec2 right_bar_bg_min = ImVec2(center_x + small_spacing * 0.5f, start_pos.y);
     ImVec2 right_bar_bg_max = ImVec2(start_pos.x + bar_width, start_pos.y + thin_bar_height);
     ImVec2 right_bar_fill_min = ImVec2(center_x + small_spacing * 0.5f, start_pos.y);
-    ImVec2 right_bar_fill_max = ImVec2(center_x + small_spacing * 0.5f + data.volume_right * half_bar_width, start_pos.y + thin_bar_height);
+    ImVec2 right_bar_fill_max = ImVec2(center_x + small_spacing * 0.5f + std::clamp(data.volume_right * amp, 0.0f, 1.0f) * half_bar_width, start_pos.y + thin_bar_height);
     
     // Draw Right bar background
     ImGui::GetWindowDrawList()->AddRectFilled(
@@ -613,7 +664,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // 
     ImGui::SameLine(bar_start_x);
     ImGui::ProgressBar(data.beat, ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
-    ImGui::Text("%.2f", data.beat);    // Audio Format
+    ImGui::Text("%.2f", data.beat * amp);    // Audio Format
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Format:");
     ImGui::SameLine(bar_start_x);
@@ -630,14 +681,46 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {    // 
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Pan Smooth:");
     ImGui::SameLine(bar_start_x);
-    auto& config = g_configManager.GetConfig();
     float pan_smoothing = config.audio.panSmoothing;
+    ImGui::PushItemWidth(bar_width);
     if (ImGui::SliderFloat("##PanSmoothing", &pan_smoothing, 0.0f, 1.0f, "%.2f")) {
         config.audio.panSmoothing = pan_smoothing;
         g_configManager.NotifyConfigurationChanged();
     }
+    ImGui::PopItemWidth();
     if (ImGui::IsItemHovered(-1)) {
         ImGui::SetTooltip("Reduces pan jitter. 0.0 = no smoothing (current behavior), higher values = more smoothing");
+    }
+    // Amplifier slider (full width, aligned under Pan Smooth, with label)
+    float amplifier = config.frequency.amplifier;
+    bool amp_is_spinal = amplifier > 10.0f;
+    if (amp_is_spinal) {
+        float t = std::clamp((amplifier - 10.0f) / 1.0f, 0.0f, 1.0f);
+        ImVec4 base = ImGui::GetStyleColorVec4(ImGuiCol_SliderGrabActive);
+        ImVec4 red = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
+        ImVec4 lerped = ImVec4(
+            base.x * (1.0f - t) + red.x * t,
+            base.y * (1.0f - t) + red.y * t,
+            base.z * (1.0f - t) + red.z * t,
+            base.w * (1.0f - t) + red.w * t
+        );
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab, lerped);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, lerped);
+    }
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Amplifier:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::PushItemWidth(bar_width);
+    if (ImGui::SliderFloat("##Amplifier", &amplifier, 1.0f, 11.0f, "%.2f")) {
+        config.frequency.amplifier = amplifier;
+        g_configManager.NotifyConfigurationChanged();
+    }
+    ImGui::PopItemWidth();
+    if (amp_is_spinal) {
+        ImGui::PopStyleColor(2);
+    }
+    if (ImGui::IsItemHovered(-1)) {
+        ImGui::SetTooltip("Scales all visualization values (volume, beat, bands). Useful for low-volume systems.");
     }
 }
 

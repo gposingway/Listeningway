@@ -67,6 +67,7 @@ bool Configuration::Validate() {
         band = std::clamp(band, 0.0f, 4.0f);
     }
     frequency.equalizerWidth = std::clamp(frequency.equalizerWidth, 0.05f, 0.5f);
+    frequency.amplifier = std::clamp(frequency.amplifier, 1.0f, 11.0f);
     
     // Ensure min < max for frequency ranges
     if (frequency.minFreq >= frequency.maxFreq) {
@@ -147,7 +148,8 @@ bool Configuration::SaveToJson(const std::string& filepath) const {
             if (i < frequency.equalizerBands.size() - 1) file << ", ";
         }
         file << "],\n";
-        file << "    \"equalizerWidth\": " << frequency.equalizerWidth << "\n";
+        file << "    \"equalizerWidth\": " << frequency.equalizerWidth << ",\n";
+        file << "    \"amplifier\": " << frequency.amplifier << "\n";
         file << "  },\n";
         
         // Debug settings
@@ -290,6 +292,9 @@ bool Configuration::LoadFromJson(const std::string& filepath) {
         
         value = getValue("equalizerWidth");
         if (!value.empty()) frequency.equalizerWidth = std::stof(value);
+        
+        value = getValue("amplifier");
+        if (!value.empty()) frequency.amplifier = std::stof(value);
         
         // Parse debug settings
         value = getValue("debugEnabled");

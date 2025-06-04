@@ -56,6 +56,9 @@ struct Configuration {
         // 5-band equalizer
         std::array<float, 5> equalizerBands = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
         float equalizerWidth = 0.2f;
+        
+        // Amplifier for visualization scaling
+        float amplifier = 1.0f;
     } frequency;
 
     // Debug and Logging Settings
