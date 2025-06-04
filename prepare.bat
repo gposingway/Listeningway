@@ -29,8 +29,8 @@ if not exist "%TOOLS_DIR%" (
 
 echo Checking for ReShade repository...
 if not exist "%RESHADE_DIR%\.git" (
-    echo ReShade repository not found. Cloning from %RESHADE_REPO_URL%...
-    git clone --depth 1 %RESHADE_REPO_URL% "%RESHADE_DIR%"
+    echo ReShade repository not found. Cloning from %RESHADE_REPO_URL% at tag v6.3.3...
+    git clone --branch v6.3.3 --depth 1 %RESHADE_REPO_URL% "%RESHADE_DIR%"
     if errorlevel 1 (
         echo Failed to clone ReShade repository. Please check Git installation and network connection.
         goto failure
@@ -38,6 +38,10 @@ if not exist "%RESHADE_DIR%\.git" (
     echo ReShade repository cloned successfully.
 ) else (
     echo ReShade repository found at %RESHADE_DIR%.
+    pushd "%RESHADE_DIR%"
+    git fetch --tags
+    git checkout v6.3.3
+    popd
 )
 
 echo Checking for vcpkg repository...
@@ -88,6 +92,17 @@ cmake -S . -B "%BUILD_DIR%" -G %CMAKE_GENERATOR% -A %CMAKE_PLATFORM% -DRESHADE_S
 if errorlevel 1 (
     echo CMake configuration failed!
     goto failure
+)
+
+REM --- Ensure correct ImGui version for ReShade (match submodule/commit in ReShade v6.3.3) ---
+echo Resetting ImGui in ReShade deps to match v6.3.3...
+set IMGUIDIR=%RESHADE_DIR%\deps\imgui
+if exist "%IMGUIDIR%\.git" (
+    pushd "%RESHADE_DIR%"
+    git submodule update --init --recursive deps/imgui
+    popd
+) else (
+    echo No .git found in %IMGUIDIR%, skipping ImGui reset.
 )
 
 echo.

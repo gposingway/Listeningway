@@ -25,7 +25,7 @@ Let's add audio reactivity to your existing ReShade presets or try out effects d
 
 **What You'll Need (The Recipe):**
 
-* **ReShade:** Version 5.2 or newer (or a recent development build from [GitHub](https://github.com/crosire/reshade/)). Make sure you're using a version with Addon support enabled if necessary (often the default download).
+* **ReShade:** Version 6.3.3 or newer (API 14+). Using older versions (such as 5.2.0) is not supported and may cause crashes. If you are building from source, ensure you use the `v6.3.3` tag of the ReShade repository. AuroraShade R10 (based on ReShade 6.3.3) is also compatible.
 * **Windows:** Version 10 or 11 (required for the WASAPI audio capture magic).
 
 **Installation:**
