@@ -538,3 +538,12 @@ void ProcessAudioCaptureProvider::StopCapture(std::atomic_bool& running, std::th
         thread.join();
     }
 }
+
+AudioProviderInfo ProcessAudioCaptureProvider::GetProviderInfo() const {
+    return AudioProviderInfo{
+        "game", // code as string
+        "Game", // name
+        false, // is_default
+        1 // order
+    };
+}

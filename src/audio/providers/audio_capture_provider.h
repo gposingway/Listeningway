@@ -18,11 +18,24 @@ enum class AudioCaptureProviderType {
 };
 
 /**
+ * @brief Audio provider metadata struct for SoC and provider model
+ */
+struct AudioProviderInfo {
+    std::string code;        // Unique code for config reference
+    std::string name;        // Human-readable name for UI
+    bool is_default;         // Is this the default provider?
+    int order;               // Order for display/UI
+};
+
+/**
  * @brief Abstract base class for audio capture providers
  */
 class IAudioCaptureProvider {
 public:
     virtual ~IAudioCaptureProvider() = default;
+
+    // --- Provider Metadata ---
+    virtual AudioProviderInfo GetProviderInfo() const = 0;
 
     /**
      * @brief Gets the provider type

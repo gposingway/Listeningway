@@ -16,7 +16,8 @@ struct Configuration {
     // Audio Analysis Settings
     struct Audio {
         bool analysisEnabled = false;
-        int captureProvider = -1;  // -1 = disabled, 0+ = provider type
+        std::string captureProviderCode = "off"; // provider code string, e.g. "system", "process", "off"
+        // int captureProvider = -1;  // (legacy, remove after migration)
         float panSmoothing = 0.1f;
     } audio;
 

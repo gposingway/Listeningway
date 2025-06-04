@@ -16,6 +16,8 @@ public:
     SystemAudioCaptureProvider() = default;
     ~SystemAudioCaptureProvider() override = default;
 
+    AudioProviderInfo GetProviderInfo() const override;
+
     AudioCaptureProviderType GetProviderType() const override {
         return AudioCaptureProviderType::SYSTEM_AUDIO;
     }

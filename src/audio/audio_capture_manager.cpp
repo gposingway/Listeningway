@@ -5,6 +5,7 @@
 #include "audio_capture_manager.h"
 #include "providers/system_audio_provider.h"
 #include "providers/process_audio_provider.h"
+#include "providers/off_audio_provider.h"
 #include "../utils/logging.h"
 
 AudioCaptureManager::AudioCaptureManager() 
@@ -67,6 +68,9 @@ void AudioCaptureManager::RegisterProviders() {
     // Register process audio provider
     providers_.push_back(std::make_unique<ProcessAudioCaptureProvider>());
     
+    // Register off audio provider (dummy provider)
+    providers_.push_back(std::make_unique<OffAudioCaptureProvider>());
+    
     LOG_DEBUG("[AudioCaptureManager] Registered " + std::to_string(providers_.size()) + " audio capture providers");
 }
 
@@ -80,6 +84,16 @@ std::vector<AudioCaptureProviderType> AudioCaptureManager::GetAvailableProviders
     }
     
     return available;
+}
+
+std::vector<AudioProviderInfo> AudioCaptureManager::GetAvailableProviderInfos() const {
+    std::vector<AudioProviderInfo> infos;
+    for (const auto& provider : providers_) {
+        if (provider->IsAvailable()) {
+            infos.push_back(provider->GetProviderInfo());
+        }
+    }
+    return infos;
 }
 
 std::string AudioCaptureManager::GetProviderName(AudioCaptureProviderType type) const {

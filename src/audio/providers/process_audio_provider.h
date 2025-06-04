@@ -32,6 +32,8 @@ public:
     ProcessAudioCaptureProvider();
     ~ProcessAudioCaptureProvider() override = default;
 
+    AudioProviderInfo GetProviderInfo() const override;
+
     // IAudioCaptureProvider implementation
     AudioCaptureProviderType GetProviderType() const override {
         return AudioCaptureProviderType::PROCESS_AUDIO;

@@ -110,6 +110,12 @@ public:
      */
     bool SwitchProviderAndRestart(AudioCaptureProviderType type, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
 
+    /**
+     * @brief Gets all available provider infos (for UI and config)
+     * @return Vector of AudioProviderInfo for available providers
+     */
+    std::vector<AudioProviderInfo> GetAvailableProviderInfos() const;
+
 private:
     /**
      * @brief Registers all available providers

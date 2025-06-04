@@ -28,16 +28,16 @@ int GetAudioCaptureProvider();
 
 /**
  * @brief Gets available audio capture providers
- * @return Vector of available provider types
+ * @return Vector of available provider infos
  */
-std::vector<int> GetAvailableAudioCaptureProviders();
+std::vector<AudioProviderInfo> GetAvailableAudioCaptureProviders();
 
 /**
- * @brief Gets the name of an audio capture provider
- * @param providerType Provider type
+ * @brief Gets the name of an audio capture provider by code
+ * @param providerCode Provider code string
  * @return Human-readable provider name
  */
-std::string GetAudioCaptureProviderName(int providerType);
+std::string GetAudioCaptureProviderName(const std::string& providerCode);
 
 // Overlay API: Switch provider and restart capture thread if running
 bool SwitchAudioCaptureProviderAndRestart(int providerType, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);

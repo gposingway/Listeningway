@@ -24,6 +24,12 @@ void InitAudioCapture() {
     }
 }
 
+// Initialize audio capture - for external API compatibility
+bool InitializeAudioCapture() {
+    InitAudioCapture();
+    return g_audio_capture_manager != nullptr;
+}
+
 void UninitAudioCapture() {
     if (g_audio_capture_manager) {
         g_audio_capture_manager->Uninitialize();
@@ -76,15 +82,13 @@ int GetAudioCaptureProvider() {
 }
 
 // Overlay API: Get available audio capture providers (vector of ints)
-std::vector<int> GetAvailableAudioCaptureProviders() {
+std::vector<AudioProviderInfo> GetAvailableAudioCaptureProviders() {
     if (!g_audio_capture_manager) {
-        InitAudioCapture();
+        InitializeAudioCapture();
     }
-    std::vector<int> result;
+    std::vector<AudioProviderInfo> result;
     if (g_audio_capture_manager) {
-        for (auto type : g_audio_capture_manager->GetAvailableProviders()) {
-            result.push_back(static_cast<int>(type));
-        }
+        result = g_audio_capture_manager->GetAvailableProviderInfos();
     }
     return result;
 }
@@ -96,6 +100,18 @@ std::string GetAudioCaptureProviderName(int providerType) {
     }
     if (!g_audio_capture_manager) return "Unknown";
     return g_audio_capture_manager->GetProviderName(static_cast<AudioCaptureProviderType>(providerType));
+}
+
+// Overlay API: Get the name of an audio capture provider by code
+std::string GetAudioCaptureProviderName(const std::string& providerCode) {
+    if (!g_audio_capture_manager) {
+        InitAudioCapture();
+    }
+    if (!g_audio_capture_manager) return "Unknown";
+    for (const auto& info : g_audio_capture_manager->GetAvailableProviderInfos()) {
+        if (info.code == providerCode) return info.name;
+    }
+    return "Unknown";
 }
 
 // Overlay API: Switch provider and restart capture thread if running

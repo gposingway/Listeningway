@@ -39,7 +39,7 @@ bool Configuration::Validate() {
     bool isValid = true;
     
     // Validate audio settings
-    audio.captureProvider = std::max(-1, audio.captureProvider);
+    // audio.captureProvider = std::max(-1, audio.captureProvider); // (legacy, remove after migration)
     audio.panSmoothing = std::clamp(audio.panSmoothing, 0.0f, 1.0f);
     
     // Validate beat detection settings
@@ -112,7 +112,7 @@ bool Configuration::SaveToJson(const std::string& filepath) const {
         // Audio settings
         file << "  \"audio\": {\n";
         file << "    \"analysisEnabled\": " << (audio.analysisEnabled ? "true" : "false") << ",\n";
-        file << "    \"captureProvider\": " << audio.captureProvider << ",\n";
+        file << "    \"captureProviderCode\": \"" << audio.captureProviderCode << "\",\n";
         file << "    \"panSmoothing\": " << audio.panSmoothing << "\n";
         file << "  },\n";
         
@@ -213,8 +213,8 @@ bool Configuration::LoadFromJson(const std::string& filepath) {
         std::string value = getValue("analysisEnabled");
         if (!value.empty()) audio.analysisEnabled = (value == "true");
         
-        value = getValue("captureProvider");
-        if (!value.empty()) audio.captureProvider = std::stoi(value);
+        value = getValue("captureProviderCode");
+        if (!value.empty()) audio.captureProviderCode = value.substr(1, value.length() - 2); // remove quotes
         
         value = getValue("panSmoothing");
         if (!value.empty()) audio.panSmoothing = std::stof(value);

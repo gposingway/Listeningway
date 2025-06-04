@@ -315,3 +315,12 @@ void SystemAudioCaptureProvider::StopCapture(std::atomic_bool& running, std::thr
         thread.join();
     }
 }
+
+AudioProviderInfo SystemAudioCaptureProvider::GetProviderInfo() const {
+    return AudioProviderInfo{
+        "system", // code as string
+        "System Audio", // name
+        true, // is_default
+        2 // order
+    };
+}

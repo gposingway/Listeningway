@@ -49,12 +49,22 @@ public:
         return true; 
     }
     
+    // New provider code string API
+    std::string GetAudioCaptureProviderCode() const { return GetConfig().audio.captureProviderCode; }
+    bool SetAudioCaptureProviderCode(const std::string& code) {
+        GetConfig().audio.captureProviderCode = code;
+        NotifyConfigurationChanged();
+        return true;
+    }
+    // Legacy int-based API (commented out)
+    /*
     int GetAudioCaptureProvider() const { return GetConfig().audio.captureProvider; }
     bool SetAudioCaptureProvider(int provider) { 
         GetConfig().audio.captureProvider = provider; 
         NotifyConfigurationChanged(); 
         return true; 
     }
+    */
     
     float GetPanSmoothing() const { return GetConfig().audio.panSmoothing; }
     bool SetPanSmoothing(float value) { 

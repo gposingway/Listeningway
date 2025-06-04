@@ -38,65 +38,21 @@ static void DrawToggles() {
     auto& config = g_configManager.GetConfig();
     
     // Audio Provider Selection Dropdown
-    std::vector<int> available_providers = GetAvailableAudioCaptureProviders();
-    std::vector<std::string> provider_name_storage;
+    std::vector<AudioProviderInfo> available_providers = GetAvailableAudioCaptureProviders();
     std::vector<const char*> provider_names;
-    provider_name_storage.push_back("None (Audio Analysis Off)");
-    provider_names.push_back(provider_name_storage[0].c_str());
-
-    for (int provider_type : available_providers) {
-        provider_name_storage.push_back(GetAudioCaptureProviderName(provider_type));
-        provider_names.push_back(provider_name_storage.back().c_str());
+    for (const auto& info : available_providers) {
+        provider_names.push_back(info.name.c_str());
     }
 
-    // Determine current selection text    // The audio_capture_provider_selection stores the *index* in our constructed list
-    // -1 (None) -> index 0
-    // provider_type 0 (System) -> index 1 (if available)
-    // provider_type 1 (Process) -> index 2 (if available, or 1 if System is not)
-    // etc.
-    
-    int current_selection_index = 0; // Default to "None"
-    if (config.audio.analysisEnabled) {
-        int current_provider_type = GetAudioCaptureProvider();
-        bool found = false;
-        for (size_t i = 0; i < available_providers.size(); ++i) {
-            if (available_providers[i] == current_provider_type) {
-                current_selection_index = i + 1; // +1 because "None" is at index 0
-                found = true;
-                break;
-            }
-        }        if (!found) { // Should not happen if provider is valid
-            LOG_WARNING("[Overlay] Current audio provider not in available list. Defaulting to None.");
-            current_selection_index = 0;            SetAudioAnalysisEnabled(false); // Disable if current is somehow invalid
-            config.audio.analysisEnabled = false;
-            g_configManager.NotifyConfigurationChanged();
-        }
-    } else {
-        current_selection_index = 0; // "None"
-    }
-    
-    // Get current selection index from the actual provider state
+    // Find current selection index by code
     int display_selection_index = 0;
-    if (config.audio.analysisEnabled) {
-        int actual_provider = GetAudioCaptureProvider();
-        bool provider_matched = false;
-        for(size_t i = 0; i < available_providers.size(); ++i) {
-            if (available_providers[i] == actual_provider) {
-                display_selection_index = i + 1;
-                provider_matched = true;
-                break;
-            }
+    std::string current_code = config.audio.captureProviderCode;
+    for (size_t i = 0; i < available_providers.size(); ++i) {
+        if (available_providers[i].code == current_code) {
+            display_selection_index = static_cast<int>(i);
+            break;
         }
-        if (!provider_matched) { // If current provider is not in the list (e.g. became unavailable)
-            SetAudioAnalysisEnabled(false);
-            config.audio.analysisEnabled = false;
-            g_configManager.NotifyConfigurationChanged();
-            display_selection_index = 0;
-        }
-    } else {
-        display_selection_index = 0; // "None"
     }
-
 
     if (ImGui::BeginCombo("Audio Analysis", provider_names[display_selection_index])) {
         int previous_selection = display_selection_index;
@@ -105,25 +61,11 @@ static void DrawToggles() {
             const bool is_selected = (display_selection_index == i);
             bool selectable = !switching_provider;
             if (ImGui::Selectable(provider_names[i], is_selected, selectable ? 0 : ImGuiSelectableFlags_Disabled)) {
-                if (previous_selection != i && !switching_provider) { // Only act if changed and not already switching
-                    // Removed overlay-side set/clear of g_switching_provider; rely on SwitchAudioProvider only
-                    bool switch_success = true;                    if (i == 0) { // "None (Audio Analysis Off)"
-                        if (config.audio.analysisEnabled) {
-                            SetAudioAnalysisEnabled(false);
-                            config.audio.analysisEnabled = false;
-                            g_configManager.NotifyConfigurationChanged();
-                            LOG_DEBUG("[Overlay] Audio Analysis toggled OFF via dropdown");
-                        }} else {
-                        int selected_provider_type = available_providers[i - 1];
-                        switch_success = SwitchAudioProvider(selected_provider_type);                        if (switch_success) {
-                            config.audio.captureProvider = selected_provider_type;
-                            g_configManager.NotifyConfigurationChanged();
-                            LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + GetAudioCaptureProviderName(selected_provider_type));
-                        }else {
-                            LOG_ERROR("[Overlay] Failed to switch audio provider. Reverting selection.");
-                            // Selection will be corrected on next frame based on actual provider state
-                        }
-                    }
+                if (previous_selection != i && !switching_provider) {
+                    const auto& selected_info = available_providers[i];
+                    config.audio.captureProviderCode = selected_info.code;
+                    g_configManager.NotifyConfigurationChanged();
+                    LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + selected_info.name);
                 }
             }
             if (is_selected) {

@@ -44,12 +44,13 @@ add_library(${PROJECT_NAME} SHARED
     src/core/configuration/ConfigValue.cpp src/core/configuration/ConfigValue.h
     src/audio/beat_detection/beat_detector.cpp src/audio/beat_detection/beat_detector.h
     src/audio/beat_detection/simple_energy_beat_detector.cpp src/audio/beat_detection/simple_energy_beat_detector.h
-    src/audio/beat_detection/spectral_flux_auto_beat_detector.cpp src/audio/beat_detection/spectral_flux_auto_beat_detector.h
-    src/audio/providers/audio_capture_provider.h
+    src/audio/beat_detection/spectral_flux_auto_beat_detector.cpp src/audio/beat_detection/spectral_flux_auto_beat_detector.h    src/audio/providers/audio_capture_provider.h
     src/audio/providers/system_audio_provider.h
     src/audio/providers/process_audio_provider.h
+    src/audio/providers/off_audio_provider.h
     src/audio/providers/system_audio_provider.cpp
     src/audio/providers/process_audio_provider.cpp
+    src/audio/providers/off_audio_provider.cpp
     listeningway.rc
 )
 
