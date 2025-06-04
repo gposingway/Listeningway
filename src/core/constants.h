@@ -1,5 +1,32 @@
 #pragma once
 
+// Enums for Magic Numbers - replacing hardcoded constants with named values
+enum class AudioFormat : int {
+    None = 0,
+    Mono = 1,
+    Stereo = 2,
+    Surround51 = 6,
+    Surround71 = 8
+};
+
+enum class EqualizerBand : int {
+    Bass = 0,        // Low frequencies
+    LowMid = 1,      // Low-mid frequencies  
+    Mid = 2,         // Mid frequencies
+    HighMid = 3,     // High-mid frequencies
+    Treble = 4       // High frequencies
+};
+
+enum class BeatDetectionAlgorithm : int {
+    SimpleEnergy = 0,
+    SpectralFluxAuto = 1
+};
+
+enum class AudioCaptureProvider : int {
+    SystemAudio = 0,
+    ProcessAudio = 1
+};
+
 // Audio Analysis
 constexpr size_t DEFAULT_NUM_BANDS = 32;
 constexpr size_t DEFAULT_FFT_SIZE = 512;
