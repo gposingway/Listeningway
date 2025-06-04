@@ -63,12 +63,11 @@ static void DrawToggles() {
                 found = true;
                 break;
             }
-        }
-        if (!found) { // Should not happen if provider is valid
+        }        if (!found) { // Should not happen if provider is valid
             LOG_WARNING("[Overlay] Current audio provider not in available list. Defaulting to None.");
             current_selection_index = 0;
             SetAudioAnalysisEnabled(false); // Disable if current is somehow invalid
-            configManager.GetConfig().audio.analysisEnabled = false;
+            config.audio.analysisEnabled = false;
             configManager.NotifyConfigurationChanged();
         }
     } else {
@@ -88,7 +87,7 @@ static void DrawToggles() {
             }
         }        if (!provider_matched) { // If current provider is not in the list (e.g. became unavailable)
              SetAudioAnalysisEnabled(false);
-             configManager.GetConfig().audio.analysisEnabled = false;
+             config.audio.analysisEnabled = false;
              configManager.NotifyConfigurationChanged();
              display_selection_index = 0;
         }
@@ -109,16 +108,16 @@ static void DrawToggles() {
                     bool switch_success = true;                    if (i == 0) { // "None (Audio Analysis Off)"
                         if (config.audio.analysisEnabled) {
                             SetAudioAnalysisEnabled(false);
-                            configManager.GetConfig().audio.analysisEnabled = false;
+                            config.audio.analysisEnabled = false;
                             configManager.NotifyConfigurationChanged();
                             LOG_DEBUG("[Overlay] Audio Analysis toggled OFF via dropdown");
                         }} else {
                         int selected_provider_type = available_providers[i - 1];
                         switch_success = SwitchAudioProvider(selected_provider_type);                        if (switch_success) {
-                            configManager.GetConfig().audio.captureProvider = selected_provider_type;
+                            config.audio.captureProvider = selected_provider_type;
                             configManager.NotifyConfigurationChanged();
                             LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + GetAudioCaptureProviderName(selected_provider_type));
-                        } else {
+                        }else {
                             LOG_ERROR("[Overlay] Failed to switch audio provider. Reverting selection.");
                             // Selection will be corrected on next frame based on actual provider state
                         }
@@ -257,10 +256,9 @@ static void DrawBeatDetectionAlgorithm(const AudioAnalysisData& data) {
     ImGui::Text("Beat Detection Algorithm:");
     
     // Create a combo box for algorithm selection
-    const char* algorithms[] = { "Simple Energy (Original)", "Spectral Flux + Autocorrelation (Advanced)" };
-    int algorithm = config.beat.algorithm;
+    const char* algorithms[] = { "Simple Energy (Original)", "Spectral Flux + Autocorrelation (Advanced)" };    int algorithm = config.beat.algorithm;
     if (ImGui::Combo("Algorithm", &algorithm, algorithms, IM_ARRAYSIZE(algorithms))) {
-        configManager.GetConfig().beat.algorithm = algorithm;
+        config.beat.algorithm = algorithm;
         configManager.NotifyConfigurationChanged();
         LOG_DEBUG(std::string("[Overlay] Beat Detection Algorithm changed to ") + 
                  (algorithm == 0 ? "Simple Energy" : "Spectral Flux + Autocorrelation"));
@@ -279,22 +277,22 @@ static void DrawBeatDetectionAlgorithm(const AudioAnalysisData& data) {
     // Show advanced settings for the Spectral Flux + Autocorrelation algorithm
     if (config.beat.algorithm == 1) {
         // Create a collapsing section for advanced parameters
-        if (ImGui::CollapsingHeader("Advanced Algorithm Parameters", ImGuiTreeNodeFlags_DefaultOpen)) {            // Spectral Flux threshold adjustment
+        if (ImGui::CollapsingHeader("Advanced Algorithm Parameters", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Spectral Flux threshold adjustment
             float spectral_flux_threshold = config.beat.spectralFluxThreshold;
             if (ImGui::SliderFloat("##SpectralFluxThreshold", &spectral_flux_threshold, 0.01f, 0.2f, "%.3f")) {
-                configManager.GetConfig().beat.spectralFluxThreshold = spectral_flux_threshold;
+                config.beat.spectralFluxThreshold = spectral_flux_threshold;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
             ImGui::Text("Spectral Flux Threshold");
             if (ImGui::IsItemHovered(-1)) {
-                ImGui::SetTooltip("Lower value = more sensitive to subtle changes");
-            }
+                ImGui::SetTooltip("Lower value = more sensitive to subtle changes");            }
             
             // Tempo change threshold adjustment
             float tempo_change_threshold = config.beat.tempoChangeThreshold;
             if (ImGui::SliderFloat("##TempoChangeThreshold", &tempo_change_threshold, 0.1f, 0.5f, "%.2f")) {
-                configManager.GetConfig().beat.tempoChangeThreshold = tempo_change_threshold;
+                config.beat.tempoChangeThreshold = tempo_change_threshold;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
@@ -302,11 +300,10 @@ static void DrawBeatDetectionAlgorithm(const AudioAnalysisData& data) {
             if (ImGui::IsItemHovered(-1)) {
                 ImGui::SetTooltip("Higher value = more stable tempo, lower = adapts faster");
             }
-            
-            // Beat induction window adjustment
+              // Beat induction window adjustment
             float beat_induction_window = config.beat.beatInductionWindow;
             if (ImGui::SliderFloat("##BeatInductionWindow", &beat_induction_window, 0.05f, 0.2f, "%.2f")) {
-                configManager.GetConfig().beat.beatInductionWindow = beat_induction_window;
+                config.beat.beatInductionWindow = beat_induction_window;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
@@ -314,11 +311,10 @@ static void DrawBeatDetectionAlgorithm(const AudioAnalysisData& data) {
             if (ImGui::IsItemHovered(-1)) {
                 ImGui::SetTooltip("Larger window = more adaptive phase adjustment");
             }
-            
-            // Octave error weight adjustment
+              // Octave error weight adjustment
             float octave_error_weight = config.beat.octaveErrorWeight;
             if (ImGui::SliderFloat("##OctaveErrorWeight", &octave_error_weight, 0.5f, 0.9f, "%.2f")) {
-                configManager.GetConfig().beat.octaveErrorWeight = octave_error_weight;
+                config.beat.octaveErrorWeight = octave_error_weight;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
@@ -346,11 +342,10 @@ static void DrawBeatDecaySettings() {
     ImGui::Text("Beat Decay Settings:");
     
     // Different settings based on which algorithm is selected
-    if (config.beat.algorithm == 0) { // SimpleEnergy
-        // SimpleEnergy decay settings
+    if (config.beat.algorithm == 0) { // SimpleEnergy        // SimpleEnergy decay settings
         float beat_falloff_default = config.beat.falloffDefault;
         if (ImGui::SliderFloat("##DefaultFalloffRate", &beat_falloff_default, 0.5f, 5.0f, "%.2f")) {
-            configManager.GetConfig().beat.falloffDefault = beat_falloff_default;
+            config.beat.falloffDefault = beat_falloff_default;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
@@ -360,10 +355,9 @@ static void DrawBeatDecaySettings() {
         }
         
         // More advanced adaptive settings
-        if (ImGui::CollapsingHeader("Adaptive Falloff Settings")) {
-            float beat_time_scale = config.beat.timeScale;
+        if (ImGui::CollapsingHeader("Adaptive Falloff Settings")) {            float beat_time_scale = config.beat.timeScale;
             if (ImGui::SliderFloat("##TimeScale", &beat_time_scale, 1e-10f, 1e-8f, "%.2e")) {
-                configManager.GetConfig().beat.timeScale = beat_time_scale;
+                config.beat.timeScale = beat_time_scale;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
@@ -371,10 +365,9 @@ static void DrawBeatDecaySettings() {
             if (ImGui::IsItemHovered(-1)) {
                 ImGui::SetTooltip("Controls time scaling for beat interval");
             }
-            
-            float beat_time_initial = config.beat.timeInitial;
+              float beat_time_initial = config.beat.timeInitial;
             if (ImGui::SliderFloat("##InitialTime", &beat_time_initial, 0.1f, 1.0f, "%.2f")) {
-                configManager.GetConfig().beat.timeInitial = beat_time_initial;
+                config.beat.timeInitial = beat_time_initial;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
@@ -382,10 +375,9 @@ static void DrawBeatDecaySettings() {
             if (ImGui::IsItemHovered(-1)) {
                 ImGui::SetTooltip("Controls initial time since last beat");
             }
-            
-            float beat_time_min = config.beat.timeMin;
+              float beat_time_min = config.beat.timeMin;
             if (ImGui::SliderFloat("##MinTime", &beat_time_min, 0.01f, 0.5f, "%.2f")) {
-                configManager.GetConfig().beat.timeMin = beat_time_min;
+                config.beat.timeMin = beat_time_min;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
@@ -393,10 +385,9 @@ static void DrawBeatDecaySettings() {
             if (ImGui::IsItemHovered(-1)) {
                 ImGui::SetTooltip("Controls minimum time for adaptive falloff");
             }
-            
-            float beat_time_divisor = config.beat.timeDivisor;
+              float beat_time_divisor = config.beat.timeDivisor;
             if (ImGui::SliderFloat("##TimeDivisor", &beat_time_divisor, 0.01f, 1.0f, "%.2f")) {
-                configManager.GetConfig().beat.timeDivisor = beat_time_divisor;
+                config.beat.timeDivisor = beat_time_divisor;
                 configManager.NotifyConfigurationChanged();
             }
             ImGui::SameLine();
@@ -405,11 +396,10 @@ static void DrawBeatDecaySettings() {
                 ImGui::SetTooltip("Controls divisor for adaptive falloff\nThese settings control how decay adapts to beat timing");
             }
         }
-    } else { // SpectralFluxAuto
-        // SpectralFluxAuto decay settings
+    } else { // SpectralFluxAuto        // SpectralFluxAuto decay settings
         float spectral_flux_decay_multiplier = config.beat.spectralFluxDecayMultiplier;
         if (ImGui::SliderFloat("##DecayMultiplier", &spectral_flux_decay_multiplier, 0.5f, 5.0f, "%.2f")) {
-            configManager.GetConfig().beat.spectralFluxDecayMultiplier = spectral_flux_decay_multiplier;
+            config.beat.spectralFluxDecayMultiplier = spectral_flux_decay_multiplier;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
@@ -428,11 +418,10 @@ static void DrawFrequencyBoostSettings() {
     if (ImGui::CollapsingHeader("Frequency Boost Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
         // 5-band equalizer settings
         ImGui::PushID("Equalizer");
-        
-        // Use the same compact style as Frequency Band Mapping with text on the right
+          // Use the same compact style as Frequency Band Mapping with text on the right
         float equalizer_band1 = config.frequency.equalizerBands[0];
         if (ImGui::SliderFloat("##band1", &equalizer_band1, 0.0f, 4.0f, "%.2f")) {
-            configManager.GetConfig().frequency.equalizerBands[0] = equalizer_band1;
+            config.frequency.equalizerBands[0] = equalizer_band1;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
@@ -440,10 +429,9 @@ static void DrawFrequencyBoostSettings() {
         if (ImGui::IsItemHovered(-1)) {
             ImGui::SetTooltip("Boost for lowest frequency bands (bass)");
         }
-        
-        float equalizer_band2 = config.frequency.equalizerBands[1];
+          float equalizer_band2 = config.frequency.equalizerBands[1];
         if (ImGui::SliderFloat("##band2", &equalizer_band2, 0.0f, 4.0f, "%.2f")) {
-            configManager.GetConfig().frequency.equalizerBands[1] = equalizer_band2;
+            config.frequency.equalizerBands[1] = equalizer_band2;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
@@ -451,10 +439,9 @@ static void DrawFrequencyBoostSettings() {
         if (ImGui::IsItemHovered(-1)) {
             ImGui::SetTooltip("Boost for low-mid frequency bands");
         }
-        
-        float equalizer_band3 = config.frequency.equalizerBands[2];
+          float equalizer_band3 = config.frequency.equalizerBands[2];
         if (ImGui::SliderFloat("##band3", &equalizer_band3, 0.0f, 4.0f, "%.2f")) {
-            configManager.GetConfig().frequency.equalizerBands[2] = equalizer_band3;
+            config.frequency.equalizerBands[2] = equalizer_band3;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
@@ -462,10 +449,9 @@ static void DrawFrequencyBoostSettings() {
         if (ImGui::IsItemHovered(-1)) {
             ImGui::SetTooltip("Boost for mid frequency bands");
         }
-        
-        float equalizer_band4 = config.frequency.equalizerBands[3];
+          float equalizer_band4 = config.frequency.equalizerBands[3];
         if (ImGui::SliderFloat("##band4", &equalizer_band4, 0.0f, 4.0f, "%.2f")) {
-            configManager.GetConfig().frequency.equalizerBands[3] = equalizer_band4;
+            config.frequency.equalizerBands[3] = equalizer_band4;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
@@ -473,10 +459,9 @@ static void DrawFrequencyBoostSettings() {
         if (ImGui::IsItemHovered(-1)) {
             ImGui::SetTooltip("Boost for mid-high frequency bands");
         }
-        
-        float equalizer_band5 = config.frequency.equalizerBands[4];
+          float equalizer_band5 = config.frequency.equalizerBands[4];
         if (ImGui::SliderFloat("##band5", &equalizer_band5, 0.0f, 4.0f, "%.2f")) {
-            configManager.GetConfig().frequency.equalizerBands[4] = equalizer_band5;
+            config.frequency.equalizerBands[4] = equalizer_band5;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
@@ -486,11 +471,10 @@ static void DrawFrequencyBoostSettings() {
         }
         
         ImGui::PopID();
-        
-        // Add the equalizer width slider
+          // Add the equalizer width slider
         float equalizer_width = config.frequency.equalizerWidth;
         if (ImGui::SliderFloat("##EqualizerWidth", &equalizer_width, 0.05f, 0.5f, "%.2f")) {
-            configManager.GetConfig().frequency.equalizerWidth = equalizer_width;
+            config.frequency.equalizerWidth = equalizer_width;
             configManager.NotifyConfigurationChanged();
         }
         ImGui::SameLine();
