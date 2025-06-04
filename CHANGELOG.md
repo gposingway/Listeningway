@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added exponential moving average smoothing for pan stability
 - Updated uniform manager to expose all new audio spatialization uniforms
 
+## [1.1.0.2] - 2025-06-04
+
+### Fixed
+- Build system now enforces ReShade v6.3.3 (API 14+) and correct ImGui docking version for compatibility and stability.
+- `prepare.bat` script updated to always check out the correct ReShade tag and reset `deps/imgui` to the commit referenced by ReShade, preventing mismatched API or ImGui errors.
+- Documentation updated to clarify minimum ReShade version and AuroraShade compatibility.
+
+### Technical
+- Automated dependency management for ReShade and ImGui to match project requirements.
+
 ## [1.0.x] - Previous Versions
 
 ### Features
