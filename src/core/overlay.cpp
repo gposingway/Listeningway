@@ -98,48 +98,6 @@ static void DrawToggles() {
         SetDebugEnabled(debug_enabled);
         LOG_DEBUG(std::string("[Overlay] Debug Logging toggled ") + (debug_enabled ? "ON" : "OFF"));
     }
-    // Pan Smoothing
-    float pan_smoothing = config.audio.panSmoothing;
-    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-    if (ImGui::SliderFloat("##PanSmoothing", &pan_smoothing, 0.0f, 1.0f, "%.2f")) {
-        config.audio.panSmoothing = pan_smoothing;
-        g_configManager.NotifyConfigurationChanged();
-    }
-    ImGui::PopItemWidth();
-    if (ImGui::IsItemHovered(-1)) {
-        ImGui::SetTooltip("Reduces pan jitter. 0.0 = no smoothing (current behavior), higher values = more smoothing");
-    }
-    // Amplifier slider for visualization scaling (under Pan Smooth, with label)
-    float amplifier = config.frequency.amplifier;
-    bool amp_is_spinal = amplifier > 10.0f;
-    if (amp_is_spinal) {
-        float t = std::clamp((amplifier - 10.0f) / 1.0f, 0.0f, 1.0f);
-        ImVec4 base = ImGui::GetStyleColorVec4(ImGuiCol_SliderGrabActive);
-        ImVec4 red = ImVec4(1.0f, 0.1f, 0.1f, 1.0f);
-        ImVec4 lerped = ImVec4(
-            base.x * (1.0f - t) + red.x * t,
-            base.y * (1.0f - t) + red.y * t,
-            base.z * (1.0f - t) + red.z * t,
-            base.w * (1.0f - t) + red.w * t
-        );
-        ImGui::PushStyleColor(ImGuiCol_SliderGrab, lerped);
-        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, lerped);
-    }
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Amplifier:");
-    ImGui::SameLine();
-    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-    if (ImGui::SliderFloat("##Amplifier", &amplifier, 1.0f, 11.0f, "%.2f")) {
-        config.frequency.amplifier = amplifier;
-        g_configManager.NotifyConfigurationChanged();
-    }
-    ImGui::PopItemWidth();
-    if (amp_is_spinal) {
-        ImGui::PopStyleColor(2);
-    }
-    if (ImGui::IsItemHovered(-1)) {
-        ImGui::SetTooltip("Scales all visualization values (volume, beat, bands). Useful for low-volume systems.");
-    }
 }
 
 // Helper: Draw log file info
@@ -537,7 +495,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     
     // Get the screen position right after the progress bar for proper alignment
     ImVec2 progress_bar_screen_pos = ImGui::GetCursorScreenPos();
-    ImGui::ProgressBar(data.volume, ImVec2(bar_width, 0.0f));
+    ImGui::ProgressBar(std::clamp(data.volume * amp, 0.0f, 1.0f), ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
     ImGui::Text("%.2f", data.volume * amp);    // Compact Left/Right display under the main volume bar
     const float thin_bar_height = 6.0f;  // Same height as frequency bands
