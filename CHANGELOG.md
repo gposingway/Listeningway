@@ -5,6 +5,23 @@ All notable changes to Listeningway will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0.0] - 2025-06-04
+
+### Added
+- **Amplifier Setting for Overlay and Uniforms**
+  - New "Amplifier" slider in the overlay UI (range: 1.0–11.0) under Pan Smooth, both full width.
+  - Multiplies all overlay visualizations and Listeningway_* uniforms (volume, beat, frequency bands, left/right volume) for enhanced visual feedback.
+  - Setting is persistent, validated, and does not affect underlying audio analysis.
+
+### Fixed
+- Overlay and uniforms now always match for all visualized values, including main volume bar.
+- Refined overlay UI: Removed duplicate/incorrect sliders, ensured proper alignment and labeling.
+
+### Technical
+- Added `amplifier` field to configuration, with validation and persistence.
+- Amplifier is only applied to overlay and uniforms, not to the analysis data.
+- Refactored overlay and uniform update logic for consistency and maintainability.
+
 ## [1.1.0] - 2025-06-02
 
 ### Added

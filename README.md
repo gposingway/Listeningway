@@ -50,6 +50,7 @@ Let's add audio reactivity to your existing ReShade presets or try out effects d
 **Tuning (Optional):**
 
 * For most users, the default settings work great! If you want to fine-tune the audio analysis (like how sensitive beat detection is), you can use the built-in overlay UI (accessible through the ReShade menu) or edit the `Listeningway.ini` file located in the same directory as the .addon file. More details on this in the section for developers below.
+* **New in 1.2.0.0:** The overlay UI now features an **Amplifier** slider. This setting multiplies all overlay visualizations and Listeningway_* uniforms (volume, beat, frequency bands, left/right volume) for enhanced visual feedback, but does not affect the underlying audio analysis.
 
 <div align="center">
 
@@ -319,11 +320,19 @@ PanSmoothing=0.0         ; Pan smoothing factor (0.0 = no smoothing, higher = mo
 
 [UI]
 CaptureStaleTimeout=3.0
+Amplifier=1.0           ; Multiplier for overlay/uniforms (1.0–11.0, default: 1.0)
 
 [General]
 AudioAnalysisEnabled=1
 DebugEnabled=0
 ```
+
+**Overlay UI:**
+
+The overlay UI (open via the ReShade menu) allows real-time adjustment of all major settings, including:
+- Volume normalization, band normalization, pan smoothing, and more
+
+All changes made in the overlay UI are saved back to `Listeningway.ini` atomically.
 
 **Band-Limited Beat Detection:**
 
