@@ -13,6 +13,7 @@
 #include "logging.h"
 #include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
 #include "configuration/ConfigurationManager.h"
+#include "ui_constants.h"
 #include <windows.h>
 #include <shellapi.h>
 #include <string>
@@ -154,7 +155,7 @@ static void DrawFrequencyBands(const AudioAnalysisData& data) {
     
     // Always use compact visualization with thin horizontal bars stacked vertically
     // Calculate total height for all bars with no spacing
-    float barHeight = 6.0f; // Thin bar height
+    float barHeight = UI_SPACING_MEDIUM; // Thin bar height (was 6.0f)
     float totalHeight = barHeight * band_count;
     
     // Create a child window to contain all the bars - removed scrollbars
@@ -378,7 +379,7 @@ static void DrawFrequencyBoostSettings() {
         ImGui::PushID("Equalizer");
           // Use the same compact style as Frequency Band Mapping with text on the right
         float equalizer_band1 = config.frequency.equalizerBands[0];
-        if (ImGui::SliderFloat("##band1", &equalizer_band1, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band1", &equalizer_band1, 0.0f, UI_SPACING_SMALL, "%.2f")) {
             config.frequency.equalizerBands[0] = equalizer_band1;
             g_configManager.NotifyConfigurationChanged();
         }
@@ -388,7 +389,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for lowest frequency bands (bass)");
         }
           float equalizer_band2 = config.frequency.equalizerBands[1];
-        if (ImGui::SliderFloat("##band2", &equalizer_band2, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band2", &equalizer_band2, 0.0f, UI_SPACING_SMALL, "%.2f")) {
             config.frequency.equalizerBands[1] = equalizer_band2;
             g_configManager.NotifyConfigurationChanged();
         }
@@ -398,7 +399,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for low-mid frequency bands");
         }
           float equalizer_band3 = config.frequency.equalizerBands[2];
-        if (ImGui::SliderFloat("##band3", &equalizer_band3, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band3", &equalizer_band3, 0.0f, UI_SPACING_SMALL, "%.2f")) {
             config.frequency.equalizerBands[2] = equalizer_band3;
             g_configManager.NotifyConfigurationChanged();
         }
@@ -408,7 +409,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for mid frequency bands");
         }
           float equalizer_band4 = config.frequency.equalizerBands[3];
-        if (ImGui::SliderFloat("##band4", &equalizer_band4, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band4", &equalizer_band4, 0.0f, UI_SPACING_SMALL, "%.2f")) {
             config.frequency.equalizerBands[3] = equalizer_band4;
             g_configManager.NotifyConfigurationChanged();
         }
@@ -418,7 +419,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for mid-high frequency bands");
         }
           float equalizer_band5 = config.frequency.equalizerBands[4];
-        if (ImGui::SliderFloat("##band5", &equalizer_band5, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band5", &equalizer_band5, 0.0f, UI_SPACING_SMALL, "%.2f")) {
             config.frequency.equalizerBands[4] = equalizer_band5;
             g_configManager.NotifyConfigurationChanged();
         }
@@ -498,7 +499,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::ProgressBar(std::clamp(data.volume * amp, 0.0f, 1.0f), ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
     ImGui::Text("%.2f", data.volume * amp);    // Compact Left/Right display under the main volume bar
-    const float thin_bar_height = 6.0f;  // Same height as frequency bands
+    const float thin_bar_height = UI_SPACING_MEDIUM;  // Same height as frequency bands (was 6.0f)
     const float small_spacing = 2.0f;    // Small gap between left and right bars
     const float half_bar_width = (bar_width - small_spacing) * 0.5f;
     
@@ -552,7 +553,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
         );    }    // Reserve space for the custom drawn left/right bars and move cursor down
     // Use minimal spacing between the left/right bars and the pan bar
     // This should be just enough to visually separate the bars (2-4 pixels)
-    ImGui::Dummy(ImVec2(0, 4.0f)); // Small spacing after left/right bars
+    ImGui::Dummy(ImVec2(0, UI_SPACING_SMALL)); // Small spacing after left/right bars
     
     // Pan bar (without label and without text overlay)
     // Use invisible dummy element for alignment with bars above
@@ -613,9 +614,8 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     
     // Reserve space for the pan bar (using Dummy to advance cursor)
     ImGui::Dummy(ImVec2(bar_width, thin_bar_height));
-    
     // Add spacing after the pan bar (same as other bars)
-    ImGui::Dummy(ImVec2(0, 4.0f));
+    ImGui::Dummy(ImVec2(0, UI_SPACING_SMALL)); // (was 4.0f)
     // Beat
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Beat:");
