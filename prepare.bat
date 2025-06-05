@@ -105,6 +105,26 @@ if exist "%IMGUIDIR%\.git" (
     echo No .git found in %IMGUIDIR%, skipping ImGui reset.
 )
 
+REM --- Ensure ImGui is present in ReShade deps ---
+set IMGUI_DIR=%RESHADE_DIR%\deps\imgui
+set IMGUI_HEADER=%IMGUI_DIR%\imgui.h
+
+if not exist "%IMGUI_HEADER%" (
+    echo ImGui not found in %IMGUI_DIR%. Cloning from official repository...
+    if exist "%IMGUI_DIR%" (
+        echo ImGui directory exists but imgui.h is missing. Removing directory...
+        rmdir /s /q "%IMGUI_DIR%"
+    )
+    git clone --depth 1 https://github.com/ocornut/imgui.git "%IMGUI_DIR%"
+    if errorlevel 1 (
+        echo Failed to clone ImGui repository. Please check Git installation and network connection.
+        goto failure
+    )
+    echo ImGui cloned successfully.
+) else (
+    echo ImGui found at %IMGUI_HEADER%.
+)
+
 echo.
 echo --- Preparation Successful ---
 echo Project is ready to be built (e.g., using simple_build.bat or opening build/Listeningway.sln).
