@@ -296,3 +296,129 @@ void AudioCaptureManager::CheckAndRestartCapture(const Listeningway::Configurati
         StartCapture(config, running, thread, data_mutex, data);
     }
 }
+
+// Implementation of the new audio system lifecycle management methods
+bool AudioCaptureManager::RestartAudioSystem(const Listeningway::Configuration& config) {
+    LOG_DEBUG("[AudioCaptureManager] Restarting audio system with new configuration");
+    
+    // Get access to global audio system variables
+    extern std::atomic_bool g_audio_thread_running;
+    extern std::thread g_audio_thread;
+    extern std::mutex g_audio_data_mutex;
+    extern AudioAnalysisData g_audio_data;
+    extern AudioAnalyzer g_audio_analyzer;
+    
+    try {
+        // Stop the current audio system
+        bool was_running = g_audio_thread_running.load();
+        if (was_running) {
+            LOG_DEBUG("[AudioCaptureManager] Stopping current audio capture");
+            StopCapture(g_audio_thread_running, g_audio_thread);
+        }
+        
+        // Stop the analyzer
+        g_audio_analyzer.Stop();
+        
+        // Wait a moment for clean shutdown
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        // Start the analyzer with new config
+        LOG_DEBUG("[AudioCaptureManager] Starting audio analyzer");
+        g_audio_analyzer.Start();
+        
+        // Restart capture if it was running
+        if (was_running) {
+            LOG_DEBUG("[AudioCaptureManager] Restarting audio capture");
+            if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data)) {
+                LOG_ERROR("[AudioCaptureManager] Failed to restart audio capture");
+                return false;
+            }
+        }
+        
+        LOG_DEBUG("[AudioCaptureManager] Audio system restart completed successfully");
+        return true;
+    } catch (const std::exception& ex) {
+        LOG_ERROR("[AudioCaptureManager] Exception during audio system restart: " + std::string(ex.what()));
+        return false;
+    } catch (...) {
+        LOG_ERROR("[AudioCaptureManager] Unknown exception during audio system restart");
+        return false;
+    }
+}
+
+void AudioCaptureManager::StopAudioSystem() {
+    LOG_DEBUG("[AudioCaptureManager] Stopping audio system");
+    
+    // Get access to global audio system variables
+    extern std::atomic_bool g_audio_thread_running;
+    extern std::thread g_audio_thread;
+    extern AudioAnalyzer g_audio_analyzer;
+    
+    try {
+        // Stop capture if running
+        if (g_audio_thread_running.load()) {
+            LOG_DEBUG("[AudioCaptureManager] Stopping audio capture");
+            StopCapture(g_audio_thread_running, g_audio_thread);
+        }
+        
+        // Stop the analyzer
+        LOG_DEBUG("[AudioCaptureManager] Stopping audio analyzer");
+        g_audio_analyzer.Stop();
+        
+        LOG_DEBUG("[AudioCaptureManager] Audio system stopped successfully");
+    } catch (const std::exception& ex) {
+        LOG_ERROR("[AudioCaptureManager] Exception during audio system stop: " + std::string(ex.what()));
+    } catch (...) {
+        LOG_ERROR("[AudioCaptureManager] Unknown exception during audio system stop");
+    }
+}
+
+bool AudioCaptureManager::ApplyConfiguration(const Listeningway::Configuration& config) {
+    LOG_DEBUG("[AudioCaptureManager] Applying new configuration to audio system");
+    
+    // Get access to global audio system variables
+    extern std::atomic_bool g_audio_thread_running;
+    extern std::thread g_audio_thread;
+    extern std::mutex g_audio_data_mutex;
+    extern AudioAnalysisData g_audio_data;
+    extern AudioAnalyzer g_audio_analyzer;
+    
+    try {
+        bool was_running = g_audio_thread_running.load();
+        
+        // If audio analysis is disabled in config, stop the system
+        if (!config.audio.analysisEnabled) {
+            if (was_running) {
+                LOG_DEBUG("[AudioCaptureManager] Audio analysis disabled in config, stopping system");
+                StopAudioSystem();
+            }
+            return true;
+        }
+        
+        // If audio was not running but should be enabled, start it
+        if (!was_running && config.audio.analysisEnabled) {
+            LOG_DEBUG("[AudioCaptureManager] Audio analysis enabled in config, starting system");
+            g_audio_analyzer.Start();
+            if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data)) {
+                LOG_ERROR("[AudioCaptureManager] Failed to start audio capture");
+                return false;
+            }
+            return true;
+        }
+        
+        // If already running, restart to apply new settings
+        if (was_running) {
+            LOG_DEBUG("[AudioCaptureManager] Restarting audio system to apply configuration changes");
+            return RestartAudioSystem(config);
+        }
+        
+        LOG_DEBUG("[AudioCaptureManager] Configuration applied successfully");
+        return true;
+    } catch (const std::exception& ex) {
+        LOG_ERROR("[AudioCaptureManager] Exception during configuration application: " + std::string(ex.what()));
+        return false;
+    } catch (...) {
+        LOG_ERROR("[AudioCaptureManager] Unknown exception during configuration application");
+        return false;
+    }
+}

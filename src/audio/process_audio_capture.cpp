@@ -7,6 +7,7 @@
 #include "logging.h"
 #include "settings.h"
 #include "audio_analysis.h"
+#include "../core/configuration/configuration_manager.h"
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -403,12 +404,10 @@ void StartProcessAudioCaptureThread(const Listeningway::Configuration& config,
                     UINT64 devicePosition = 0;
                     UINT64 qpcPosition = 0;
                     
-                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
-                    if (SUCCEEDED(hr)) {
-                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
+                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);                    if (SUCCEEDED(hr)) {                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
                             std::lock_guard<std::mutex> lock(data_mutex);
                             
-                            if (g_settings.audio_analysis_enabled) {
+                            if (Listeningway::ConfigurationManager::Snapshot().audioAnalysisEnabled) { // Thread-safe snapshot for capture thread
                                 // Use the global audio analyzer
                                 g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
                                                                   numFramesAvailable, 

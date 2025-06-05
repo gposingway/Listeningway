@@ -266,11 +266,10 @@ bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration&
                     UINT64 devicePosition = 0;
                     UINT64 qpcPosition = 0;
                     
-                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
-                    if (SUCCEEDED(hr)) {
+                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);                    if (SUCCEEDED(hr)) {
                         if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
-                            // Check if analysis is enabled in config
-                            if (!Listeningway::ConfigurationManager::Config().audio.analysisEnabled) {
+                            // Check if analysis is enabled in config (thread-safe snapshot)
+                            if (!Listeningway::ConfigurationManager::Snapshot().audio.analysisEnabled) {
                                 res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
                                 continue;
                             }

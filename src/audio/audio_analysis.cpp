@@ -22,7 +22,7 @@ AudioAnalyzer g_audio_analyzer;
 
 // Standard standalone function to analyze audio buffers (used by audio_capture.cpp)
 void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, AudioAnalysisData& out) {
-    const auto& config = Listeningway::ConfigurationManager::Config();
+    const auto config = Listeningway::ConfigurationManager::Snapshot(); // Thread-safe snapshot for audio capture threads
     // Calculate volume (RMS)
     float sum_squares = 0.0f;
     for (size_t i = 0; i < numFrames * numChannels; i++) {
@@ -537,15 +537,14 @@ void AudioAnalyzer::Stop() {
 
 void AudioAnalyzer::AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, AudioAnalysisData& out) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
-    if (!is_running_ || !beat_detector_) {
+      if (!is_running_ || !beat_detector_) {
         out.volume = 0.0f;
         std::fill(out.freq_bands.begin(), out.freq_bands.end(), 0.0f);
         out.beat = 0.0f;
         return;
     }
     
-    const auto& config = Listeningway::ConfigurationManager::Config();
+    const auto config = Listeningway::ConfigurationManager::Snapshot(); // Thread-safe snapshot for audio analysis thread
     // Call the standalone AnalyzeAudioBuffer function to perform the actual analysis
     ::AnalyzeAudioBuffer(data, numFrames, numChannels, out);
     

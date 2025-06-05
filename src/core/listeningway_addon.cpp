@@ -55,10 +55,10 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
         volume_left = g_audio_data.volume_left;
         volume_right = g_audio_data.volume_right;
         audio_pan = g_audio_data.audio_pan;
-        audio_format = g_audio_data.audio_format;
-    }
-    // Get amplifier from config (thread-safe)
-    amplifier = ConfigurationManager::Config().frequency.amplifier;
+        audio_format = g_audio_data.audio_format;    }
+    // Get amplifier from config - thread-safe snapshot
+    const auto config = ConfigurationManager::Snapshot();
+    amplifier = config.frequency.amplifier;
     // Apply amplifier to all relevant values
     volume_to_set *= amplifier;
     beat_to_set *= amplifier;
@@ -149,12 +149,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                         (reshade::addon_event_traits<reshade::addon_event::reshade_begin_effects>::decl)UpdateShaderUniforms);
                     reshade::register_event<reshade::addon_event::reshade_reloaded_effects>(
                         (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
-                    
-                    // Initialize and start the audio analyzer with the configured algorithm
-                    g_audio_analyzer.SetBeatDetectionAlgorithm(ConfigurationManager::Config().beat.algorithm);
+                      // Initialize and start the audio analyzer with the configured algorithm
+                    const auto config = ConfigurationManager::Snapshot();
+                    g_audio_analyzer.SetBeatDetectionAlgorithm(config.beat.algorithm);
                     g_audio_analyzer.Start();
                     LOG_DEBUG("[Addon] Audio analyzer started with algorithm: " + 
-                             std::to_string(ConfigurationManager::Config().beat.algorithm));
+                             std::to_string(config.beat.algorithm));
                     
                     // Start the audio capture thread
                     StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);

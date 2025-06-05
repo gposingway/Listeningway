@@ -136,6 +136,25 @@ public:
      */
     std::vector<AudioProviderInfo> GetAvailableProviderInfos() const;
 
+    /**
+     * @brief Restarts the entire audio system (analyzer + capture) with new config
+     * @param config New configuration to apply
+     * @return true if restart succeeded
+     */
+    bool RestartAudioSystem(const Listeningway::Configuration& config);
+
+    /**
+     * @brief Stops the entire audio system (analyzer + capture)
+     */
+    void StopAudioSystem();
+
+    /**
+     * @brief Applies configuration changes to the live audio system
+     * @param config Configuration to apply
+     * @return true if application succeeded
+     */
+    bool ApplyConfiguration(const Listeningway::Configuration& config);
+
 private:
     /**
      * @brief Registers all available providers

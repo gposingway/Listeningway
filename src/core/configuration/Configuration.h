@@ -39,12 +39,12 @@ struct Configuration {
         float tempoChangeThreshold = 0.3f;
         float beatInductionWindow = 0.1f;
         float octaveErrorWeight = 0.7f;
-        
-        // Band-Limited Beat Detection
+          // Band-Limited Beat Detection
         float minFreq = 0.0f;
         float maxFreq = 500.0f;
         float fluxLowAlpha = 0.1f;
         float fluxLowThresholdMultiplier = 2.0f;
+        float fluxMin = DEFAULT_BEAT_FLUX_MIN;
     } beat;
 
     // Frequency Band Settings

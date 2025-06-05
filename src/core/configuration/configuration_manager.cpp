@@ -8,12 +8,6 @@
 #include <mutex>
 
 extern AudioAnalyzer g_audio_analyzer;
-extern std::atomic_bool g_audio_thread_running;
-extern std::thread g_audio_thread;
-extern std::mutex g_audio_data_mutex;
-extern AudioAnalysisData g_audio_data;
-extern void StopAudioCaptureThread(std::atomic_bool&, std::thread&);
-extern void StartAudioCaptureThread(std::atomic_bool&, std::thread&, std::mutex&, AudioAnalysisData&);
 
 namespace Listeningway {
 
@@ -137,30 +131,18 @@ void ConfigurationManager::ApplyConfigToLiveSystems() {
     LOG_DEBUG("[ConfigurationManager] Applying configuration to live systems...");
     
     try {
-        // Stop audio systems first to ensure clean state
-        LOG_DEBUG("[ConfigurationManager] Stopping audio analyzer...");
-        g_audio_analyzer.Stop();
-        
-        LOG_DEBUG("[ConfigurationManager] Stopping audio capture thread...");
-        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
-        
         // Apply beat detection algorithm configuration
         LOG_DEBUG("[ConfigurationManager] Setting beat detection algorithm: " + std::to_string(m_config.beat.algorithm));
         g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
         
-        // Only restart if analysis is enabled in config
-        if (m_config.audio.analysisEnabled) {
-            LOG_DEBUG("[ConfigurationManager] Analysis enabled, starting audio systems...");
-            
-            // Start analyzer first
-            g_audio_analyzer.Start();
-            LOG_DEBUG("[ConfigurationManager] Audio analyzer started");
-            
-            // Then start capture thread
-            StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
-            LOG_DEBUG("[ConfigurationManager] Audio capture thread started");
+        // Delegate audio system management to AudioCaptureManager
+        extern std::unique_ptr<AudioCaptureManager> g_audio_capture_manager;
+        if (g_audio_capture_manager) {
+            if (!g_audio_capture_manager->ApplyConfiguration(m_config)) {
+                LOG_ERROR("[ConfigurationManager] Failed to apply configuration to audio system");
+            }
         } else {
-            LOG_DEBUG("[ConfigurationManager] Analysis disabled, audio systems remain stopped");
+            LOG_WARNING("[ConfigurationManager] AudioCaptureManager not available, cannot apply audio configuration");
         }
         
         LOG_DEBUG("[ConfigurationManager] Configuration applied successfully");
@@ -176,35 +158,20 @@ void ConfigurationManager::RestartAudioSystems() {
     LOG_DEBUG("[ConfigurationManager] Restarting audio systems...");
     
     try {
-        // Always stop first to ensure clean state
-        LOG_DEBUG("[ConfigurationManager] Stopping audio analyzer...");
-        g_audio_analyzer.Stop();
-        
-        LOG_DEBUG("[ConfigurationManager] Stopping audio capture thread...");
-        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
-        
-        // Wait a moment for clean shutdown
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        
         // Validate provider before restarting
         ValidateProvider();
         
-        // Only restart if analysis is enabled
-        if (m_config.audio.analysisEnabled) {
-            LOG_DEBUG("[ConfigurationManager] Analysis enabled, restarting audio systems...");
-            
-            // Apply current beat detection algorithm
-            g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
-            
-            // Start analyzer
-            g_audio_analyzer.Start();
-            LOG_DEBUG("[ConfigurationManager] Audio analyzer restarted");
-            
-            // Start capture thread
-            StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
-            LOG_DEBUG("[ConfigurationManager] Audio capture thread restarted");
+        // Apply beat detection algorithm
+        g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
+        
+        // Delegate audio system management to AudioCaptureManager
+        extern std::unique_ptr<AudioCaptureManager> g_audio_capture_manager;
+        if (g_audio_capture_manager) {
+            if (!g_audio_capture_manager->RestartAudioSystem(m_config)) {
+                LOG_ERROR("[ConfigurationManager] Failed to restart audio system");
+            }
         } else {
-            LOG_DEBUG("[ConfigurationManager] Analysis disabled, audio systems remain stopped");
+            LOG_WARNING("[ConfigurationManager] AudioCaptureManager not available, cannot restart audio system");
         }
         
         LOG_DEBUG("[ConfigurationManager] Audio systems restart completed successfully");
