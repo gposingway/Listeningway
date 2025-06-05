@@ -1,3 +1,5 @@
 /.vs
 /build
+/tools
+/deps
 /vcpkg_installed
