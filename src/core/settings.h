@@ -22,7 +22,7 @@ struct ListeningwaySettings {
     float beat_time_initial = DEFAULT_BEAT_TIME_INITIAL;
     float beat_time_min = DEFAULT_BEAT_TIME_MIN;
     float beat_time_divisor = DEFAULT_BEAT_TIME_DIVISOR;
-    float volume_norm = DEFAULT_VOLUME_NORM;
+    float volume_norm = DEFAULT_AMPLIFIER;
     float band_norm = DEFAULT_BAND_NORM;
     float capture_stale_timeout = DEFAULT_CAPTURE_STALE_TIMEOUT;    
     int beat_detection_algorithm = DEFAULT_BEAT_DETECTION_ALGORITHM; // 0 = SimpleEnergy, 1 = SpectralFluxAuto

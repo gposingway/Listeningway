@@ -1,15 +1,15 @@
 #include "simple_energy_beat_detector.h"
 #include "logging.h"
+#include "../../core/configuration/configuration_manager.h"
 #include <algorithm>
 #include <cmath>
 
 SimpleEnergyBeatDetector::SimpleEnergyBeatDetector() 
     : is_running_(false), 
       last_beat_time_(0.0f),
-      total_time_(0.0f),
-      beat_value_(0.0f),
+      total_time_(0.0f),      beat_value_(0.0f),
       flux_threshold_(0.0f),
-      beat_falloff_(g_settings.beat_falloff_default)
+      beat_falloff_(Listeningway::ConfigurationManager::Snapshot().beat.falloffDefault)
 {
     result_.beat = 0.0f;
     result_.tempo_detected = false; // Simple detector doesn't detect tempo
@@ -64,12 +64,11 @@ void SimpleEnergyBeatDetector::Process(const std::vector<float>& magnitudes, flo
     
     // Use a smoother threshold adaptation by adjusting the alpha values
     // Slower adaptation means more stable threshold (less jittery beats)
-    flux_threshold_ = flux_threshold_ * 0.98f + beat_flux * 0.02f;
-    
-    // Check if this is a beat
+    flux_threshold_ = flux_threshold_ * 0.98f + beat_flux * 0.02f;    // Check if this is a beat
     bool is_beat = false;
-    if (beat_flux > flux_threshold_ * g_settings.flux_low_threshold_multiplier && 
-        beat_flux > g_settings.beat_flux_min) {
+    const auto config = Listeningway::ConfigurationManager::Snapshot(); // Thread-safe snapshot for beat detection
+    if (beat_flux > flux_threshold_ * config.beat.fluxLowThresholdMultiplier && 
+        beat_flux > config.beat.fluxMin) {
         
         // Require minimum time between beats
         float time_since_last_beat = total_time_ - last_beat_time_;
@@ -84,20 +83,20 @@ void SimpleEnergyBeatDetector::Process(const std::vector<float>& magnitudes, flo
             // Set beat value high
             beat_value_ = 1.0f;
             
-            // Use more advanced adaptive falloff based on time between beats
+            // Use more advanced adaptive falloff based on time between beats            
             // This was the original algorithm from Listeningway
             if (time_since_last_beat > 0.0f) {
                 // Calculate beat falloff based on elapsed time
-                beat_falloff_ = g_settings.beat_falloff_default;
+                beat_falloff_ = config.beat.falloffDefault;
                 
                 // Adjust falloff based on time between beats
                 // Reduce the divisor to make the decay slower
-                float adaptive_time = g_settings.beat_time_scale * std::exp(time_since_last_beat) + 
-                                     g_settings.beat_time_initial;
-                adaptive_time = std::max(adaptive_time, g_settings.beat_time_min);
+                float adaptive_time = config.beat.timeScale * std::exp(time_since_last_beat) + 
+                                     config.beat.timeInitial;
+                adaptive_time = std::max(adaptive_time, config.beat.timeMin);
                 
                 // Reduce the falloff rate by using a smaller divisor
-                beat_falloff_ = beat_falloff_ / (adaptive_time * g_settings.beat_time_divisor * 2.0f);
+                beat_falloff_ = beat_falloff_ / (adaptive_time * config.beat.timeDivisor * 2.0f);
             }
         }
     }

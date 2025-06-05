@@ -63,7 +63,7 @@ public:
      * @param data Analysis data to be updated by the thread
      * @return true if capture started successfully
      */
-    virtual bool StartCapture(const AudioAnalysisConfig& config, 
+    virtual bool StartCapture(const Listeningway::Configuration& config, 
                              std::atomic_bool& running, 
                              std::thread& thread, 
                              std::mutex& data_mutex, 

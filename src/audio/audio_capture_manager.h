@@ -1,6 +1,7 @@
 #pragma once
 #include "providers/audio_capture_provider.h"
 #include "audio_analysis.h"
+#include "configuration/configuration_manager.h"
 #include <memory>
 #include <vector>
 #include <atomic>
@@ -78,7 +79,7 @@ public:
      * @param data Analysis data to be updated by the thread
      * @return true if capture started successfully
      */
-    bool StartCapture(const AudioAnalysisConfig& config, 
+    bool StartCapture(const Listeningway::Configuration& config, 
                      std::atomic_bool& running, 
                      std::thread& thread, 
                      std::mutex& data_mutex, 
@@ -99,7 +100,7 @@ public:
      * @param data_mutex Mutex protecting the analysis data
      * @param data Analysis data to be updated by the thread
      */
-    void CheckAndRestartCapture(const AudioAnalysisConfig& config, 
+    void CheckAndRestartCapture(const Listeningway::Configuration& config, 
                                std::atomic_bool& running, 
                                std::thread& thread, 
                                std::mutex& data_mutex, 
@@ -115,7 +116,7 @@ public:
      * @param data Analysis data to be updated by the thread
      * @return true if switch and restart succeeded
      */
-    bool SwitchProviderAndRestart(AudioCaptureProviderType type, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+    bool SwitchProviderAndRestart(AudioCaptureProviderType type, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
 
     /**
      * @brief Switches provider by code and restarts capture thread if running
@@ -127,13 +128,32 @@ public:
      * @param data Analysis data to be updated by the thread
      * @return true if switch and restart succeeded
      */
-    bool SwitchProviderByCodeAndRestart(const std::string& providerCode, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+    bool SwitchProviderByCodeAndRestart(const std::string& providerCode, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
 
     /**
      * @brief Gets all available provider infos (for UI and config)
      * @return Vector of AudioProviderInfo for available providers
      */
     std::vector<AudioProviderInfo> GetAvailableProviderInfos() const;
+
+    /**
+     * @brief Restarts the entire audio system (analyzer + capture) with new config
+     * @param config New configuration to apply
+     * @return true if restart succeeded
+     */
+    bool RestartAudioSystem(const Listeningway::Configuration& config);
+
+    /**
+     * @brief Stops the entire audio system (analyzer + capture)
+     */
+    void StopAudioSystem();
+
+    /**
+     * @brief Applies configuration changes to the live audio system
+     * @param config Configuration to apply
+     * @return true if application succeeded
+     */
+    bool ApplyConfiguration(const Listeningway::Configuration& config);
 
 private:
     /**

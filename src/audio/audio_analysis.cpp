@@ -7,6 +7,8 @@
 #include "simple_energy_beat_detector.h"
 #include "spectral_flux_auto_beat_detector.h"
 #include "logging.h"
+#include "configuration/configuration_manager.h"
+using Listeningway::ConfigurationManager;
 #include <algorithm>
 #include <numeric>
 #include <cmath>
@@ -19,24 +21,24 @@
 AudioAnalyzer g_audio_analyzer;
 
 // Standard standalone function to analyze audio buffers (used by audio_capture.cpp)
-void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, 
-                        const AudioAnalysisConfig& config, AudioAnalysisData& out) {
+void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, AudioAnalysisData& out) {
+    const auto config = Listeningway::ConfigurationManager::Snapshot(); // Thread-safe snapshot for audio capture threads
     // Calculate volume (RMS)
     float sum_squares = 0.0f;
     for (size_t i = 0; i < numFrames * numChannels; i++) {
         sum_squares += data[i] * data[i];
     }
     float rms = std::sqrt(sum_squares / (numFrames * numChannels));
-    out.volume = std::min(1.0f, rms * g_settings.volume_norm);
+    out.volume = std::min(1.0f, rms * config.frequency.amplifier); // Use amplifier for normalization
     
     // Resize frequency bands vector if needed
-    if (out.freq_bands.size() != config.num_bands) {
-        out.freq_bands.resize(config.num_bands, 0.0f);
-        out.raw_freq_bands.resize(config.num_bands, 0.0f);
+    if (out.freq_bands.size() != config.frequency.bands) {
+        out.freq_bands.resize(config.frequency.bands, 0.0f);
+        out.raw_freq_bands.resize(config.frequency.bands, 0.0f);
     }
     
     // Prepare FFT data
-    const size_t fft_size = config.fft_size;
+    const size_t fft_size = config.frequency.fftSize;
     const size_t half_fft_size = fft_size / 2;
     
     // Create FFT configuration
@@ -113,11 +115,12 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     out._prev_magnitudes = magnitudes;
     
     // Populate frequency bands using proper mapping according to settings
-    const size_t bands = config.num_bands;
-    const bool use_log_scale = g_settings.band_log_scale;
-    const float min_freq = g_settings.band_min_freq;
-    const float max_freq = g_settings.band_max_freq;
-    const float log_strength = g_settings.band_log_strength;
+    const size_t bands = config.frequency.bands;
+    const bool use_log_scale = config.frequency.logScaleEnabled;
+    const float min_freq = config.frequency.minFreq;
+    const float max_freq = config.frequency.maxFreq;
+    const float log_strength = config.frequency.logStrength;
+    // TODO: Add fftSize, bandNorm, sample_rate to Configuration if needed, or define locally/with constants
     const float nyquist_freq = config.sample_rate * 0.5f;
     
     // Ensure min and max are within sensible ranges for the FFT size
@@ -230,7 +233,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
         }
         
         // Store the raw (unmodified) band value for beat detection
-        out.raw_freq_bands[band] = std::min(1.0f, band_value * g_settings.band_norm);
+        out.raw_freq_bands[band] = std::min(1.0f, band_value * config.frequency.bandNorm);
         
         // Calculate equalizer multiplier for visualization
         float equalizer_multiplier = 1.0f;
@@ -249,7 +252,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
         const float centers[5] = { 0.0f, 0.25f, 0.5f, 0.75f, 1.0f };
         
         // Width of the bell curve from user settings (smaller = sharper peaks, larger = more overlap)
-        const float bell_width = g_settings.equalizer_width;
+        const float bell_width = config.frequency.equalizerWidth;
         
         // Apply bell curves from all 5 modifiers with position-based weighting
         float total_weight = 0.0f;
@@ -262,14 +265,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
             float bell_value = std::exp(-(distance * distance) / (2.0f * bell_width * bell_width));
             
             // Get the corresponding modifier value
-            float modifier_value = 1.0f; // Default
-            switch (i) {
-                case 0: modifier_value = g_settings.equalizer_band1; break;
-                case 1: modifier_value = g_settings.equalizer_band2; break;
-                case 2: modifier_value = g_settings.equalizer_band3; break;
-                case 3: modifier_value = g_settings.equalizer_band4; break;
-                case 4: modifier_value = g_settings.equalizer_band5; break;
-            }
+            float modifier_value = config.frequency.equalizerBands[i];
             
             weighted_modifier += bell_value * modifier_value;
             total_weight += bell_value;
@@ -420,21 +416,21 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     } else {
         pan_norm = 0.0f;    }
     // Now normalize for display only
-    out.volume_left = std::min(1.0f, rms_left * g_settings.volume_norm);
-    out.volume_right = std::min(1.0f, rms_right * g_settings.volume_norm);
+    out.volume_left = std::min(1.0f, rms_left * config.frequency.amplifier);
+    out.volume_right = std::min(1.0f, rms_right * config.frequency.amplifier);
     
     // Apply pan smoothing if enabled
     static float smoothed_pan = 0.0f;
     static bool pan_initialized = false;
     
-    if (g_settings.pan_smoothing > 0.0f) {
+    if (config.audio.panSmoothing > 0.0f) {
         if (!pan_initialized) {
             smoothed_pan = pan_norm;
             pan_initialized = true;
         } else {
             // Exponential moving average: smoothed = (1-alpha) * previous + alpha * current
             // Higher smoothing value = more smoothing (slower response)
-            float alpha = 1.0f / (1.0f + g_settings.pan_smoothing * 10.0f); // Scale smoothing factor
+            float alpha = 1.0f / (1.0f + config.audio.panSmoothing * 10.0f); // Scale smoothing factor
             smoothed_pan = (1.0f - alpha) * smoothed_pan + alpha * pan_norm;
         }
         out.audio_pan = smoothed_pan;
@@ -448,7 +444,7 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     kiss_fft_free(fft_cfg);
     
     // If audio analysis is disabled, reset all values
-    if (!g_settings.audio_analysis_enabled) {
+    if (!config.audio.analysisEnabled) {
         out.volume = 0.0f;
         std::fill(out.freq_bands.begin(), out.freq_bands.end(), 0.0f);
         out.beat = 0.0f;
@@ -539,20 +535,18 @@ void AudioAnalyzer::Stop() {
     LOG_DEBUG("[AudioAnalyzer] Stopped");
 }
 
-void AudioAnalyzer::AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, 
-                                      const AudioAnalysisConfig& config, AudioAnalysisData& out) {
+void AudioAnalyzer::AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, AudioAnalysisData& out) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
-    if (!is_running_ || !beat_detector_) {
-        // If not running, just zero out the data
+      if (!is_running_ || !beat_detector_) {
         out.volume = 0.0f;
         std::fill(out.freq_bands.begin(), out.freq_bands.end(), 0.0f);
         out.beat = 0.0f;
         return;
     }
     
+    const auto config = Listeningway::ConfigurationManager::Snapshot(); // Thread-safe snapshot for audio analysis thread
     // Call the standalone AnalyzeAudioBuffer function to perform the actual analysis
-    ::AnalyzeAudioBuffer(data, numFrames, numChannels, config, out);
+    ::AnalyzeAudioBuffer(data, numFrames, numChannels, out);
     
     // Update beat analysis
     if (beat_detector_) {
