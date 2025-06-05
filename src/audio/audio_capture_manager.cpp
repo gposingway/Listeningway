@@ -120,6 +120,9 @@ bool AudioCaptureManager::SetPreferredProvider(AudioCaptureProviderType type) {
     }
     
     preferred_provider_type_ = type;
+    // Set analysisEnabled based on provider's activates_capture
+    auto& config = Listeningway::ConfigurationManager::Config();
+    config.audio.analysisEnabled = provider->GetProviderInfo().activates_capture;
     LOG_INFO("[AudioCaptureManager] Set preferred provider to: " + provider->GetProviderName());
     
     // If we're currently using a different provider, switch to the preferred one

@@ -26,10 +26,13 @@ public:
     Configuration& GetConfig();
     const Configuration& GetConfig() const;
 
-    // Save/load/reset
-    bool Save(const std::string& filename = "");
-    bool Load(const std::string& filename = "");
+    // Save/load/reset (no parameters, always use default path)
+    bool Save();
+    bool Load();
     void ResetToDefaults();
+
+    // Applies the current config to all live systems (analyzer, capture, etc.)
+    void ApplyConfigToLiveSystems();
 
     // Provider logic: enumerate, validate, set default if needed
     void EnsureValidProvider();

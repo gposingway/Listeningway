@@ -27,12 +27,12 @@
 #include "configuration/ConfigurationManager.h"
 using Listeningway::ConfigurationManager;
 
-static std::atomic_bool g_addon_enabled = false;
-static std::atomic_bool g_audio_thread_running = false;
-static std::atomic_bool g_audio_analysis_enabled = true;
-static std::thread g_audio_thread;
-static std::mutex g_audio_data_mutex;
-static AudioAnalysisData g_audio_data;
+std::atomic_bool g_addon_enabled = false;
+std::atomic_bool g_audio_thread_running = false;
+extern std::atomic_bool g_audio_analysis_enabled;
+std::thread g_audio_thread;
+std::mutex g_audio_data_mutex;
+AudioAnalysisData g_audio_data;
 static UniformManager g_uniform_manager;
 static std::chrono::steady_clock::time_point g_last_audio_update = std::chrono::steady_clock::now();
 static float g_last_volume = 0.0f;
@@ -133,7 +133,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         switch (ul_reason_for_call) {
             case DLL_PROCESS_ATTACH:
                 LOG_DEBUG("[Addon] DLL_PROCESS_ATTACH: Startup sequence initiated.");
-                LoadSettings();
+                // Load configuration at startup (ensures config is loaded and provider is valid)
+                Listeningway::ConfigurationManager::Instance();
                 LOG_DEBUG("[Addon] Loaded settings from ini.");
                 LoadAllTunables();
                 LOG_DEBUG("[Addon] Loaded all tunables from ini.");

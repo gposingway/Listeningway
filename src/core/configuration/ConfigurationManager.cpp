@@ -2,6 +2,18 @@
 #include "logging.h"
 #include <algorithm>
 #include <set>
+#include "../audio/audio_analysis.h"
+#include "../audio/audio_capture.h"
+#include <thread>
+#include <mutex>
+
+extern AudioAnalyzer g_audio_analyzer;
+extern std::atomic_bool g_audio_thread_running;
+extern std::thread g_audio_thread;
+extern std::mutex g_audio_data_mutex;
+extern AudioAnalysisData g_audio_data;
+extern void StopAudioCaptureThread(std::atomic_bool&, std::thread&);
+extern void StartAudioCaptureThread(std::atomic_bool&, std::thread&, std::mutex&, AudioAnalysisData&);
 
 namespace Listeningway {
 
@@ -29,16 +41,17 @@ const Configuration& ConfigurationManager::GetConfig() const {
     return m_config;
 }
 
-bool ConfigurationManager::Save(const std::string& filename) {
+bool ConfigurationManager::Save() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    return m_config.Save(filename.empty() ? Configuration::GetDefaultConfigPath() : filename);
+    return m_config.Save();
 }
 
-bool ConfigurationManager::Load(const std::string& filename) {
+bool ConfigurationManager::Load() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    bool loaded = m_config.Load(filename.empty() ? Configuration::GetDefaultConfigPath() : filename);
+    bool loaded = m_config.Load();
     ValidateProvider();
     m_config.Validate();
+    ApplyConfigToLiveSystems();
     return loaded;
 }
 
@@ -46,6 +59,27 @@ void ConfigurationManager::ResetToDefaults() {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_config.ResetToDefaults();
     ValidateProvider();
+    // Set analysisEnabled based on the default provider's activates_capture
+    auto provider_code = m_config.audio.captureProviderCode;
+    // Find the provider info for the current code
+    auto available = EnumerateAvailableProviders();
+    bool activates_capture = false;
+    for (const auto& code : available) {
+        if (code == provider_code) {
+            // Find the provider and get its info
+            if (g_audio_capture_manager) {
+                for (const auto& info : g_audio_capture_manager->GetAvailableProviderInfos()) {
+                    if (info.code == provider_code) {
+                        activates_capture = info.activates_capture;
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+    }
+    m_config.audio.analysisEnabled = activates_capture;
+    ApplyConfigToLiveSystems();
 }
 
 void ConfigurationManager::EnsureValidProvider() {
@@ -60,9 +94,18 @@ std::vector<std::string> ConfigurationManager::EnumerateAvailableProviders() con
 }
 
 std::string ConfigurationManager::GetDefaultProviderCode() const {
-    // TODO: Implement logic to determine the default provider
-    // Example: return "system";
-    return "system";
+    // Enumerate available providers
+    auto available = EnumerateAvailableProviders();
+    // If config has a provider marked as default, use it
+    // (Assume config file or code can be extended to support Is_default flag)
+    // For now, use the first available provider that is not "off"
+    for (const auto& code : available) {
+        if (code != "off") {
+            return code;
+        }
+    }
+    // Fallback
+    return !available.empty() ? available[0] : "off";
 }
 
 void ConfigurationManager::ValidateProvider() {
@@ -73,6 +116,24 @@ void ConfigurationManager::ValidateProvider() {
     }
 }
 
-ConfigurationManager::ConfigurationManager() = default;
+void ConfigurationManager::ApplyConfigToLiveSystems() {
+    // Apply beat detection algorithm and restart analyzer
+    g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
+    g_audio_analyzer.Start();
+    // Restart audio capture thread
+    StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+    StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+}
+
+ConfigurationManager::ConfigurationManager() {
+    // Attempt to load config at startup
+    bool loaded = m_config.Load();
+    if (!loaded) {
+        LOG_WARNING("[ConfigurationManager] No config file found, using defaults.");
+        m_config.ResetToDefaults();
+    }
+    // Ensure provider is valid and select default if needed
+    ValidateProvider();
+}
 
 } // namespace Listeningway

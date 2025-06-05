@@ -1,5 +1,6 @@
 #include "Configuration.h"
 #include "logging.h"
+#include "settings.h"
 #include <fstream>
 #include <sstream>
 #include <windows.h>
@@ -9,24 +10,12 @@
 
 namespace Listeningway {
 
-bool Configuration::Save(const std::string& filename) const {
-    std::string filepath = filename;
-    if (filepath.find('/') == std::string::npos && filepath.find('\\') == std::string::npos) {
-        // If no path specified, use default location
-        filepath = GetDefaultConfigPath() + "\\" + filename;
-    }
-    
-    return SaveToJson(filepath);
+bool Configuration::Save() const {
+    return SaveToJson(GetDefaultConfigPath());
 }
 
-bool Configuration::Load(const std::string& filename) {
-    std::string filepath = filename;
-    if (filepath.find('/') == std::string::npos && filepath.find('\\') == std::string::npos) {
-        // If no path specified, use default location
-        filepath = GetDefaultConfigPath() + "\\" + filename;
-    }
-    
-    return LoadFromJson(filepath);
+bool Configuration::Load() {
+    return LoadFromJson(GetDefaultConfigPath());
 }
 
 void Configuration::ResetToDefaults() {
@@ -84,23 +73,16 @@ bool Configuration::Validate() {
 }
 
 std::string Configuration::GetDefaultConfigPath() {
-    char path[MAX_PATH];
-    if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, path))) {
-        std::string appDataPath(path);
-        appDataPath += "\\Listeningway";
-        
-        // Create directory if it doesn't exist
-        CreateDirectoryA(appDataPath.c_str(), NULL);
-        
-        return appDataPath;
-    }
-    
-    // Fallback to current directory
-    return ".";
+    // Use the same directory as the INI/log file
+    std::string ini = GetSettingsPath();
+    size_t pos = ini.find_last_of("\\/");
+    std::string dir = (pos != std::string::npos) ? ini.substr(0, pos + 1) : "";
+    return dir + "Listeningway.json";
 }
 
 bool Configuration::SaveToJson(const std::string& filepath) const {
     try {
+        LOG_DEBUG("[Configuration] Attempting to save config to: " + filepath);
         std::ofstream file(filepath);
         if (!file.is_open()) {
             LOG_ERROR("[Configuration] Failed to open file for writing: " + filepath);

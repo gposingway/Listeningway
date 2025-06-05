@@ -777,7 +777,8 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         ImGui::Text("Settings Management:");
         
         // Use columns to position the buttons side by side with equal width
-        ImGui::Columns(3, "settings_buttons", false);        // Save button
+        ImGui::Columns(3, "settings_buttons", false);
+        // Save button
         if (ImGui::Button("Save Settings", ImVec2(-1, 0))) {
             if (g_configManager.Save()) {
                 LOG_DEBUG("[Overlay] Settings saved to file");
@@ -785,10 +786,12 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
                 LOG_ERROR("[Overlay] Failed to save settings to file");
             }
         }
-        ImGui::NextColumn();        // Load button
+        ImGui::NextColumn();
+        // Load button
         if (ImGui::Button("Load Settings", ImVec2(-1, 0))) {
             if (g_configManager.Load()) {
                 LOG_DEBUG("[Overlay] Settings loaded from file");
+                // No longer re-apply config here; ConfigurationManager handles it
             } else {
                 LOG_ERROR("[Overlay] Failed to load settings to file");
             }
@@ -798,6 +801,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
         if (ImGui::Button("Reset to Default", ImVec2(-1, 0))) {
             g_configManager.ResetToDefaults();
             LOG_DEBUG("[Overlay] Settings reset to default values");
+            // No longer re-apply config here; ConfigurationManager handles it
         }
         
         // Reset columns

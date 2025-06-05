@@ -71,12 +71,12 @@ struct Configuration {
     } debug;
 
     // Methods for persistence
-    bool Save(const std::string& filename = "listeningway_config.json") const;
-    bool Load(const std::string& filename = "listeningway_config.json");
+    bool Save() const;
+    bool Load();
     void ResetToDefaults();
     bool Validate();
 
-    // Get default file path
+    // Returns the full path to the default config file (same dir as INI/log)
     static std::string GetDefaultConfigPath();
 
 private:
