@@ -7,7 +7,7 @@
 #include "simple_energy_beat_detector.h"
 #include "spectral_flux_auto_beat_detector.h"
 #include "logging.h"
-#include "configuration/ConfigurationManager.h"
+#include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
 #include <algorithm>
 #include <numeric>

@@ -24,7 +24,7 @@
 #include "uniform_manager.h"
 #include "constants.h"
 #include "settings.h"
-#include "configuration/ConfigurationManager.h"
+#include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
 
 std::atomic_bool g_addon_enabled = false;

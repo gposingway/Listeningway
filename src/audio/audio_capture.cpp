@@ -6,7 +6,7 @@
 #include "audio_capture_manager.h"
 #include "providers/audio_capture_provider.h"
 #include "../utils/logging.h"
-#include "configuration/ConfigurationManager.h"
+#include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
 
 #include <memory>

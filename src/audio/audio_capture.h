@@ -6,7 +6,7 @@
 #include <memory>
 #include "audio_analysis.h"
 #include "audio_capture_manager.h"
-#include "configuration/ConfigurationManager.h"
+#include "configuration/configuration_manager.h"
 
 extern std::unique_ptr<AudioCaptureManager> g_audio_capture_manager;
 

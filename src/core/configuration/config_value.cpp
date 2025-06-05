@@ -1,4 +1,4 @@
-#include "ConfigValue.h"
+#include "config_value.h"
 #include <sstream>
 
 std::string ConfigValue::ToString() const {

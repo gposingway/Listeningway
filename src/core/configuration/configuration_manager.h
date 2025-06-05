@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Configuration.h"
+#include "configuration.h"
 #include <mutex>
 #include <string>
 #include <vector>

@@ -1,7 +1,7 @@
 #pragma once
 #include "providers/audio_capture_provider.h"
 #include "audio_analysis.h"
-#include "configuration/ConfigurationManager.h"
+#include "configuration/configuration_manager.h"
 #include <memory>
 #include <vector>
 #include <atomic>

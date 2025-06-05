@@ -5,7 +5,7 @@
 #include <mutex>
 #include "constants.h"
 #include "beat_detector.h"
-#include "configuration/ConfigurationManager.h"
+#include "configuration/configuration_manager.h"
 
 // Audio analysis results for one frame
 struct AudioAnalysisData {

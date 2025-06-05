@@ -12,7 +12,7 @@
 #include "settings.h"
 #include "logging.h"
 #include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
-#include "configuration/ConfigurationManager.h"
+#include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
 #include <windows.h>
 #include <shellapi.h>
