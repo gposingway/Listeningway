@@ -131,7 +131,11 @@ bool Configuration::SaveToJson(const std::string& filepath) const {
         }
         file << "],\n";
         file << "    \"equalizerWidth\": " << frequency.equalizerWidth << ",\n";
-        file << "    \"amplifier\": " << frequency.amplifier << "\n";
+        file << "    \"amplifier\": " << frequency.amplifier << ",\n";
+        // Serialize new members
+        file << "    \"bands\": " << frequency.bands << ",\n";
+        file << "    \"fftSize\": " << frequency.fftSize << ",\n";
+        file << "    \"bandNorm\": " << frequency.bandNorm << "\n";
         file << "  },\n";
         
         // Debug settings
@@ -277,6 +281,14 @@ bool Configuration::LoadFromJson(const std::string& filepath) {
         
         value = getValue("amplifier");
         if (!value.empty()) frequency.amplifier = std::stof(value);
+        
+        // Parse new members
+        value = getValue("bands");
+        if (!value.empty()) frequency.bands = static_cast<size_t>(std::stoul(value));
+        value = getValue("fftSize");
+        if (!value.empty()) frequency.fftSize = static_cast<size_t>(std::stoul(value));
+        value = getValue("bandNorm");
+        if (!value.empty()) frequency.bandNorm = std::stof(value);
         
         // Parse debug settings
         value = getValue("debugEnabled");
