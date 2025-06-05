@@ -416,8 +416,8 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     } else {
         pan_norm = 0.0f;    }
     // Now normalize for display only
-    out.volume_left = std::min(1.0f, rms_left * config.frequency.bandNorm);
-    out.volume_right = std::min(1.0f, rms_right * config.frequency.bandNorm);
+    out.volume_left = std::min(1.0f, rms_left * config.frequency.amplifier);
+    out.volume_right = std::min(1.0f, rms_right * config.frequency.amplifier);
     
     // Apply pan smoothing if enabled
     static float smoothed_pan = 0.0f;
