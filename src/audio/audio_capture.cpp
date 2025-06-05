@@ -43,7 +43,7 @@ void UninitAudioCapture() {
 
 // Starts a background thread that captures audio and updates analysis data using the selected provider.
 void StartAudioCaptureThread(std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
-    const auto& config = ConfigurationManager::Config();
+    auto config = ConfigurationManager::Snapshot();
     if (!g_audio_capture_manager) {
         InitializeAudioCapture();
     }
@@ -64,7 +64,7 @@ void StopAudioCaptureThread(std::atomic_bool& running, std::thread& thread) {
 
 // Helper to restart audio capture if provider signals restart is needed
 void CheckAndRestartAudioCapture(std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
-    const auto& config = ConfigurationManager::Config();
+    auto config = ConfigurationManager::Snapshot();
     if (g_audio_capture_manager) {
         g_audio_capture_manager->CheckAndRestartCapture(config, running, thread, data_mutex, data);
     }
@@ -124,7 +124,7 @@ std::string GetAudioCaptureProviderName(const std::string& providerCode) {
 
 // Overlay API: Switch provider and restart capture thread if running
 bool SwitchAudioCaptureProviderAndRestart(int providerType, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
-    const auto& config = ConfigurationManager::Config();
+    auto config = ConfigurationManager::Snapshot();
     if (!g_audio_capture_manager) {
         InitializeAudioCapture();
     }
@@ -135,7 +135,7 @@ bool SwitchAudioCaptureProviderAndRestart(int providerType, std::atomic_bool& ru
 
 // Overlay API: Switch provider by code and restart capture thread if running
 bool SwitchAudioCaptureProviderByCodeAndRestart(const std::string& providerCode, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
-    const auto& config = ConfigurationManager::Config();
+    auto config = ConfigurationManager::Snapshot();
     if (!g_audio_capture_manager) {
         InitializeAudioCapture();
     }

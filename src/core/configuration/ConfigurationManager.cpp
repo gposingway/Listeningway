@@ -25,7 +25,7 @@ ConfigurationManager& ConfigurationManager::Instance() {
     return instance;
 }
 
-Configuration& ConfigurationManager::Config() {
+const Configuration& ConfigurationManager::Config() {
     return Instance().GetConfig();
 }
 
@@ -135,6 +135,11 @@ void ConfigurationManager::ApplyConfigToLiveSystems() {
     StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
 }
 
+Configuration ConfigurationManager::Snapshot() {
+    std::lock_guard<std::mutex> lock(Instance().m_mutex);
+    return m_config;
+}
+
 ConfigurationManager::ConfigurationManager() {
     // Attempt to load config at startup
     bool loaded = m_config.Load();
@@ -144,6 +149,11 @@ ConfigurationManager::ConfigurationManager() {
     }
     // Ensure provider is valid and select default if needed
     ValidateProvider();
+}
+
+void ConfigurationManager::SetAnalysisEnabled(bool enabled) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_config.audio.analysisEnabled = enabled;
 }
 
 } // namespace Listeningway

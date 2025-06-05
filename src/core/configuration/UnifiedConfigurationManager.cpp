@@ -38,11 +38,8 @@ void UnifiedConfigurationManager::ResetToDefaults() {
     config_ = nlohmann::json::object();
 }
 
-nlohmann::json& UnifiedConfigurationManager::GetConfig() {
-    return config_;
-}
-
 const nlohmann::json& UnifiedConfigurationManager::GetConfig() const {
+    // Thread-safe read-only access. All modifications must use Update().
     return config_;
 }
 

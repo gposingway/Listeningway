@@ -7,6 +7,7 @@
 #include <shlobj.h>
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 
 namespace Listeningway {
 
@@ -77,6 +78,12 @@ std::string Configuration::GetDefaultConfigPath() {
     std::string ini = GetSettingsPath();
     size_t pos = ini.find_last_of("\\/");
     std::string dir = (pos != std::string::npos) ? ini.substr(0, pos + 1) : "";
+    if (!dir.empty()) {
+        std::filesystem::path dirPath(dir);
+        if (!std::filesystem::exists(dirPath)) {
+            std::filesystem::create_directories(dirPath);
+        }
+    }
     return dir + "Listeningway.json";
 }
 

@@ -19,8 +19,7 @@ public:
     // Singleton access
     static UnifiedConfigurationManager& Instance();
 
-    // Get current config (thread-safe)
-    nlohmann::json& GetConfig();
+    // Get current config (thread-safe, read-only)
     const nlohmann::json& GetConfig() const;
 
     // Save/load config to disk (returns true on success)
@@ -51,7 +50,12 @@ private:
     nlohmann::json config_;
     std::string config_path_;
     std::vector<AudioProviderInfo> providers_;
-};
+}
 
-// Global static config access
-#define g_config (UnifiedConfigurationManager::Instance().GetConfig())
+// Remove macro definition of g_config and replace with inline function
+// Returns a copy of the config for thread-safety. For modifications, use Update().
+inline nlohmann::json GetGlobalConfigCopy() {
+    return UnifiedConfigurationManager::Instance().GetConfig();
+}
+
+// All modifications must use Update() for thread-safety.

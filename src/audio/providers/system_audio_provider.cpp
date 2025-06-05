@@ -269,9 +269,12 @@ bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration&
                     hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
                     if (SUCCEEDED(hr)) {
                         if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
+                            // Check if analysis is enabled in config
+                            if (!Listeningway::ConfigurationManager::Config().audio.analysisEnabled) {
+                                res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
+                                continue;
+                            }
                             extern AudioAnalyzer g_audio_analyzer;
-                            
-                            // Remove reference to g_settings and always analyze audio (config now controls enable/disable)
                             g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
                                                               numFramesAvailable, 
                                                               res.pwfx->nChannels, 

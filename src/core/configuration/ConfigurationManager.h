@@ -19,12 +19,15 @@ public:
     static ConfigurationManager& Instance();
 
     // Static access to the configuration (always available)
-    static Configuration& Config();
+    static const Configuration& Config();
     static const Configuration& ConfigConst();
 
     // Thread-safe access (for advanced use)
     Configuration& GetConfig();
     const Configuration& GetConfig() const;
+
+    // Returns an immutable copy of the configuration for thread-safe use in background threads
+    static Configuration Snapshot();
 
     // Save/load/reset (no parameters, always use default path)
     bool Save();
@@ -38,6 +41,9 @@ public:
     void EnsureValidProvider();
     std::vector<std::string> EnumerateAvailableProviders() const;
     std::string GetDefaultProviderCode() const;
+
+    // Thread-safe setter for analysisEnabled
+    void SetAnalysisEnabled(bool enabled);
 
 private:
     ConfigurationManager();
