@@ -2,7 +2,7 @@
 // Audio Capture Module Implementation
 // Manages audio capture using different providers (System/Process)
 // ---------------------------------------------
-#include "audio_capture.h"
+#include "capture/audio_capture.h"
 #include "audio_capture_manager.h"
 #include "providers/audio_capture_provider.h"
 #include "../utils/logging.h"

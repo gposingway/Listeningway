@@ -3,7 +3,7 @@
 // Captures system-wide audio using WASAPI loopback
 // ---------------------------------------------
 #include "system_audio_provider.h"
-#include "../audio_analysis.h"
+#include "analysis/audio_analysis.h"
 #include "../../utils/logging.h"
 #include "../../core/thread_safety_manager.h"
 #include <mmdeviceapi.h>

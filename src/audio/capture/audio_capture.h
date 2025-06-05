@@ -4,7 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include "audio_analysis.h"
+#include "../analysis/audio_analysis.h"
 #include "audio_capture_manager.h"
 #include "configuration/configuration_manager.h"
 

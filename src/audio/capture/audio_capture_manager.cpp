@@ -4,7 +4,6 @@
 // ---------------------------------------------
 #include "audio_capture_manager.h"
 #include "providers/system_audio_provider.h"
-#include "providers/process_audio_provider.h"
 #include "providers/off_audio_provider.h"
 #include "../utils/logging.h"
 #include "../core/thread_safety_manager.h"
@@ -67,9 +66,6 @@ void AudioCaptureManager::Uninitialize() {
 void AudioCaptureManager::RegisterProviders() {
     // Register system audio provider (always available)
     providers_.push_back(std::make_unique<SystemAudioCaptureProvider>());
-    
-    // Register process audio provider
-    providers_.push_back(std::make_unique<ProcessAudioCaptureProvider>());
     
     // Register off audio provider (dummy provider)
     providers_.push_back(std::make_unique<OffAudioCaptureProvider>());

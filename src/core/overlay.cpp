@@ -7,13 +7,13 @@
 #include <imgui.h>
 #include <reshade.hpp>
 #include "overlay.h"
-#include "audio_analysis.h"
+#include "audio/analysis/audio_analysis.h"
 #include "constants.h"
 #include "audio_format_utils.h"
 #include "settings.h"
 #include "logging.h"
 #include "thread_safety_manager.h"
-#include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
+#include "audio/capture/audio_capture.h"
 #include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
 #include <windows.h>

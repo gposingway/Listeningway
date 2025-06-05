@@ -2,8 +2,8 @@
 #include "logging.h"
 #include <algorithm>
 #include <set>
-#include "../audio/audio_analysis.h"
-#include "../audio/audio_capture.h"
+#include "audio/analysis/audio_analysis.h"
+#include "audio/capture/audio_capture.h"
 #include <thread>
 #include <mutex>
 

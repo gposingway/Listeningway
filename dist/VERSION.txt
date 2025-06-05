@@ -1,1 +1,14 @@
-1.2.0.2
+parsing "FileVersion\s*,\s*([^]+)" - Unterminated [] set.
+At line:1 char:75
++ ... orEach-Object { if ($_.Line -match 'FileVersion\s*,\s*([^]+)') { $mat ...
++                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (:) [], ArgumentException
+    + FullyQualifiedErrorId : System.ArgumentException
+ 
+parsing "FileVersion\s*,\s*([^]+)" - Unterminated [] set.
+At line:1 char:75
++ ... orEach-Object { if ($_.Line -match 'FileVersion\s*,\s*([^]+)') { $mat ...
++                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (:) [], ArgumentException
+    + FullyQualifiedErrorId : System.ArgumentException
+ 

@@ -53,11 +53,11 @@ if !errorlevel! neq 0 (
 )
 
 REM Copy the .fx and .fxh files to the shader directory
-copy "%SOURCE_DIR%\Listeningway.fx" "%SHADER_DIR%\" /Y
+copy "%SOURCE_DIR%\assets\Listeningway.fx" "%SHADER_DIR%\" /Y
 if !errorlevel! neq 0 (
     echo WARNING: Failed to copy Listeningway.fx.
 )
-copy "%SOURCE_DIR%\ListeningwayUniforms.fxh" "%SHADER_DIR%\" /Y
+copy "%SOURCE_DIR%\assets\ListeningwayUniforms.fxh" "%SHADER_DIR%\" /Y
 if !errorlevel! neq 0 (
     echo WARNING: Failed to copy ListeningwayUniforms.fxh.
 )

@@ -1,5 +1,5 @@
 #pragma once
-#include "../audio_capture.h"
+#include "capture/audio_capture.h"
 #include <string>
 
 // Dummy provider for 'None (Audio Analysis Off)'

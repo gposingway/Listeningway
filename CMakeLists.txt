@@ -9,8 +9,8 @@ set(CMAKE_CXX_EXTENSIONS OFF) # Prefer standard features
 
 # --- ReShade SDK ---
 # Option 1: Set this variable via CMake command line or GUI
-# cmake .. -DRESHADE_SDK_PATH=/path/to/reshade/sdk/include
-option(RESHADE_SDK_PATH "Path to the ReShade SDK include directory" "")
+# cmake .. -DRESHADE_SDK_PATH=third_party/reshade/include
+option(RESHADE_SDK_PATH "Path to the ReShade SDK include directory" "${CMAKE_SOURCE_DIR}/third_party/reshade/include")
 if(NOT RESHADE_SDK_PATH OR NOT EXISTS "${RESHADE_SDK_PATH}/reshade.hpp")
     message(FATAL_ERROR "ReShade SDK path not found or invalid. Please set RESHADE_SDK_PATH correctly (e.g., path to the 'include' directory containing reshade.hpp). Current value: '${RESHADE_SDK_PATH}'")
 endif()
@@ -31,10 +31,12 @@ include_directories(
 # Add source file(s) including the resource file
 add_library(${PROJECT_NAME} SHARED
     src/core/listeningway_addon.cpp
-    src/audio/audio_capture.cpp # Ensure this is the .cpp file
-    src/audio/audio_capture.h
-    src/audio/audio_capture_manager.cpp src/audio/audio_capture_manager.h
-    src/audio/audio_analysis.cpp src/audio/audio_analysis.h    src/core/overlay.cpp src/core/overlay.h
+    src/audio/capture/audio_capture.cpp # moved from src/audio/audio_capture.cpp
+    src/audio/capture/audio_capture.h
+    src/audio/capture/audio_capture_manager.cpp
+    src/audio/capture/audio_capture_manager.h
+    src/audio/analysis/audio_analysis.cpp
+    src/audio/analysis/audio_analysis.h    src/core/overlay.cpp src/core/overlay.h
     src/core/thread_safety_manager.cpp src/core/thread_safety_manager.h
     src/utils/logging.cpp src/utils/logging.h
     src/core/uniform_manager.cpp src/core/uniform_manager.h
@@ -45,17 +47,15 @@ add_library(${PROJECT_NAME} SHARED
     src/audio/beat_detection/simple_energy_beat_detector.cpp src/audio/beat_detection/simple_energy_beat_detector.h
     src/audio/beat_detection/spectral_flux_auto_beat_detector.cpp src/audio/beat_detection/spectral_flux_auto_beat_detector.h    src/audio/providers/audio_capture_provider.h
     src/audio/providers/system_audio_provider.h
-    src/audio/providers/process_audio_provider.h
     src/audio/providers/off_audio_provider.h
     src/audio/providers/system_audio_provider.cpp
-    src/audio/providers/process_audio_provider.cpp
     src/audio/providers/off_audio_provider.cpp
-    listeningway.rc
+    assets/listeningway.rc
 )
 
 # Add ImGui include directory specifically for the Listeningway target
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/tools/reshade/deps/imgui
+    ${CMAKE_SOURCE_DIR}/third_party/reshade/deps/imgui
 )
 
 # --- Preprocessor Definitions ---

@@ -7,7 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <string>
-#include "../audio_analysis.h"
+#include "analysis/audio_analysis.h"
 
 /**
  * @brief Audio capture provider types
