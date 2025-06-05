@@ -38,8 +38,7 @@ add_library(${PROJECT_NAME} SHARED
     src/core/overlay.cpp src/core/overlay.h
     src/utils/logging.cpp src/utils/logging.h
     src/core/uniform_manager.cpp src/core/uniform_manager.h
-    src/core/settings.cpp src/core/settings.h
-    src/core/configuration/configuration_manager.cpp src/core/configuration/configuration_manager.h
+    src/core/settings.cpp src/core/settings.h    src/core/configuration/configuration_manager.cpp src/core/configuration/configuration_manager.h
     src/core/configuration/configuration.cpp src/core/configuration/configuration.h
     src/core/configuration/config_value.cpp src/core/configuration/config_value.h
     src/audio/beat_detection/beat_detector.cpp src/audio/beat_detection/beat_detector.h

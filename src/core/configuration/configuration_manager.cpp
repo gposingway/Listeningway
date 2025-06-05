@@ -47,39 +47,46 @@ bool ConfigurationManager::Save() {
 }
 
 bool ConfigurationManager::Load() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    bool loaded = m_config.Load();
-    ValidateProvider();
-    m_config.Validate();
-    ApplyConfigToLiveSystems();
+    bool loaded;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        loaded = m_config.Load();
+        ValidateProvider();
+        m_config.Validate();
+    }
+    // Use the robust restart method after loading
+    RestartAudioSystems();
     return loaded;
 }
 
 void ConfigurationManager::ResetToDefaults() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_config.ResetToDefaults();
-    // Always set provider code to the default after resetting
-    m_config.audio.captureProviderCode = GetDefaultProviderCode();
-    ValidateProvider();
-    // Set analysisEnabled based on the default provider's activates_capture
-    auto provider_code = m_config.audio.captureProviderCode;
-    auto available = EnumerateAvailableProviders();
-    bool activates_capture = false;
-    for (const auto& code : available) {
-        if (code == provider_code) {
-            if (g_audio_capture_manager) {
-                for (const auto& info : g_audio_capture_manager->GetAvailableProviderInfos()) {
-                    if (info.code == provider_code) {
-                        activates_capture = info.activates_capture;
-                        break;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_config.ResetToDefaults();
+        // Always set provider code to the default after resetting
+        m_config.audio.captureProviderCode = GetDefaultProviderCode();
+        ValidateProvider();
+        // Set analysisEnabled based on the default provider's activates_capture
+        auto provider_code = m_config.audio.captureProviderCode;
+        auto available = EnumerateAvailableProviders();
+        bool activates_capture = false;
+        for (const auto& code : available) {
+            if (code == provider_code) {
+                if (g_audio_capture_manager) {
+                    for (const auto& info : g_audio_capture_manager->GetAvailableProviderInfos()) {
+                        if (info.code == provider_code) {
+                            activates_capture = info.activates_capture;
+                            break;
+                        }
                     }
                 }
+                break;
             }
-            break;
         }
+        m_config.audio.analysisEnabled = activates_capture;
     }
-    m_config.audio.analysisEnabled = activates_capture;
-    ApplyConfigToLiveSystems();
+    // Use the robust restart method instead of ApplyConfigToLiveSystems
+    RestartAudioSystems();
 }
 
 void ConfigurationManager::EnsureValidProvider() {
@@ -127,12 +134,85 @@ void ConfigurationManager::ValidateProvider() {
 }
 
 void ConfigurationManager::ApplyConfigToLiveSystems() {
-    // Apply beat detection algorithm and restart analyzer
-    g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
-    g_audio_analyzer.Start();
-    // Restart audio capture thread
-    StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
-    StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+    LOG_DEBUG("[ConfigurationManager] Applying configuration to live systems...");
+    
+    try {
+        // Stop audio systems first to ensure clean state
+        LOG_DEBUG("[ConfigurationManager] Stopping audio analyzer...");
+        g_audio_analyzer.Stop();
+        
+        LOG_DEBUG("[ConfigurationManager] Stopping audio capture thread...");
+        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+        
+        // Apply beat detection algorithm configuration
+        LOG_DEBUG("[ConfigurationManager] Setting beat detection algorithm: " + std::to_string(m_config.beat.algorithm));
+        g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
+        
+        // Only restart if analysis is enabled in config
+        if (m_config.audio.analysisEnabled) {
+            LOG_DEBUG("[ConfigurationManager] Analysis enabled, starting audio systems...");
+            
+            // Start analyzer first
+            g_audio_analyzer.Start();
+            LOG_DEBUG("[ConfigurationManager] Audio analyzer started");
+            
+            // Then start capture thread
+            StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+            LOG_DEBUG("[ConfigurationManager] Audio capture thread started");
+        } else {
+            LOG_DEBUG("[ConfigurationManager] Analysis disabled, audio systems remain stopped");
+        }
+        
+        LOG_DEBUG("[ConfigurationManager] Configuration applied successfully");
+    } catch (const std::exception& ex) {
+        LOG_ERROR("[ConfigurationManager] Error applying config to live systems: " + std::string(ex.what()));
+    } catch (...) {
+        LOG_ERROR("[ConfigurationManager] Unknown error applying config to live systems");
+    }
+}
+
+void ConfigurationManager::RestartAudioSystems() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    LOG_DEBUG("[ConfigurationManager] Restarting audio systems...");
+    
+    try {
+        // Always stop first to ensure clean state
+        LOG_DEBUG("[ConfigurationManager] Stopping audio analyzer...");
+        g_audio_analyzer.Stop();
+        
+        LOG_DEBUG("[ConfigurationManager] Stopping audio capture thread...");
+        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+        
+        // Wait a moment for clean shutdown
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        // Validate provider before restarting
+        ValidateProvider();
+        
+        // Only restart if analysis is enabled
+        if (m_config.audio.analysisEnabled) {
+            LOG_DEBUG("[ConfigurationManager] Analysis enabled, restarting audio systems...");
+            
+            // Apply current beat detection algorithm
+            g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
+            
+            // Start analyzer
+            g_audio_analyzer.Start();
+            LOG_DEBUG("[ConfigurationManager] Audio analyzer restarted");
+            
+            // Start capture thread
+            StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+            LOG_DEBUG("[ConfigurationManager] Audio capture thread restarted");
+        } else {
+            LOG_DEBUG("[ConfigurationManager] Analysis disabled, audio systems remain stopped");
+        }
+        
+        LOG_DEBUG("[ConfigurationManager] Audio systems restart completed successfully");
+    } catch (const std::exception& ex) {
+        LOG_ERROR("[ConfigurationManager] Error restarting audio systems: " + std::string(ex.what()));
+    } catch (...) {
+        LOG_ERROR("[ConfigurationManager] Unknown error restarting audio systems");
+    }
 }
 
 Configuration ConfigurationManager::Snapshot() {

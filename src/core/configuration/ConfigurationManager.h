@@ -1,6 +1,6 @@
 #pragma once
 
-#include "configuration.h"
+#include "Configuration.h"
 #include <mutex>
 #include <string>
 #include <vector>
@@ -27,16 +27,15 @@ public:
     const Configuration& GetConfig() const;
 
     // Returns an immutable copy of the configuration for thread-safe use in background threads
-    static Configuration Snapshot();    // Save/load/reset (no parameters, always use default path)
+    static Configuration Snapshot();
+
+    // Save/load/reset (no parameters, always use default path)
     bool Save();
     bool Load();
     void ResetToDefaults();
 
     // Applies the current config to all live systems (analyzer, capture, etc.)
     void ApplyConfigToLiveSystems();
-    
-    // Robustly restart audio analysis systems
-    void RestartAudioSystems();
 
     // Provider logic: enumerate, validate, set default if needed
     void EnsureValidProvider();
