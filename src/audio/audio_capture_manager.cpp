@@ -7,6 +7,7 @@
 #include "providers/process_audio_provider.h"
 #include "providers/off_audio_provider.h"
 #include "../utils/logging.h"
+#include "../core/thread_safety_manager.h"
 #include <algorithm>
 #include <climits>
 
@@ -152,7 +153,7 @@ bool AudioCaptureManager::SetPreferredProviderByCode(const std::string& provider
 }
 
 // New method: Switch provider and restart capture thread if running
-bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data) {
     bool was_running = running.load();
     if (was_running) {
         StopCapture(running, thread);
@@ -160,13 +161,13 @@ bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type
     bool set_ok = SetPreferredProvider(type);
     if (!set_ok) return false;
     if (was_running) {
-        return StartCapture(config, running, thread, data_mutex, data);
+        return StartCapture(config, running, thread, data);
     }
     return true;
 }
 
 // New method: Switch provider by code and restart capture thread if running
-bool AudioCaptureManager::SwitchProviderByCodeAndRestart(const std::string& providerCode, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool AudioCaptureManager::SwitchProviderByCodeAndRestart(const std::string& providerCode, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data) {
     // Handle "off" code specially - stop capture and don't switch to any provider
     if (providerCode == "off") {
         if (running.load()) {
@@ -191,7 +192,7 @@ bool AudioCaptureManager::SwitchProviderByCodeAndRestart(const std::string& prov
     }
     
     // Use the existing method with the provider type
-    return SwitchProviderAndRestart(target_provider->GetProviderType(), config, running, thread, data_mutex, data);
+    return SwitchProviderAndRestart(target_provider->GetProviderType(), config, running, thread, data);
 }
 
 AudioCaptureProviderType AudioCaptureManager::GetCurrentProvider() const {
@@ -252,7 +253,6 @@ IAudioCaptureProvider* AudioCaptureManager::SelectBestProvider() {
 bool AudioCaptureManager::StartCapture(const Listeningway::Configuration& config, 
                                       std::atomic_bool& running, 
                                       std::thread& thread, 
-                                      std::mutex& data_mutex, 
                                       AudioAnalysisData& data) {
     if (!initialized_ || !current_provider_) {
         LOG_ERROR("[AudioCaptureManager] Cannot start capture - not initialized or no provider");
@@ -260,7 +260,7 @@ bool AudioCaptureManager::StartCapture(const Listeningway::Configuration& config
     }
     
     LOG_DEBUG("[AudioCaptureManager] Starting capture with provider: " + current_provider_->GetProviderName());
-    return current_provider_->StartCapture(config, running, thread, data_mutex, data);
+    return current_provider_->StartCapture(config, running, thread, data);
 }
 
 void AudioCaptureManager::StopCapture(std::atomic_bool& running, std::thread& thread) {
@@ -273,7 +273,6 @@ void AudioCaptureManager::StopCapture(std::atomic_bool& running, std::thread& th
 void AudioCaptureManager::CheckAndRestartCapture(const Listeningway::Configuration& config, 
                                                  std::atomic_bool& running, 
                                                  std::thread& thread, 
-                                                 std::mutex& data_mutex, 
                                                  AudioAnalysisData& data) {
     if (!current_provider_) {
         return;
@@ -284,7 +283,7 @@ void AudioCaptureManager::CheckAndRestartCapture(const Listeningway::Configurati
         LOG_DEBUG("[AudioCaptureManager] Provider requesting restart");
         StopCapture(running, thread);
         current_provider_->ResetRestartFlags();
-        StartCapture(config, running, thread, data_mutex, data);
+        StartCapture(config, running, thread, data);
         return;
     }
     
@@ -293,18 +292,16 @@ void AudioCaptureManager::CheckAndRestartCapture(const Listeningway::Configurati
         LOG_INFO("[AudioCaptureManager] Switching to better provider: " + best_provider->GetProviderName());
         StopCapture(running, thread);
         current_provider_ = best_provider;
-        StartCapture(config, running, thread, data_mutex, data);
+        StartCapture(config, running, thread, data);
     }
 }
 
 // Implementation of the new audio system lifecycle management methods
 bool AudioCaptureManager::RestartAudioSystem(const Listeningway::Configuration& config) {
     LOG_DEBUG("[AudioCaptureManager] Restarting audio system with new configuration");
-    
-    // Get access to global audio system variables
+      // Get access to global audio system variables
     extern std::atomic_bool g_audio_thread_running;
     extern std::thread g_audio_thread;
-    extern std::mutex g_audio_data_mutex;
     extern AudioAnalysisData g_audio_data;
     extern AudioAnalyzer g_audio_analyzer;
     
@@ -329,7 +326,7 @@ bool AudioCaptureManager::RestartAudioSystem(const Listeningway::Configuration& 
         // Restart capture if it was running
         if (was_running) {
             LOG_DEBUG("[AudioCaptureManager] Restarting audio capture");
-            if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data)) {
+            if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data)) {
                 LOG_ERROR("[AudioCaptureManager] Failed to restart audio capture");
                 return false;
             }
@@ -375,11 +372,9 @@ void AudioCaptureManager::StopAudioSystem() {
 
 bool AudioCaptureManager::ApplyConfiguration(const Listeningway::Configuration& config) {
     LOG_DEBUG("[AudioCaptureManager] Applying new configuration to audio system");
-    
-    // Get access to global audio system variables
+      // Get access to global audio system variables
     extern std::atomic_bool g_audio_thread_running;
     extern std::thread g_audio_thread;
-    extern std::mutex g_audio_data_mutex;
     extern AudioAnalysisData g_audio_data;
     extern AudioAnalyzer g_audio_analyzer;
     
@@ -399,7 +394,7 @@ bool AudioCaptureManager::ApplyConfiguration(const Listeningway::Configuration& 
         if (!was_running && config.audio.analysisEnabled) {
             LOG_DEBUG("[AudioCaptureManager] Audio analysis enabled in config, starting system");
             g_audio_analyzer.Start();
-            if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data)) {
+            if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data)) {
                 LOG_ERROR("[AudioCaptureManager] Failed to start audio capture");
                 return false;
             }

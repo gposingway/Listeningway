@@ -8,6 +8,7 @@
 #include "settings.h"
 #include "audio_analysis.h"
 #include "../core/configuration/configuration_manager.h"
+#include "../core/thread_safety_manager.h"
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -204,7 +205,6 @@ void StartProcessAudioCaptureThread(const Listeningway::Configuration& config,
                                    const ProcessAudioCaptureConfig& process_config,
                                    std::atomic_bool& running, 
                                    std::thread& thread, 
-                                   std::mutex& data_mutex, 
                                    AudioAnalysisData& data) {
     running = true;
     LOG_DEBUG("[ProcessAudioCapture] Starting process-specific audio capture thread.");
@@ -405,19 +405,21 @@ void StartProcessAudioCaptureThread(const Listeningway::Configuration& config,
                     UINT64 qpcPosition = 0;
                     
                     hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);                    if (SUCCEEDED(hr)) {                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
-                            std::lock_guard<std::mutex> lock(data_mutex);
-                            
-                            if (Listeningway::ConfigurationManager::Snapshot().audioAnalysisEnabled) { // Thread-safe snapshot for capture thread
-                                // Use the global audio analyzer
-                                g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
-                                                                  numFramesAvailable, 
-                                                                  res.pwfx->nChannels, 
-                                                                  config, 
-                                                                  data);
-                            } else {
-                                data.volume = 0.0f;
-                                std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
-                                data.beat = 0.0f;
+                            // Use centralized thread safety for audio data access
+                            {
+                                LOCK_AUDIO_DATA();
+                                
+                                if (Listeningway::ConfigurationManager::Snapshot().audio.analysisEnabled) { // Thread-safe snapshot for capture thread
+                                    // Use the global audio analyzer
+                                    g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
+                                                                      numFramesAvailable, 
+                                                                      res.pwfx->nChannels, 
+                                                                      data);
+                                } else {
+                                    data.volume = 0.0f;
+                                    std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
+                                    data.beat = 0.0f;
+                                }
                             }
                         }
                         res.pCaptureClient->ReleaseBuffer(numFramesAvailable);

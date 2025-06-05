@@ -52,21 +52,18 @@ public:
      * @brief Checks if this provider is available on the current system
      * @return true if the provider can be used
      */
-    virtual bool IsAvailable() const = 0;
-
-    /**
+    virtual bool IsAvailable() const = 0;    /**
      * @brief Starts the audio capture thread
      * @param config Analysis configuration
      * @param running Atomic flag to control thread lifetime
      * @param thread Thread object (will be started)
-     * @param data_mutex Mutex protecting the analysis data
      * @param data Analysis data to be updated by the thread
      * @return true if capture started successfully
+     * @note Audio data synchronization is handled internally via ThreadSafetyManager
      */
     virtual bool StartCapture(const Listeningway::Configuration& config, 
                              std::atomic_bool& running, 
                              std::thread& thread, 
-                             std::mutex& data_mutex, 
                              AudioAnalysisData& data) = 0;
 
     /**

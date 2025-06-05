@@ -4,13 +4,12 @@
 // ---------------------------------------------
 #include "logging.h"
 #include "settings.h"
+#include "../core/thread_safety_manager.h"
 #include <fstream>
-#include <mutex>
 #include <chrono>
 #include <ctime>
 
 static std::ofstream g_log_file;
-std::mutex g_log_mutex;
 extern bool g_listeningway_debug_enabled;
 
 static std::string GetLogFilePath() {
@@ -24,7 +23,7 @@ static std::string GetLogFilePath() {
 void LogToFile(const std::string& message, LogLevel level) {
     // Always log errors, only log debug if enabled
     if (level == LogLevel::Debug && !g_listeningway_debug_enabled) return;
-    std::lock_guard<std::mutex> lock(g_log_mutex);
+    LOCK_LOGGING();
     if (g_log_file.is_open()) {
         // Get current time for timestamp
         auto now = std::chrono::system_clock::now();
@@ -41,7 +40,7 @@ void LogToFile(const std::string& message, LogLevel level) {
 
 // Opens the log file for writing (call at startup)
 void OpenLogFile(const char* /*filename*/) {
-    std::lock_guard<std::mutex> lock(g_log_mutex);
+    LOCK_LOGGING();
     if (g_log_file.is_open()) return;
     g_log_file.open(GetLogFilePath(), std::ios::out | std::ios::app);
 }
@@ -52,6 +51,6 @@ void OpenLogFile(const std::string& filename) {
 
 // Closes the log file (call at shutdown)
 void CloseLogFile() {
-    std::lock_guard<std::mutex> lock(g_log_mutex);
+    LOCK_LOGGING();
     if (g_log_file.is_open()) g_log_file.close();
 }

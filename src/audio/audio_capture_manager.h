@@ -68,21 +68,18 @@ public:
      * @brief Gets the currently active provider type
      * @return Currently active provider type, or SYSTEM_AUDIO if none active
      */
-    AudioCaptureProviderType GetCurrentProvider() const;
-
-    /**
+    AudioCaptureProviderType GetCurrentProvider() const;    /**
      * @brief Starts audio capture using the preferred provider
      * @param config Analysis configuration
      * @param running Atomic flag to control thread lifetime
      * @param thread Thread object (will be started)
-     * @param data_mutex Mutex protecting the analysis data
      * @param data Analysis data to be updated by the thread
      * @return true if capture started successfully
+     * @note Audio data synchronization is handled internally via ThreadSafetyManager
      */
     bool StartCapture(const Listeningway::Configuration& config, 
                      std::atomic_bool& running, 
                      std::thread& thread, 
-                     std::mutex& data_mutex, 
                      AudioAnalysisData& data);
 
     /**
@@ -90,20 +87,17 @@ public:
      * @param running Atomic flag to signal thread to stop
      * @param thread Thread object (will be joined)
      */
-    void StopCapture(std::atomic_bool& running, std::thread& thread);
-
-    /**
+    void StopCapture(std::atomic_bool& running, std::thread& thread);    /**
      * @brief Checks if capture needs to be restarted and restarts if necessary
      * @param config Analysis configuration
      * @param running Atomic flag to control thread lifetime
      * @param thread Thread object (will be restarted if needed)
-     * @param data_mutex Mutex protecting the analysis data
      * @param data Analysis data to be updated by the thread
+     * @note Audio data synchronization is handled internally via ThreadSafetyManager
      */
     void CheckAndRestartCapture(const Listeningway::Configuration& config, 
                                std::atomic_bool& running, 
                                std::thread& thread, 
-                               std::mutex& data_mutex, 
                                AudioAnalysisData& data);
 
     /**
@@ -112,11 +106,11 @@ public:
      * @param config Analysis configuration
      * @param running Atomic flag to control thread lifetime
      * @param thread Thread object (will be stopped/restarted)
-     * @param data_mutex Mutex protecting the analysis data
      * @param data Analysis data to be updated by the thread
      * @return true if switch and restart succeeded
+     * @note Audio data synchronization is handled internally via ThreadSafetyManager
      */
-    bool SwitchProviderAndRestart(AudioCaptureProviderType type, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+    bool SwitchProviderAndRestart(AudioCaptureProviderType type, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data);
 
     /**
      * @brief Switches provider by code and restarts capture thread if running
@@ -124,11 +118,11 @@ public:
      * @param config Analysis configuration
      * @param running Atomic flag to control thread lifetime
      * @param thread Thread object (will be stopped/restarted)
-     * @param data_mutex Mutex protecting the analysis data
      * @param data Analysis data to be updated by the thread
      * @return true if switch and restart succeeded
+     * @note Audio data synchronization is handled internally via ThreadSafetyManager
      */
-    bool SwitchProviderByCodeAndRestart(const std::string& providerCode, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+    bool SwitchProviderByCodeAndRestart(const std::string& providerCode, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data);
 
     /**
      * @brief Gets all available provider infos (for UI and config)

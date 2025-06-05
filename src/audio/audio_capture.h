@@ -15,7 +15,7 @@ bool InitializeAudioCapture();
 void UninitializeAudioCapture();
 
 // Audio capture thread management
-void StartAudioCaptureThread(std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+void StartAudioCaptureThread(std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data);
 void StopAudioCaptureThread(std::atomic_bool& running, std::thread& thread);
 
 // Audio device notifications (inline no-ops)
@@ -23,7 +23,7 @@ inline void InitAudioDeviceNotification() {}
 inline void UninitAudioDeviceNotification() {}
 
 // Audio capture restart and provider management
-void CheckAndRestartAudioCapture(std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+void CheckAndRestartAudioCapture(std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data);
 bool SetAudioCaptureProvider(int providerType);
 int GetAudioCaptureProvider();
 
@@ -41,7 +41,7 @@ std::vector<AudioProviderInfo> GetAvailableAudioCaptureProviders();
 std::string GetAudioCaptureProviderName(const std::string& providerCode);
 
 // Overlay API: Switch provider and restart capture thread if running
-bool SwitchAudioCaptureProviderAndRestart(int providerType, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+bool SwitchAudioCaptureProviderAndRestart(int providerType, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data);
 
 // Overlay API: Switch provider by code and restart capture thread if running
-bool SwitchAudioCaptureProviderByCodeAndRestart(const std::string& providerCode, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data);
+bool SwitchAudioCaptureProviderByCodeAndRestart(const std::string& providerCode, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data);

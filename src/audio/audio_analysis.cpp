@@ -8,6 +8,7 @@
 #include "spectral_flux_auto_beat_detector.h"
 #include "logging.h"
 #include "configuration/configuration_manager.h"
+#include "../core/audio_format_utils.h"
 using Listeningway::ConfigurationManager;
 #include <algorithm>
 #include <numeric>
@@ -288,44 +289,45 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     float sum_rear_left = 0.0f, sum_rear_right = 0.0f;
     float sum_total = 0.0f;
     size_t count_left = 0, count_right = 0, count_center = 0;
-    size_t count_side_left = 0, count_side_right = 0, count_rear_left = 0, count_rear_right = 0;
-    // Channel mapping: FL=0, FR=1, C=2, LFE=3, SL=4, SR=5, RL=6, RR=7 (ITU-R BS.775)
+    size_t count_side_left = 0, count_side_right = 0, count_rear_left = 0, count_rear_right = 0;    // Channel mapping: FL=0, FR=1, C=2, LFE=3, SL=4, SR=5, RL=6, RR=7 (ITU-R BS.775)
     for (size_t i = 0; i < numFrames; ++i) {
         for (size_t ch = 0; ch < numChannels; ++ch) {
             float sample = data[i * numChannels + ch];
             sum_total += sample * sample;
-            switch (numChannels) {
-                case 1: // Mono
-                    sum_left += sample * sample;
-                    sum_right += sample * sample;
-                    count_left++;
-                    count_right++;
-                    break;
-                case 2: // Stereo
-                    if (ch == 0) { sum_left += sample * sample; count_left++; }
-                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
-                    break;
-                case 6: // 5.1 Surround (FL, FR, C, LFE, SL, SR)
-                    if (ch == 0) { sum_left += sample * sample; count_left++; }
-                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
-                    else if (ch == 2) { sum_center += sample * sample; count_center++; }
-                    else if (ch == 4) { sum_side_left += sample * sample; count_side_left++; }
-                    else if (ch == 5) { sum_side_right += sample * sample; count_side_right++; }
-                    break;
-                case 8: // 7.1 Surround (FL, FR, C, LFE, RL, RR, SL, SR)
-                    if (ch == 0) { sum_left += sample * sample; count_left++; }
-                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
-                    else if (ch == 2) { sum_center += sample * sample; count_center++; }
-                    else if (ch == 4) { sum_rear_left += sample * sample; count_rear_left++; }
-                    else if (ch == 5) { sum_rear_right += sample * sample; count_rear_right++; }
-                    else if (ch == 6) { sum_side_left += sample * sample; count_side_left++; }
-                    else if (ch == 7) { sum_side_right += sample * sample; count_side_right++; }
-                    break;
-                default:
-                    // Fallback: treat first two channels as L/R
-                    if (ch == 0) { sum_left += sample * sample; count_left++; }
-                    else if (ch == 1) { sum_right += sample * sample; count_right++; }
-                    break;
+            
+            // Use AudioFormatUtils to eliminate hardcoded switch statement
+            AudioFormat format = AudioFormatUtils::IntToFormat(static_cast<int>(numChannels));
+            
+            // Check channel types using utility functions
+            if (AudioFormatUtils::IsLeftChannel(format, ch)) {
+                sum_left += sample * sample;
+                count_left++;
+            }
+            if (AudioFormatUtils::IsRightChannel(format, ch)) {
+                sum_right += sample * sample;
+                count_right++;
+            }
+            if (AudioFormatUtils::IsCenterChannel(format, ch)) {
+                sum_center += sample * sample;
+                count_center++;
+            }
+            if (AudioFormatUtils::IsSideChannel(format, ch)) {
+                if (ch == 4 || ch == 6) { // SL channels
+                    sum_side_left += sample * sample;
+                    count_side_left++;
+                } else { // SR channels
+                    sum_side_right += sample * sample;
+                    count_side_right++;
+                }
+            }
+            if (AudioFormatUtils::IsRearChannel(format, ch)) {
+                if (ch == 4) { // RL
+                    sum_rear_left += sample * sample;
+                    count_rear_left++;
+                } else { // RR
+                    sum_rear_right += sample * sample;
+                    count_rear_right++;
+                }
             }
         }
     }

@@ -5,6 +5,7 @@
 #include "process_audio_provider.h"
 #include "../audio_analysis.h"
 #include "../../utils/logging.h"
+#include "../../core/thread_safety_manager.h"
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 #include <audiopolicy.h>
@@ -283,7 +284,6 @@ bool ProcessAudioCaptureProvider::FindGameAudioSession(IAudioSessionControl2** p
 bool ProcessAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, 
                                               std::atomic_bool& running, 
                                               std::thread& thread, 
-                                              std::mutex& data_mutex, 
                                               AudioAnalysisData& data) {
     running = true;
     device_change_pending_ = false;
@@ -450,23 +450,26 @@ bool ProcessAudioCaptureProvider::StartCapture(const Listeningway::Configuration
                     UINT64 qpcPosition = 0;
                     
                     hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
-                    if (SUCCEEDED(hr)) {
-                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
-                            extern AudioAnalyzer g_audio_analyzer;
-                            // Remove reference to g_settings and always analyze audio (config now controls enable/disable)
-                            g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
-                                                              numFramesAvailable, 
-                                                              res.pwfx->nChannels, 
-                                                              data);
-                                    
-                            // Apply game session volume scaling to make the difference more apparent
-                            float volumeScale = 1.0f;
-                            if (res.pGameSession && volumeScale < 1.0f) {
-                                data.volume *= volumeScale;
-                                for (auto& band : data.freq_bands) {
-                                    band *= volumeScale;
+                    if (SUCCEEDED(hr)) {                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
+                            // Use centralized thread safety for audio data access
+                            {
+                                LOCK_AUDIO_DATA();
+                                extern AudioAnalyzer g_audio_analyzer;
+                                // Remove reference to g_settings and always analyze audio (config now controls enable/disable)
+                                g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
+                                                                  numFramesAvailable, 
+                                                                  res.pwfx->nChannels, 
+                                                                  data);
+                                        
+                                // Apply game session volume scaling to make the difference more apparent
+                                float volumeScale = 1.0f;
+                                if (res.pGameSession && volumeScale < 1.0f) {
+                                    data.volume *= volumeScale;
+                                    for (auto& band : data.freq_bands) {
+                                        band *= volumeScale;
+                                    }
+                                    data.beat *= volumeScale;
                                 }
-                                data.beat *= volumeScale;
                             }
                         }
                         res.pCaptureClient->ReleaseBuffer(numFramesAvailable);

@@ -100,6 +100,7 @@ set IMGUIDIR=%RESHADE_DIR%\deps\imgui
 if exist "%IMGUIDIR%\.git" (
     pushd "%RESHADE_DIR%"
     git submodule update --init --recursive deps/imgui
+    git -C deps/imgui checkout 19040
     popd
 ) else (
     echo No .git found in %IMGUIDIR%, skipping ImGui reset.
@@ -115,7 +116,7 @@ if not exist "%IMGUI_HEADER%" (
         echo ImGui directory exists but imgui.h is missing. Removing directory...
         rmdir /s /q "%IMGUI_DIR%"
     )
-    git clone --depth 1 https://github.com/ocornut/imgui.git "%IMGUI_DIR%"
+    git clone --branch v1.90.4 --depth 1 https://github.com/ocornut/imgui.git "%IMGUI_DIR%"
     if errorlevel 1 (
         echo Failed to clone ImGui repository. Please check Git installation and network connection.
         goto failure
