@@ -256,21 +256,19 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
         float weighted_modifier = 0.0f;
         
         // Calculate weighted contribution from each modifier
+        // Use array for equalizer band values for maintainability
+        const float modifier_values[5] = {
+            g_settings.equalizer_band1,
+            g_settings.equalizer_band2,
+            g_settings.equalizer_band3,
+            g_settings.equalizer_band4,
+            g_settings.equalizer_band5
+        };
         for (int i = 0; i < 5; i++) {
             // Calculate Gaussian weight: e^(-(x^2)/(2*sigma^2))
             float distance = normalized_pos - centers[i];
             float bell_value = std::exp(-(distance * distance) / (2.0f * bell_width * bell_width));
-            
-            // Get the corresponding modifier value
-            float modifier_value = 1.0f; // Default
-            switch (i) {
-                case 0: modifier_value = g_settings.equalizer_band1; break;
-                case 1: modifier_value = g_settings.equalizer_band2; break;
-                case 2: modifier_value = g_settings.equalizer_band3; break;
-                case 3: modifier_value = g_settings.equalizer_band4; break;
-                case 4: modifier_value = g_settings.equalizer_band5; break;
-            }
-            
+            float modifier_value = modifier_values[i];
             weighted_modifier += bell_value * modifier_value;
             total_weight += bell_value;
         }

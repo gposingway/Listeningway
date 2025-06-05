@@ -36,14 +36,26 @@ static auto& g_configManager = ConfigurationManager::Instance();
 
 // Helper for audio format name mapping
 static const char* GetAudioFormatName(int format) {
-    switch (format) {
-        case 0: return "None";
-        case 1: return "Mono";
-        case 2: return "Stereo";
-        case 6: return "5.1";
-        case 8: return "7.1";
-        default: return "Unknown";
-    }
+    static const std::unordered_map<int, const char*> format_names = {
+        {0, "None"},
+        {1, "Mono"},
+        {2, "Stereo"},
+        {6, "5.1"},
+        {8, "7.1"}
+    };
+    auto it = format_names.find(format);
+    return it != format_names.end() ? it->second : "Unknown";
+}
+
+// Helper for mapping provider code to provider type
+static int GetProviderTypeFromCode(const std::string& code) {
+    static const std::unordered_map<std::string, int> provider_type_map = {
+        {"system", 0}, // SYSTEM_AUDIO
+        {"game", 1},   // PROCESS_AUDIO
+        {"off", -1}    // None/Off
+    };
+    auto it = provider_type_map.find(code);
+    return it != provider_type_map.end() ? it->second : -1;
 }
 
 // Helper: Draw toggles (audio analysis, debug logging)
@@ -72,24 +84,19 @@ static void DrawToggles() {
         bool switching_provider = g_switching_provider;
         for (int i = 0; i < provider_names.size(); ++i) {
             const bool is_selected = (display_selection_index == i);
-            bool selectable = !switching_provider;            if (ImGui::Selectable(provider_names[i], is_selected, selectable ? 0 : ImGuiSelectableFlags_Disabled)) {
+            bool selectable = !switching_provider;
+            if (ImGui::Selectable(provider_names[i], is_selected, selectable ? 0 : ImGuiSelectableFlags_Disabled)) {
                 if (previous_selection != i && !switching_provider) {
                     const auto& selected_info = available_providers[i];
                     config.audio.captureProviderCode = selected_info.code;
                     g_configManager.NotifyConfigurationChanged();
-                    
-                    // Map provider code to provider type for existing SwitchAudioProvider function
-                    int provider_type = -1; // Default to "None/Off"
-                    if (selected_info.code == "system") {
-                        provider_type = 0; // SYSTEM_AUDIO
-                    } else if (selected_info.code == "game") {
-                        provider_type = 1; // PROCESS_AUDIO
-                    }
-                    // "off" code stays as -1 for None
-                    
+
+                    // Use the new mapping helper for provider type
+                    int provider_type = GetProviderTypeFromCode(selected_info.code);
+
                     // Switch the provider using the existing robust function
                     bool switch_ok = SwitchAudioProvider(provider_type, 2000);
-                    
+
                     if (switch_ok) {
                         LOG_DEBUG(std::string("[Overlay] Audio Provider changed to: ") + selected_info.name + 
                                  " (code: " + selected_info.code + ", type: " + std::to_string(provider_type) + ")");
@@ -510,24 +517,25 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImVec2 progress_bar_screen_pos = ImGui::GetCursorScreenPos();
     ImGui::ProgressBar(std::clamp(data.volume * amp, 0.0f, 1.0f), ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
-    ImGui::Text("%.2f", data.volume * amp);    // Compact Left/Right display under the main volume bar
-    const float thin_bar_height = UI_SPACING_MEDIUM;  // Same height as frequency bands (was 6.0f)
-    const float small_spacing = UI_SPACING_XSMALL;    // Use new constant for extra small spacing
+    ImGui::Text("%.2f", data.volume * amp);
+    // Compact Left/Right display under the main volume bar
+    constexpr float thin_bar_height = UI_SPACING_MEDIUM;  // Same height as frequency bands (was 6.0f)
+    constexpr float small_spacing = UI_SPACING_XSMALL;    // Use new constant for extra small spacing
     const float half_bar_width = (bar_width - small_spacing) * 0.5f;
-    
+
     // Use the captured progress bar position for perfect alignment
     ImVec2 start_pos = progress_bar_screen_pos;
     start_pos.y += ImGui::GetFrameHeight() + UI_SPACING_XSMALL;  // Position below the progress bar
-    
+
     // Calculate center point for both bars
     float center_x = start_pos.x + bar_width * 0.5f;
-    
+
     // Draw Left volume bar (grows from center leftward)
     ImVec2 left_bar_bg_min = ImVec2(start_pos.x, start_pos.y);
     ImVec2 left_bar_bg_max = ImVec2(center_x - small_spacing * 0.5f, start_pos.y + thin_bar_height);
     ImVec2 left_bar_fill_min = ImVec2(center_x - small_spacing * 0.5f - std::clamp(data.volume_left * amp, 0.0f, 1.0f) * half_bar_width, start_pos.y);
     ImVec2 left_bar_fill_max = ImVec2(center_x - small_spacing * 0.5f, start_pos.y + thin_bar_height);
-      // Draw Left bar background
+    // Draw Left bar background
     ImGui::GetWindowDrawList()->AddRectFilled(
         left_bar_bg_min, left_bar_bg_max,
         ImGui::GetColorU32(IM_COL32(40, 40, 40, 128)),  // Dark background
