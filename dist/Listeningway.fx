@@ -75,21 +75,49 @@ float line(float2 uv, float2 a, float2 b, float width) {
 
 // Helper: draw text-like blocks (for numbers, format)
 float text_digit(float2 uv, int digit, float2 pos, float2 size) {
-    // Simple 7-segment style for 0-9
-    float seg = 0.08 * size.x;
+    // Standard 7-segment layout:
+    //  ---a---
+    // |       |
+    // f       b
+    // |       |
+    //  ---g---
+    // |       |
+    // e       c
+    // |       |
+    //  ---d---
     float2 rel = (uv - pos) / size;
+    float seg_w = 0.15, seg_l = 0.7, seg_o = 0.05;
     float v = 0.0;
-    if (digit == 0) v = rect(rel, float2(0.1,0.1), float2(0.9,0.9)) - rect(rel, float2(0.2,0.2), float2(0.8,0.8));
-    else if (digit == 1) v = rect(rel, float2(0.7,0.1), float2(0.9,0.9));
-    else if (digit == 2) v = rect(rel, float2(0.1,0.7), float2(0.9,0.9)) + rect(rel, float2(0.1,0.1), float2(0.9,0.3));
-    else if (digit == 3) v = rect(rel, float2(0.1,0.1), float2(0.9,0.3)) + rect(rel, float2(0.7,0.1), float2(0.9,0.9));
-    else if (digit == 4) v = rect(rel, float2(0.1,0.1), float2(0.3,0.5)) + rect(rel, float2(0.7,0.1), float2(0.9,0.9));
-    else if (digit == 5) v = rect(rel, float2(0.1,0.1), float2(0.9,0.3)) + rect(rel, float2(0.1,0.7), float2(0.9,0.9));
-    else if (digit == 6) v = rect(rel, float2(0.1,0.1), float2(0.9,0.9)) - rect(rel, float2(0.7,0.7), float2(0.9,0.9));
-    else if (digit == 7) v = rect(rel, float2(0.1,0.1), float2(0.9,0.3)) + rect(rel, float2(0.7,0.1), float2(0.9,0.9));
-    else if (digit == 8) v = rect(rel, float2(0.1,0.1), float2(0.9,0.9));
-    else if (digit == 9) v = rect(rel, float2(0.1,0.1), float2(0.9,0.9)) - rect(rel, float2(0.1,0.7), float2(0.9,0.9));
-    return v;
+    // Define each segment as a rectangle
+    float a = rect(rel, float2(seg_o, 0.0), float2(1.0 - seg_o, seg_w)); // top
+    float b = rect(rel, float2(1.0 - seg_w, seg_o), float2(1.0, 0.5 - seg_o)); // top right
+    float c = rect(rel, float2(1.0 - seg_w, 0.5 + seg_o), float2(1.0, 1.0 - seg_o)); // bottom right
+    float d = rect(rel, float2(seg_o, 1.0 - seg_w), float2(1.0 - seg_o, 1.0)); // bottom
+    float e = rect(rel, float2(0.0, 0.5 + seg_o), float2(seg_w, 1.0 - seg_o)); // bottom left
+    float f = rect(rel, float2(0.0, seg_o), float2(seg_w, 0.5 - seg_o)); // top left
+    float g = rect(rel, float2(seg_o, 0.5 - seg_w * 0.5), float2(1.0 - seg_o, 0.5 + seg_w * 0.5)); // middle
+    // Segment patterns for 0-9 (gfedcba order, 1=on, 0=off)
+    static const int patterns[10] = {
+        0x3F, // 0: 0b0111111
+        0x06, // 1: 0b0000110
+        0x5B, // 2: 0b1011011
+        0x4F, // 3: 0b1001111
+        0x66, // 4: 0b1100110
+        0x6D, // 5: 0b1101101
+        0x7D, // 6: 0b1111101
+        0x07, // 7: 0b0000111
+        0x7F, // 8: 0b1111111
+        0x6F  // 9: 0b1101111
+    };
+    int segs = patterns[clamp(digit, 0, 9)];
+    if (segs & 0x01) v += a;
+    if (segs & 0x02) v += b;
+    if (segs & 0x04) v += c;
+    if (segs & 0x08) v += d;
+    if (segs & 0x10) v += e;
+    if (segs & 0x20) v += f;
+    if (segs & 0x40) v += g;
+    return saturate(v);
 }
 
 float4 OverlayPS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
