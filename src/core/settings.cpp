@@ -82,7 +82,13 @@ void SetAudioAnalysisEnabled(bool enabled) {
         std::lock_guard<std::mutex> lock(g_settings_mutex);
         g_audio_analysis_enabled = enabled;
     }
-      // Start or stop the audio analyzer when toggling audio analysis
+    
+    // Update the ConfigurationManager to ensure persistence after restart
+    auto& configManager = Listeningway::ConfigurationManager::Instance();
+    configManager.SetAnalysisEnabled(enabled);
+    configManager.Save(); // Persist the change to the JSON configuration file
+    
+    // Start or stop the audio analyzer when toggling audio analysis
     if (enabled) {
         // Start the audio analyzer with the current algorithm
         extern AudioAnalyzer g_audio_analyzer;
@@ -98,7 +104,7 @@ void SetAudioAnalysisEnabled(bool enabled) {
         LOG_DEBUG("[Settings] Audio analyzer stopped");
     }
     
-    SaveSettings();
+    SaveSettings(); // Save to legacy INI file for backward compatibility
 }
 
 /**

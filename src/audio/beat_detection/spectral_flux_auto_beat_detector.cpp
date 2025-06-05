@@ -135,9 +135,12 @@ void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes,
         }
         
         // Decay beat value over time based on tempo if detected
-        float decay_rate;        if (current_tempo_bpm_ > 0.0f) {
-            // Adjust decay rate based on tempo        // Faster tempo = faster decay
-            float beat_length = 60.0f / current_tempo_bpm_;            decay_rate = Listeningway::ConfigurationManager::Snapshot().beat.spectralFluxDecayMultiplier / beat_length; // Thread-safe for beat detection thread
+        float decay_rate;
+        if (current_tempo_bpm_ > 0.0f) {
+            // Adjust decay rate based on tempo
+            // Faster tempo = faster decay
+            float beat_length = 60.0f / current_tempo_bpm_;
+            decay_rate = Listeningway::ConfigurationManager::Snapshot().beat.spectralFluxDecayMultiplier / beat_length; // Thread-safe for beat detection thread
         } else {
             // Default decay rate
             decay_rate = Listeningway::ConfigurationManager::Snapshot().beat.falloffDefault; // Thread-safe for beat detection thread

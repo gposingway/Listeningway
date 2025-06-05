@@ -83,7 +83,8 @@ void SimpleEnergyBeatDetector::Process(const std::vector<float>& magnitudes, flo
             // Set beat value high
             beat_value_ = 1.0f;
             
-            // Use more advanced adaptive falloff based on time between beats            // This was the original algorithm from Listeningway
+            // Use more advanced adaptive falloff based on time between beats            
+            // This was the original algorithm from Listeningway
             if (time_since_last_beat > 0.0f) {
                 // Calculate beat falloff based on elapsed time
                 beat_falloff_ = config.beat.falloffDefault;
