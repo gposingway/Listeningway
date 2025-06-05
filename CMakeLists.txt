@@ -34,10 +34,11 @@ add_library(${PROJECT_NAME} SHARED
     src/audio/audio_capture.cpp # Ensure this is the .cpp file
     src/audio/audio_capture.h
     src/audio/audio_capture_manager.cpp src/audio/audio_capture_manager.h
-    src/audio/audio_analysis.cpp src/audio/audio_analysis.h    src/core/overlay.cpp src/core/overlay.h
+    src/audio/audio_analysis.cpp src/audio/audio_analysis.h
+    src/core/overlay.cpp src/core/overlay.h
     src/utils/logging.cpp src/utils/logging.h
     src/core/uniform_manager.cpp src/core/uniform_manager.h
-    src/core/configuration/configuration_manager.cpp src/core/configuration/configuration_manager.h
+    src/core/settings.cpp src/core/settings.h    src/core/configuration/configuration_manager.cpp src/core/configuration/configuration_manager.h
     src/core/configuration/configuration.cpp src/core/configuration/configuration.h
     src/core/configuration/config_value.cpp src/core/configuration/config_value.h
     src/audio/beat_detection/beat_detector.cpp src/audio/beat_detection/beat_detector.h
@@ -49,7 +50,6 @@ add_library(${PROJECT_NAME} SHARED
     src/audio/providers/system_audio_provider.cpp
     src/audio/providers/process_audio_provider.cpp
     src/audio/providers/off_audio_provider.cpp
-    src/core/file_manager.cpp src/core/file_manager.h
     listeningway.rc
 )
 

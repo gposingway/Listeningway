@@ -1,6 +1,6 @@
 #include "Configuration.h"
 #include "logging.h"
-#include "file_manager.h"
+#include "settings.h"
 #include <fstream>
 #include <sstream>
 #include <windows.h>
@@ -73,22 +73,11 @@ bool Configuration::Validate() {
     return isValid;
 }
 
-static std::string GetConfigFilePath() {
-    // Use the same directory as the configuration file
-    char modulePath[MAX_PATH] = {};
-    HMODULE hModule = nullptr;
-    GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-        (LPCSTR)&GetConfigFilePath, &hModule);
-    GetModuleFileNameA(hModule, modulePath, MAX_PATH);
-    std::string path(modulePath);
-    size_t pos = path.find_last_of("\\/");
-    std::string dir = (pos != std::string::npos) ? path.substr(0, pos + 1) : "";
-    return dir + "listeningway.log";
-};
-
-
 std::string Configuration::GetDefaultConfigPath() {
-    std::string dir = FileManager::GetPath();
+    // Use the same directory as the INI/log file
+    std::string ini = GetSettingsPath();
+    size_t pos = ini.find_last_of("\\/");
+    std::string dir = (pos != std::string::npos) ? ini.substr(0, pos + 1) : "";
     if (!dir.empty()) {
         std::filesystem::path dirPath(dir);
         if (!std::filesystem::exists(dirPath)) {

@@ -3,25 +3,27 @@
 // Thread-safe logging to a file for debugging and diagnostics
 // ---------------------------------------------
 #include "logging.h"
-#include "../core/configuration/configuration_manager.h"
-#include "../core/file_manager.h"
+#include "settings.h"
 #include <fstream>
 #include <mutex>
 #include <chrono>
 #include <ctime>
-#include <windows.h>
 
 static std::ofstream g_log_file;
 std::mutex g_log_mutex;
+extern bool g_listeningway_debug_enabled;
 
-std::string GetLogFilePath() {
-    return FileManager::GetPath() + "listeningway.log";
+static std::string GetLogFilePath() {
+    std::string ini = GetSettingsPath();
+    size_t pos = ini.find_last_of("\\/");
+    std::string dir = (pos != std::string::npos) ? ini.substr(0, pos + 1) : "";
+    return dir + "listeningway.log";
 }
 
 // Writes a timestamped message to the log file (thread-safe)
 void LogToFile(const std::string& message, LogLevel level) {
     // Always log errors, only log debug if enabled
-    if (level == LogLevel::Debug && !Listeningway::ConfigurationManager::Snapshot().debug.debugEnabled) return;
+    if (level == LogLevel::Debug && !g_listeningway_debug_enabled) return;
     std::lock_guard<std::mutex> lock(g_log_mutex);
     if (g_log_file.is_open()) {
         // Get current time for timestamp
