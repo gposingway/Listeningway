@@ -4,8 +4,8 @@
 #include <memory>
 #include <mutex>
 #include "constants.h"
-#include "settings.h"
 #include "beat_detector.h"
+#include "configuration/configuration_manager.h"
 
 // Audio analysis results for one frame
 struct AudioAnalysisData {
@@ -32,20 +32,6 @@ struct AudioAnalysisData {
     float audio_format = 0.0f;        // Audio format (0=none, 1=mono, 2=stereo, 6=5.1, 8=7.1)
 
     AudioAnalysisData(size_t bands = 8) : freq_bands(bands, 0.0f), raw_freq_bands(bands, 0.0f) {}
-};
-
-// Audio analysis configuration
-struct AudioAnalysisConfig {
-    size_t num_bands;
-    size_t fft_size;
-    int beat_algorithm;
-    float sample_rate;
-
-    AudioAnalysisConfig(const ListeningwaySettings& settings)
-        : num_bands(settings.num_bands), 
-          fft_size(settings.fft_size),
-          beat_algorithm(settings.beat_detection_algorithm),
-          sample_rate(44100.0f) {}  // Assuming 44.1kHz by default
 };
 
 /**
@@ -90,11 +76,9 @@ public:
      * @param data Pointer to interleaved float samples.
      * @param numFrames Number of frames (samples per channel).
      * @param numChannels Number of channels (e.g. 2 for stereo).
-     * @param config Analysis configuration.
      * @param out Analysis results (updated in-place).
      */
-    void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, 
-                           const AudioAnalysisConfig& config, AudioAnalysisData& out);
+    void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, AudioAnalysisData& out);
 
 private:
     mutable std::mutex mutex_;
@@ -105,3 +89,6 @@ private:
 
 // Global instance of the audio analyzer (accessible to all modules)
 extern AudioAnalyzer g_audio_analyzer;
+
+// Standalone function to analyze audio buffers using the static config
+void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels, AudioAnalysisData& out);

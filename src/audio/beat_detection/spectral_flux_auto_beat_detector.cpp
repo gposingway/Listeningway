@@ -1,5 +1,6 @@
 #include "spectral_flux_auto_beat_detector.h"
 #include "logging.h"
+#include "../../core/configuration/configuration_manager.h"
 #include <algorithm>
 #include <cmath>
 #include <numeric>
@@ -11,9 +12,8 @@ constexpr float MAX_TEMPO_BPM = 180.0f;
 constexpr float ANALYSIS_INTERVAL = 2.0f; // Seconds between tempo analysis runs
 
 SpectralFluxAutoBeatDetector::SpectralFluxAutoBeatDetector()
-    : is_running_(false),
-      analysis_pending_(false),
-      flux_threshold_(g_settings.spectral_flux_threshold),
+    : is_running_(false),      analysis_pending_(false),
+      flux_threshold_(Listeningway::ConfigurationManager::Snapshot().beat.spectralFluxThreshold),
       beat_value_(0.0f),
       current_tempo_bpm_(0.0f),
       tempo_confidence_(0.0f),
@@ -92,21 +92,17 @@ void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes,
         flux_history_.push_back(flux_low);
         if (flux_history_.size() > FLUX_HISTORY_SIZE) {
             flux_history_.pop_front();
-        }
-        
-        // Update beat detection using low frequency flux
+        }        // Update beat detection using low frequency flux
         // For this advanced detector, we use a dynamic threshold based on recent history
-        if (flux_low > flux_threshold_ * g_settings.flux_low_threshold_multiplier) {
+        if (flux_low > flux_threshold_ * Listeningway::ConfigurationManager::Snapshot().beat.fluxLowThresholdMultiplier) { // Thread-safe for beat detection thread
             float beat_gap = 0.0f;
             
             if (current_tempo_bpm_ > 0.0f) {
                 // If we have a tempo, use it to adjust beat timing
                 float expected_beat_time = 60.0f / current_tempo_bpm_;
-                beat_gap = total_time_ - time_since_last_beat_;
-                
-                // Only accept beats that are close to the expected timing
+                beat_gap = total_time_ - time_since_last_beat_;                // Only accept beats that are close to the expected timing
                 // Allow more flexibility for lower confidence levels
-                float window = g_settings.beat_induction_window * (1.0f + (1.0f - tempo_confidence_));
+                float window = Listeningway::ConfigurationManager::Snapshot().beat.beatInductionWindow * (1.0f + (1.0f - tempo_confidence_)); // Thread-safe for beat detection thread
                 
                 if (beat_gap > expected_beat_time * (1.0f - window) &&
                     beat_gap < expected_beat_time * (1.0f + window)) {
@@ -144,10 +140,10 @@ void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes,
             // Adjust decay rate based on tempo
             // Faster tempo = faster decay
             float beat_length = 60.0f / current_tempo_bpm_;
-            decay_rate = g_settings.spectral_flux_decay_multiplier / beat_length;
+            decay_rate = Listeningway::ConfigurationManager::Snapshot().beat.spectralFluxDecayMultiplier / beat_length; // Thread-safe for beat detection thread
         } else {
             // Default decay rate
-            decay_rate = g_settings.beat_falloff_default;
+            decay_rate = Listeningway::ConfigurationManager::Snapshot().beat.falloffDefault; // Thread-safe for beat detection thread
         }
         
         beat_value_ = std::max(0.0f, beat_value_ - decay_rate * dt);
@@ -196,11 +192,9 @@ void SpectralFluxAutoBeatDetector::TempoAnalysisThread() {
                 
                 // Update tempo if valid
                 if (detected_tempo > 0.0f) {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    
-                    // If we already have a tempo, only change it if the new one is significantly different
+                    std::lock_guard<std::mutex> lock(mutex_);                    // If we already have a tempo, only change it if the new one is significantly different
                     if (current_tempo_bpm_ <= 0.0f || 
-                        std::abs(current_tempo_bpm_ - detected_tempo) / current_tempo_bpm_ > g_settings.tempo_change_threshold) {
+                        std::abs(current_tempo_bpm_ - detected_tempo) / current_tempo_bpm_ > Listeningway::ConfigurationManager::Snapshot().beat.tempoChangeThreshold) { // Thread-safe for beat detection thread
                         
                         LOG_DEBUG("[SpectralFluxAutoBeatDetector] Tempo changed from " + 
                                   std::to_string(current_tempo_bpm_) + " to " + 
@@ -227,6 +221,8 @@ void SpectralFluxAutoBeatDetector::TempoAnalysisThread() {
 }
 
 float SpectralFluxAutoBeatDetector::DetectTempo(const std::vector<float>& flux_history) {
+    const auto config = Listeningway::ConfigurationManager::Snapshot(); // Thread-safe snapshot for tempo analysis
+    
     if (flux_history.size() < 100) {
         return 0.0f;
     }
@@ -240,12 +236,10 @@ float SpectralFluxAutoBeatDetector::DetectTempo(const std::vector<float>& flux_h
         }
     } else {
         return 0.0f; // No significant flux, can't detect tempo
-    }
-    
-    // Apply a threshold to get a binary array of beats
+    }    // Apply a threshold to get a binary array of beats
     std::vector<float> beat_array(normalized_flux.size(), 0.0f);
     for (size_t i = 0; i < normalized_flux.size(); i++) {
-        if (normalized_flux[i] > g_settings.spectral_flux_threshold) {
+        if (normalized_flux[i] > Listeningway::ConfigurationManager::Snapshot().beat.spectralFluxThreshold) { // Thread-safe for tempo analysis thread
             beat_array[i] = 1.0f;
         }
     }
@@ -311,12 +305,11 @@ float SpectralFluxAutoBeatDetector::DetectTempo(const std::vector<float>& flux_h
     if (half_bpm >= MIN_TEMPO_BPM) {
         for (float bpm : peak_bpms) {
             if (std::abs(bpm - half_bpm) < 2.0f) {
-                // We found a peak at half tempo
-                // Weight the decision
+                // We found a peak at half tempo                // Weight the decision
                 size_t primary_idx = static_cast<size_t>(60.0f / primary_bpm / SECONDS_PER_SAMPLE);
                 size_t half_idx = static_cast<size_t>(60.0f / half_bpm / SECONDS_PER_SAMPLE);
                 
-                if (autocorr[half_idx] > autocorr[primary_idx] * g_settings.octave_error_weight) {
+                if (autocorr[half_idx] > autocorr[primary_idx] * config.beat.octaveErrorWeight) {
                     // Half tempo is significantly stronger
                     primary_bpm = half_bpm;
                 }
@@ -328,12 +321,11 @@ float SpectralFluxAutoBeatDetector::DetectTempo(const std::vector<float>& flux_h
     if (double_bpm <= MAX_TEMPO_BPM) {
         for (float bpm : peak_bpms) {
             if (std::abs(bpm - double_bpm) < 4.0f) {
-                // We found a peak at double tempo
-                // Weight the decision
+                // We found a peak at double tempo                // Weight the decision
                 size_t primary_idx = static_cast<size_t>(60.0f / primary_bpm / SECONDS_PER_SAMPLE);
                 size_t double_idx = static_cast<size_t>(60.0f / double_bpm / SECONDS_PER_SAMPLE);
                 
-                if (autocorr[double_idx] > autocorr[primary_idx] * g_settings.octave_error_weight) {
+                if (autocorr[double_idx] > autocorr[primary_idx] * config.beat.octaveErrorWeight) {
                     // Double tempo is significantly stronger
                     primary_bpm = double_bpm;
                 }

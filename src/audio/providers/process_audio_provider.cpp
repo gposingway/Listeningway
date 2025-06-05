@@ -280,7 +280,7 @@ bool ProcessAudioCaptureProvider::FindGameAudioSession(IAudioSessionControl2** p
     return false;
 }
 
-bool ProcessAudioCaptureProvider::StartCapture(const AudioAnalysisConfig& config, 
+bool ProcessAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, 
                                               std::atomic_bool& running, 
                                               std::thread& thread, 
                                               std::mutex& data_mutex, 
@@ -453,59 +453,20 @@ bool ProcessAudioCaptureProvider::StartCapture(const AudioAnalysisConfig& config
                     if (SUCCEEDED(hr)) {
                         if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
                             extern AudioAnalyzer g_audio_analyzer;
-                            extern ListeningwaySettings g_settings;                            if (g_settings.audio_analysis_enabled) {
-                                // Process audio with game session awareness
-                                bool processAudio = true;
-                                float volumeScale = 1.0f;
-                                
-                                if (res.pGameSession) {
-                                    // Check if game session is active
-                                    AudioSessionState sessionState;
-                                    if (SUCCEEDED(res.pGameSession->GetState(&sessionState))) {
-                                        processAudio = (sessionState == AudioSessionStateActive);
-                                        
-                                        if (processAudio) {
-                                            // Get current game session volume for scaling
-                                            ISimpleAudioVolume* pVolumeInterface = nullptr;
-                                            if (SUCCEEDED(res.pGameSession->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pVolumeInterface))) {
-                                                float currentVolume = 1.0f;
-                                                if (SUCCEEDED(pVolumeInterface->GetMasterVolume(&currentVolume))) {
-                                                    // Scale audio analysis based on game volume vs system volume
-                                                    // This helps differentiate game audio impact vs other system audio
-                                                    volumeScale = currentVolume;
-                                                }
-                                                pVolumeInterface->Release();
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                if (processAudio) {
-                                    // Use the global audio analyzer with volume scaling for game session awareness
-                                    g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
-                                                                      numFramesAvailable, 
-                                                                      res.pwfx->nChannels, 
-                                                                      config, 
-                                                                      data);
+                            // Remove reference to g_settings and always analyze audio (config now controls enable/disable)
+                            g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
+                                                              numFramesAvailable, 
+                                                              res.pwfx->nChannels, 
+                                                              data);
                                     
-                                    // Apply game session volume scaling to make the difference more apparent
-                                    if (res.pGameSession && volumeScale < 1.0f) {
-                                        data.volume *= volumeScale;
-                                        for (auto& band : data.freq_bands) {
-                                            band *= volumeScale;
-                                        }
-                                        data.beat *= volumeScale;
-                                    }
-                                } else {
-                                    // Game session not active, mute output to show the difference
-                                    data.volume = 0.0f;
-                                    std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
-                                    data.beat = 0.0f;
+                            // Apply game session volume scaling to make the difference more apparent
+                            float volumeScale = 1.0f;
+                            if (res.pGameSession && volumeScale < 1.0f) {
+                                data.volume *= volumeScale;
+                                for (auto& band : data.freq_bands) {
+                                    band *= volumeScale;
                                 }
-                            } else {
-                                data.volume = 0.0f;
-                                std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
-                                data.beat = 0.0f;
+                                data.beat *= volumeScale;
                             }
                         }
                         res.pCaptureClient->ReleaseBuffer(numFramesAvailable);

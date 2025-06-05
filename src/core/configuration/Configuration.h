@@ -2,6 +2,7 @@
 
 #include <array>
 #include <string>
+#include "../constants.h"
 
 namespace Listeningway {
 
@@ -38,28 +39,30 @@ struct Configuration {
         float tempoChangeThreshold = 0.3f;
         float beatInductionWindow = 0.1f;
         float octaveErrorWeight = 0.7f;
-        
-        // Band-Limited Beat Detection
+          // Band-Limited Beat Detection
         float minFreq = 0.0f;
         float maxFreq = 500.0f;
         float fluxLowAlpha = 0.1f;
         float fluxLowThresholdMultiplier = 2.0f;
+        float fluxMin = DEFAULT_BEAT_FLUX_MIN;
     } beat;
 
     // Frequency Band Settings
     struct FrequencyBands {
-        bool logScaleEnabled = true;
-        float logStrength = 1.0f;
-        float minFreq = 20.0f;
-        float maxFreq = 20000.0f;
-        
-        // 5-band equalizer
-        std::array<float, 5> equalizerBands = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-        float equalizerWidth = 0.2f;
-        
-        // Amplifier for visualization scaling
-        float amplifier = 1.0f;
+        bool logScaleEnabled = DEFAULT_BAND_LOG_SCALE;
+        float logStrength = DEFAULT_BAND_LOG_STRENGTH;
+        float minFreq = DEFAULT_BAND_MIN_FREQ;
+        float maxFreq = DEFAULT_BAND_MAX_FREQ;
+        std::array<float, 5> equalizerBands = { DEFAULT_EQUALIZER_BAND1, DEFAULT_EQUALIZER_BAND2, DEFAULT_EQUALIZER_BAND3, DEFAULT_EQUALIZER_BAND4, DEFAULT_EQUALIZER_BAND5 };
+        float equalizerWidth = DEFAULT_EQUALIZER_WIDTH;
+        float amplifier = DEFAULT_AMPLIFIER;
+        size_t bands = DEFAULT_NUM_BANDS;
+        size_t fftSize = DEFAULT_FFT_SIZE;
+        float bandNorm = DEFAULT_BAND_NORM;
     } frequency;
+
+    // Audio sample rate (Hz)
+    float sample_rate = 48000.0f;
 
     // Debug and Logging Settings
     struct Debug {
@@ -68,12 +71,12 @@ struct Configuration {
     } debug;
 
     // Methods for persistence
-    bool Save(const std::string& filename = "listeningway_config.json") const;
-    bool Load(const std::string& filename = "listeningway_config.json");
+    bool Save() const;
+    bool Load();
     void ResetToDefaults();
     bool Validate();
 
-    // Get default file path
+    // Returns the full path to the default config file (same dir as INI/log)
     static std::string GetDefaultConfigPath();
 
 private:

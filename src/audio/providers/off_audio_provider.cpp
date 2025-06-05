@@ -11,7 +11,7 @@
 bool OffAudioCaptureProvider::IsAvailable() const { return true; }
 bool OffAudioCaptureProvider::Initialize() { return true; }
 void OffAudioCaptureProvider::Uninitialize() {}
-bool OffAudioCaptureProvider::StartCapture(const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool OffAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
     // Keep the thread running but provide dummy/zero data
     running = true;
     thread = std::thread([&, config]() {

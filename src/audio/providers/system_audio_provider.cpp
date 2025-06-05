@@ -101,7 +101,7 @@ void SystemAudioCaptureProvider::Uninitialize() {
     LOG_DEBUG("[SystemAudioProvider] Uninitialized.");
 }
 
-bool SystemAudioCaptureProvider::StartCapture(const AudioAnalysisConfig& config, 
+bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, 
                                              std::atomic_bool& running, 
                                              std::thread& thread, 
                                              std::mutex& data_mutex, 
@@ -266,24 +266,18 @@ bool SystemAudioCaptureProvider::StartCapture(const AudioAnalysisConfig& config,
                     UINT64 devicePosition = 0;
                     UINT64 qpcPosition = 0;
                     
-                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
-                    if (SUCCEEDED(hr)) {
+                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);                    if (SUCCEEDED(hr)) {
                         if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
-                            extern AudioAnalyzer g_audio_analyzer;
-                            extern ListeningwaySettings g_settings;
-                            
-                            if (g_settings.audio_analysis_enabled) {
-                                // Use the global audio analyzer
-                                g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
-                                                                  numFramesAvailable, 
-                                                                  res.pwfx->nChannels, 
-                                                                  config, 
-                                                                  data);
-                            } else {
-                                data.volume = 0.0f;
-                                std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
-                                data.beat = 0.0f;
+                            // Check if analysis is enabled in config (thread-safe snapshot)
+                            if (!Listeningway::ConfigurationManager::Snapshot().audio.analysisEnabled) {
+                                res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
+                                continue;
                             }
+                            extern AudioAnalyzer g_audio_analyzer;
+                            g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
+                                                              numFramesAvailable, 
+                                                              res.pwfx->nChannels, 
+                                                              data);
                         }
                         res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
                     } else {

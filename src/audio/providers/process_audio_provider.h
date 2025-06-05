@@ -43,7 +43,7 @@ public:
         return "Game Audio (Process-Aware)";
     }    bool IsAvailable() const override;
     
-    bool StartCapture(const AudioAnalysisConfig& config, 
+    bool StartCapture(const Listeningway::Configuration& config, 
                      std::atomic_bool& running, 
                      std::thread& thread, 
                      std::mutex& data_mutex, 

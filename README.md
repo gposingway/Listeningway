@@ -291,40 +291,51 @@ It's streamlined with batch scripts\!
 
 </div>
 
-All tunable parameters (FFT size, number of bands, smoothing factors, beat detection thresholds, UI layout values, etc.) live in `Listeningway.ini`, created in the same directory as the ReShade DLL / addon file. Settings are loaded into the `ListeningwaySettings` struct on startup. Missing keys use defaults from `constants.h`. Changes made in the overlay UI are saved back to the `.ini` atomically. Manual edits require a game/addon restart. The `AudioAnalysisConfig` struct bundles settings for the analysis modules.
+All tunable parameters—such as FFT size, number of bands, smoothing factors, beat detection thresholds, and overlay/visualization options—are stored in `Listeningway.json`, located in the same directory as the ReShade `.addon` file. Changes made through the overlay UI are saved automatically to this file. If you edit the JSON manually, restart your game or ReShade to apply changes. Any missing settings will fall back to sensible defaults.
 
-**Example `.ini` entries:**
+**Example `Listeningway.json` (as of June 2025):**
 
-```ini
-[Audio]
-NumBands=32
-FFTSize=512
-FluxAlpha=0.1
-FluxThresholdMultiplier=1.5
-
-# Band-limited beat detection settings
-BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection (default: 0.0)
-BeatMaxFreq=400.0        ; Maximum frequency (Hz) for beat detection (default: 0.0)
-FluxLowAlpha=0.35        ; Smoothing factor for low-frequency flux (default: 0.35, smaller = smoother)
-FluxLowThresholdMultiplier=2.0  ; Threshold multiplier for low-frequency flux (default: 2.0)
-
-BeatFluxMin=0.01
-BeatFalloffDefault=2.0
-BeatTimeScale=0.000000001
-BeatTimeInitial=0.5
-BeatTimeMin=0.05
-BeatTimeDivisor=0.1
-VolumeNorm=2.0
-BandNorm=0.1
-PanSmoothing=0.0         ; Pan smoothing factor (0.0 = no smoothing, higher = more smoothing)
-
-[UI]
-CaptureStaleTimeout=3.0
-Amplifier=1.0           ; Multiplier for overlay/uniforms (1.0–11.0, default: 1.0)
-
-[General]
-AudioAnalysisEnabled=1
-DebugEnabled=0
+```json
+{
+  "audio": {
+    "analysisEnabled": true,
+    "captureProviderCode": "system",
+    "panSmoothing": 0.0
+  },
+  "beat": {
+    "algorithm": 1,
+    "falloffDefault": 2.0,
+    "timeScale": 0.000000001,
+    "timeInitial": 0.5,
+    "timeMin": 0.05,
+    "timeDivisor": 0.1,
+    "spectralFluxThreshold": 0.05,
+    "spectralFluxDecayMultiplier": 2.0,
+    "tempoChangeThreshold": 0.25,
+    "beatInductionWindow": 0.10,
+    "octaveErrorWeight": 0.60,
+    "minFreq": 0.0,
+    "maxFreq": 400.0,
+    "fluxLowAlpha": 0.35,
+    "fluxLowThresholdMultiplier": 2.0
+  },
+  "frequency": {
+    "logScaleEnabled": true,
+    "logStrength": 0.5,
+    "minFreq": 80.0,
+    "maxFreq": 13000.0,
+    "equalizerBands": [1.0, 1.5, 2.0, 2.5, 3.0],
+    "equalizerWidth": 1.5,
+    "amplifier": 1.0,
+    "bands": 32,
+    "fftSize": 512,
+    "bandNorm": 0.1
+  },
+  "debug": {
+    "debugEnabled": false,
+    "overlayEnabled": true
+  }
+}
 ```
 
 **Overlay UI:**
@@ -332,90 +343,62 @@ DebugEnabled=0
 The overlay UI (open via the ReShade menu) allows real-time adjustment of all major settings, including:
 - Volume normalization, band normalization, pan smoothing, and more
 
-All changes made in the overlay UI are saved back to `Listeningway.ini` atomically.
+All changes made in the overlay UI are saved back to `Listeningway.json` atomically.
 
 **Band-Limited Beat Detection:**
 
 Listeningway features band-limited spectral flux detection for more accurate beat detection, especially in music with strong bass beats like electronic, hip-hop, and rock. This feature focuses the beat detection on low frequencies (by default 0-400Hz) where kick drums and bass hits typically occur, making it less sensitive to other sounds like vocals, synths, or high-frequency percussion.
 
-You can fine-tune this feature through the overlay UI (available in the ReShade menu) or directly through these settings in `Listeningway.ini`:
+You can fine-tune this feature through the overlay UI (available in the ReShade menu) or directly through these settings in `Listeningway.json`:
 
-```ini
-[Audio]
-# Band-limited beat detection settings
-BeatMinFreq=0.0          ; Minimum frequency (Hz) for beat detection (default: 0.0)
-BeatMaxFreq=400.0        ; Maximum frequency (Hz) for beat detection (default: 400.0)
-FluxLowAlpha=0.35        ; Smoothing factor for low-frequency flux (default: 0.35, smaller = smoother)
-FluxLowThresholdMultiplier=2.0  ; Threshold multiplier for low-frequency flux (default: 2.0)
+```json
+{
+  "beat": {
+    "minFreq": 0.0,
+    "maxFreq": 400.0,
+    "fluxLowAlpha": 0.35,
+    "fluxLowThresholdMultiplier": 2.0
+  }
+}
 ```
 
-**Tuning Tips:**
-- For music with deep bass (EDM, dubstep): Try `BeatMinFreq=20.0` and `BeatMaxFreq=150.0`
-- For rock/pop with prominent kick drums: The default range works well
-- For acoustic music: Try `BeatMinFreq=40.0` and `BeatMaxFreq=250.0`
-- Adjust `FluxLowThresholdMultiplier`: Lower values (1.1-1.3) make beat detection more sensitive, higher values (1.5-2.0) make it more selective
-- Adjust `FluxLowAlpha`: Lower values make the detection adapt more slowly to volume changes
+**Tuning Tips (JSON & Overlay UI):**
 
-The FFT processing now also uses a Hann window function to reduce spectral leakage, resulting in cleaner frequency analysis and more accurate beat detection.
+You can fine-tune Listeningway's audio reactivity for your needs using the overlay UI (in the ReShade menu) or by editing `Listeningway.json` directly. All field names below match the JSON config and overlay UI labels.
 
-**Frequency Band Mapping (Logarithmic/Linear):**
+**Beat Detection**
+- `beat.minFreq` / `beat.maxFreq`: Restrict beat detection to a frequency range. Lower values (e.g. 20–150 Hz) focus on bass/kick drums. Defaults (0–400 Hz) work for most music. For acoustic, try 40–250 Hz.
+- `beat.fluxLowThresholdMultiplier`: Lower (1.1–1.3) = more sensitive, higher (1.5–2.0) = more selective (fewer false positives).
+- `beat.fluxLowAlpha`: Lower = slower adaptation to volume changes (smoother, less jitter), higher = more responsive.
+- `beat.algorithm`: 0 = Simple Energy (good for strong, simple beats), 1 = Spectral Flux + Autocorrelation (better for complex rhythms).
+- Advanced: `beat.spectralFluxThreshold`, `beat.spectralFluxDecayMultiplier`, `beat.tempoChangeThreshold`, `beat.beatInductionWindow`, `beat.octaveErrorWeight`—tune only if you want to experiment with advanced beat detection.
 
-By default, Listeningway uses a logarithmic (log-scale) mapping for frequency bands, which better matches human hearing and makes higher bands more visually active. You can control this behavior in `Listeningway.ini`:
+**Frequency Bands**
+- `frequency.logScaleEnabled`: `true` (default) matches human hearing; `false` for linear mapping.
+- `frequency.minFreq` / `frequency.maxFreq`: Set the frequency range for band analysis. Lower min or higher max makes bands more/less sensitive to certain content.
+- `frequency.logStrength`: Higher = more detail in bass bands.
+- `frequency.bands`: Number of bands (e.g. 32). Must match your shader's uniform array size.
+- `frequency.fftSize`: FFT window size (e.g. 512). Higher = more frequency detail, but slower response.
 
-```ini
-[Audio]
-BandLogScale=1      ; 1 = Logarithmic mapping (default), 0 = Linear mapping
-BandMinFreq=80      ; Minimum frequency for band mapping (Hz, default: 80)
-BandMaxFreq=13000   ; Maximum frequency for band mapping (Hz, default: 13000)
-BandLogStrength=0.5 ; Log scale strength (default: 0.5, higher values = more bass detail)
-```
-- **BandLogScale**: Set to 1 for log-scale (recommended for most music/audio), or 0 for legacy linear mapping.
-- **BandMinFreq/BandMaxFreq**: Adjust the frequency range covered by the bands. Lower min or higher max can make bands more/less sensitive to certain audio content.
-- **BandLogStrength**: Controls how logarithmic the scaling is. Higher values give more detail to bass frequencies.
+**Amplifier**
+- `frequency.amplifier`: Multiplies all overlay visualizations and Listeningway_* uniforms (volume, beat, bands, left/right volume). Use if your system/game is quiet or you want more visual punch. Does not affect underlying analysis.
 
-**Stereo Spatialization & Audio Format Detection:**
+**Pan Smoothing**
+- `audio.panSmoothing`: 0.0 = no smoothing (fast, but jittery), 0.1–0.3 = light smoothing, 0.4–0.7 = medium, 0.8–1.0 = heavy smoothing (very stable, but slow to react).
 
-Listeningway now provides enhanced stereo audio analysis, enabling sophisticated spatial audio effects. The system detects audio formats (mono, stereo, 5.1, 7.1) and provides per-channel volume analysis and stereo pan information:
+**5-Band Equalizer**
+- `frequency.equalizerBands`: Array of 5 multipliers for low to high frequencies (e.g. `[1.0, 1.5, 2.0, 2.5, 3.0]`). Boost or cut specific ranges for more visible bass, mids, or treble.
+- `frequency.equalizerWidth`: Controls how wide each band's effect is (in octaves). Higher = smoother transitions, lower = more focused boosts.
 
-```ini
-[Audio]
-PanSmoothing=0.0    ; Pan smoothing factor (0.0 = no smoothing, higher values = more smoothing)
-```
+**Workflow Tips**
+- Use the overlay UI for real-time feedback and tuning. All changes are saved to `Listeningway.json` automatically.
+- If you edit the JSON manually, restart your game or ReShade to apply changes.
+- Any missing settings in the JSON will fall back to sensible defaults.
 
-**Key Features:**
-- **Left/Right Volume**: Separate volume analysis for left and right audio channels
-- **Audio Pan**: Real-time stereo pan position (-1.0 = full left, +1.0 = full right)
-- **Format Detection**: Automatic detection of mono, stereo, and surround sound formats
-- **Pan Smoothing**: Configurable smoothing to reduce jitter in pan calculations
+For most users, the defaults work well! Tweak only if you want to optimize for a specific genre, visualization style, or hardware setup.
 
-**Pan Smoothing:**
-The pan calculation can sometimes be jittery due to rapid audio changes. The `PanSmoothing` setting helps reduce this:
-- **0.0**: No smoothing (default, preserves current behavior)
-- **0.1-0.3**: Light smoothing for subtle stabilization
-- **0.4-0.7**: Medium smoothing for stable pan values
-- **0.8-1.0**: Heavy smoothing for very stable but slower-responding pan
-
-This is especially useful for music visualization where smooth pan movements are more visually appealing than rapid jitter.
-
-**5-Band Equalizer System:**
-
-Listeningway features a 5-band equalizer system that enhances the visibility of different frequency ranges. Configure these in the overlay UI or in `Listeningway.ini`:
-
-```ini
-[Audio]
-EqualizerBand1=1.0    ; Bass frequency boost multiplier (default: 1.0)
-EqualizerBand2=1.5    ; Low-mid frequency boost multiplier (default: 1.5)
-EqualizerBand3=2.0    ; Mid frequency boost multiplier (default: 2.0)
-EqualizerBand4=2.5    ; Upper-mid frequency boost multiplier (default: 2.5)
-EqualizerBand5=3.0    ; High frequency boost multiplier (default: 3.0)
-EqualizerWidth=1.5    ; Width of the equalizer bands in octaves (default: 1.5)
-```
-
-These settings let you adjust the prominence of different frequency ranges:
-- **EqualizerBand1-5**: Multipliers for five frequency bands from low to high (1.0 = no boost).
-- **EqualizerWidth**: Controls how wide each band's effect is (in octaves). Larger values create smoother transitions between bands.
-
-This makes the visualization more balanced and customizable for different types of audio content.
+**Frequency Analysis Improvements:**
+- FFT processing now uses a Hann window function to reduce spectral leakage, resulting in cleaner frequency analysis and more accurate beat detection.
 
 **Architecture Overview:**
 
@@ -425,7 +408,7 @@ This makes the visualization more balanced and customizable for different types 
   * `overlay.*`: Renders the ImGui debug overlay.
   * `logging.*`: Simple thread-safe logging.
   * `listeningway_addon.cpp`: Main addon entry point, event handling, initialization.
-  * `settings.*`: Loads/saves settings from `.ini`, holds the `ListeningwaySettings` struct.
+  * `settings.*`: Loads/saves settings from `.json`, holds the `ListeningwaySettings` struct.
 
 **Dependencies & Credits:**
 
@@ -440,7 +423,7 @@ This makes the visualization more balanced and customizable for different types 
 
   * All dependencies (like KissFFT) are linked statically; no extra DLLs needed beside the `.addon` file.
   * Check the ReShade log file (`ReShade.log` or `d3d11.log` etc. in game dir) for any addon errors.
-  * If you change the number of frequency bands (`NumBands` in `.ini`), you MUST update it in `settings.h` (`DEFAULT_NUM_BANDS`) AND adjust your shader code (array sizes, uniform source annotations if needed) accordingly\! Same applies if adding new uniforms.
+  * If you change the number of frequency bands (`NumBands` in `.json`), you MUST update it in `settings.h` (`DEFAULT_NUM_BANDS`) AND adjust your shader code (array sizes, uniform source annotations if needed) accordingly\! Same applies if adding new uniforms.
   * Doxygen documentation can be generated using the `Doxyfile` in `tools/reshade`.
 
   HUGE thanks to the ReShade community and the creators of these libraries\!

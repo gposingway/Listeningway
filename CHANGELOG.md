@@ -5,6 +5,36 @@ All notable changes to Listeningway will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0.2] - 2025-06-05
+
+### New Features
+- Centralized configuration management introduced for unified settings handling.
+- Live application of configuration changes to audio capture and analysis systems.
+- Added new configuration options for frequency bands, FFT size, normalization, and sample rate.
+- Audio system lifecycle controls added: restart, stop, and apply configuration dynamically.
+
+### Improvements
+- Audio analysis and capture now use thread-safe, centralized configuration snapshots.
+- Configuration persistence switched to JSON format for better portability.
+- Enhanced validation and fallback for audio capture providers.
+- Audio overlay shader redesigned with comprehensive visual audio data display.
+- Refined audio capture and analysis logic to remove legacy global settings dependencies.
+
+### Bug Fixes
+- Improved verification of ImGui dependency to prevent partial or corrupted setups.
+
+### Chores
+- Version number updated to 1.2.0.2.
+- Resource file version info synchronized with the new version.
+- Deployment script updated to ensure shader directory exists and copy shader files with warnings.
+
+### Refactor
+- Legacy INI-based settings replaced with modern configuration manager.
+- Updated audio module function signatures to adopt new configuration system.
+- Streamlined internal code structure for maintainability and thread safety.
+- Removed redundant configuration change notifications from UI handlers.
+- Consolidated and renamed configuration manager files to lowercase for consistency.
+
 ## [1.2.0.0] - 2025-06-04
 
 ### Added
