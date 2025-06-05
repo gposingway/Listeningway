@@ -40,16 +40,20 @@ add_library(${PROJECT_NAME} SHARED
     src/core/thread_safety_manager.cpp src/core/thread_safety_manager.h
     src/utils/logging.cpp src/utils/logging.h
     src/core/uniform_manager.cpp src/core/uniform_manager.h
-    src/core/settings.cpp src/core/settings.h    src/core/configuration/configuration_manager.cpp src/core/configuration/configuration_manager.h
-    src/core/configuration/configuration.cpp src/core/configuration/configuration.h
-    src/core/configuration/config_value.cpp src/core/configuration/config_value.h
-    src/audio/beat_detection/beat_detector.cpp src/audio/beat_detection/beat_detector.h
-    src/audio/beat_detection/simple_energy_beat_detector.cpp src/audio/beat_detection/simple_energy_beat_detector.h
-    src/audio/beat_detection/spectral_flux_auto_beat_detector.cpp src/audio/beat_detection/spectral_flux_auto_beat_detector.h    src/audio/providers/audio_capture_provider.h
-    src/audio/providers/system_audio_provider.h
-    src/audio/providers/off_audio_provider.h
-    src/audio/providers/system_audio_provider.cpp
-    src/audio/providers/off_audio_provider.cpp
+    src/core/settings.cpp src/core/settings.h    src/configuration/configuration_manager.cpp src/configuration/configuration_manager.h
+    src/configuration/Configuration.cpp src/configuration/Configuration.h
+    src/configuration/config_value.cpp src/configuration/config_value.h
+    src/audio/capture/providers/audio_capture_provider.h
+    src/audio/capture/providers/audio_capture_provider_system.h
+    src/audio/capture/providers/audio_capture_provider_system.cpp
+    src/audio/capture/providers/audio_capture_provider_off.h
+    src/audio/capture/providers/audio_capture_provider_off.cpp
+    src/audio/beat_detection/beat_detector.cpp
+    src/audio/beat_detection/beat_detector.h
+    src/audio/beat_detection/beat_detector_simple_energy.cpp
+    src/audio/beat_detection/beat_detector_simple_energy.h
+    src/audio/beat_detection/beat_detector_spectral_flux_auto.cpp
+    src/audio/beat_detection/beat_detector_spectral_flux_auto.h
     assets/listeningway.rc
 )
 

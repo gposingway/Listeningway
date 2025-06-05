@@ -1,5 +1,8 @@
+// Implementation of dummy provider for 'None (Audio Analysis Off)'
+// Renamed for clarity: audio_capture_provider_off.h/cpp
+
 #pragma once
-#include "capture/audio_capture.h"
+#include "audio/capture/providers/audio_capture_provider.h"
 #include <string>
 
 // Dummy provider for 'None (Audio Analysis Off)'

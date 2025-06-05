@@ -4,9 +4,9 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include "../analysis/audio_analysis.h"
+#include "audio/analysis/audio_analysis.h"
 #include "audio_capture_manager.h"
-#include "configuration/configuration_manager.h"
+#include "../configuration/configuration_manager.h"
 
 extern std::unique_ptr<AudioCaptureManager> g_audio_capture_manager;
 

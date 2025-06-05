@@ -1,5 +1,8 @@
+// Implementation of system-wide audio capture provider (WASAPI loopback)
+// Renamed for clarity: audio_capture_provider_system.h/cpp
+
 #pragma once
-#include "audio_capture_provider.h"
+#include "audio/capture/providers/audio_capture_provider.h"
 #include <mmdeviceapi.h>
 #include <atomic>
 

@@ -1,8 +1,11 @@
+// Implementation of dummy provider for 'None (Audio Analysis Off)'
+// Renamed for clarity: audio_capture_provider_off.cpp
 // ---------------------------------------------
 // Dummy (Off) Audio Provider Implementation
 // Represents the 'None' or 'Off' selection in the provider dropdown
 // ---------------------------------------------
-#include "off_audio_provider.h"
+#include "audio/capture/providers/audio_capture_provider_off.h"
+#include "audio/capture/providers/audio_capture_provider.h"
 #include "../../core/thread_safety_manager.h"
 #include <string>
 #include <thread>

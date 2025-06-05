@@ -1,6 +1,6 @@
-#include "simple_energy_beat_detector.h"
+#include "beat_detector_simple_energy.h"
 #include "logging.h"
-#include "../../core/configuration/configuration_manager.h"
+#include "../../configuration/configuration_manager.h"
 #include <algorithm>
 #include <cmath>
 

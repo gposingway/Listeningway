@@ -1,8 +1,7 @@
-// ---------------------------------------------
-// System Audio Capture Provider Implementation
-// Captures system-wide audio using WASAPI loopback
-// ---------------------------------------------
-#include "system_audio_provider.h"
+// Implementation of system-wide audio capture provider (WASAPI loopback)
+// Renamed for clarity: audio_capture_provider_system.cpp
+#include "audio/capture/providers/audio_capture_provider_system.h"
+#include "audio/capture/providers/audio_capture_provider.h"
 #include "analysis/audio_analysis.h"
 #include "../../utils/logging.h"
 #include "../../core/thread_safety_manager.h"

@@ -1,6 +1,6 @@
-#include "spectral_flux_auto_beat_detector.h"
+#include "beat_detector_spectral_flux_auto.h"
 #include "logging.h"
-#include "../../core/configuration/configuration_manager.h"
+#include "../../configuration/configuration_manager.h"
 #include <algorithm>
 #include <cmath>
 #include <numeric>

@@ -1,13 +1,14 @@
 // ---------------------------------------------
 // Audio Capture Provider Interface
 // Abstract base class for different audio capture implementations
+// This file defines the IAudioCaptureProvider interface and related types.
 // ---------------------------------------------
 #pragma once
 #include <atomic>
 #include <thread>
 #include <mutex>
 #include <string>
-#include "analysis/audio_analysis.h"
+#include "audio/analysis/audio_analysis.h"
 
 /**
  * @brief Audio capture provider types

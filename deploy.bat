@@ -52,15 +52,10 @@ if !errorlevel! neq 0 (
     echo WARNING: Failed to copy %ADDON_FILE%.
 )
 
-REM Copy the .fx and .fxh files to the shader directory
-copy "%SOURCE_DIR%\assets\Listeningway.fx" "%SHADER_DIR%\" /Y
-if !errorlevel! neq 0 (
-    echo WARNING: Failed to copy Listeningway.fx.
-)
-copy "%SOURCE_DIR%\assets\ListeningwayUniforms.fxh" "%SHADER_DIR%\" /Y
-if !errorlevel! neq 0 (
-    echo WARNING: Failed to copy ListeningwayUniforms.fxh.
-)
+REM Copy Listeningway.fx to game directory
+copy /Y "%SOURCE_DIR%\Listeningway.fx" "%FFXIV_DIR%\Listeningway.fx" || echo WARNING: Failed to copy Listeningway.fx.
+REM Copy ListeningwayUniforms.fxh to game directory
+copy /Y "%SOURCE_DIR%\ListeningwayUniforms.fxh" "%FFXIV_DIR%\ListeningwayUniforms.fxh" || echo WARNING: Failed to copy ListeningwayUniforms.fxh.
 
 echo.
 echo Listeningway successfully deployed to:

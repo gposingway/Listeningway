@@ -3,8 +3,8 @@
 // Manages audio capture providers and handles provider selection
 // ---------------------------------------------
 #include "audio_capture_manager.h"
-#include "providers/system_audio_provider.h"
-#include "providers/off_audio_provider.h"
+#include "audio/capture/providers/audio_capture_provider_system.h"
+#include "audio/capture/providers/audio_capture_provider_off.h"
 #include "../utils/logging.h"
 #include "../core/thread_safety_manager.h"
 #include <algorithm>

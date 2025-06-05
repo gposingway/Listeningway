@@ -4,8 +4,8 @@
 // ---------------------------------------------
 #include "audio_analysis.h"
 #include "beat_detector.h"
-#include "simple_energy_beat_detector.h"
-#include "spectral_flux_auto_beat_detector.h"
+#include "beat_detector_simple_energy.h"
+#include "beat_detector_spectral_flux_auto.h"
 #include "logging.h"
 #include "configuration/configuration_manager.h"
 #include "../core/audio_format_utils.h"
