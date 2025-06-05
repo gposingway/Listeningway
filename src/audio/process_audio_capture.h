@@ -37,7 +37,6 @@ void StartProcessAudioCaptureThread(const Listeningway::Configuration& config,
                                    const ProcessAudioCaptureConfig& process_config,
                                    std::atomic_bool& running, 
                                    std::thread& thread, 
-                                   std::mutex& data_mutex, 
                                    AudioAnalysisData& data);
 
 /**

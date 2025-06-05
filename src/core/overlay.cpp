@@ -9,8 +9,10 @@
 #include "overlay.h"
 #include "audio_analysis.h"
 #include "constants.h"
+#include "audio_format_utils.h"
 #include "settings.h"
 #include "logging.h"
+#include "thread_safety_manager.h"
 #include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
 #include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
@@ -609,16 +611,9 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Format:");
     ImGui::SameLine(bar_start_x);
-    const char* format_name = "None";
-    switch (static_cast<int>(data.audio_format)) {
-        case 0: format_name = "None"; break;
-        case 1: format_name = "Mono"; break;
-        case 2: format_name = "Stereo"; break;
-        case 6: format_name = "5.1"; break;
-        case 8: format_name = "7.1"; break;
-        default: format_name = "Unknown"; break;
-    }
-    ImGui::Text("%s (%.0f)", format_name, data.audio_format);    // Pan Smoothing
+    AudioFormat format = AudioFormatUtils::IntToFormat(static_cast<int>(data.audio_format));
+    const char* format_name = AudioFormatUtils::FormatToString(format);
+    ImGui::Text("%s (%.0f)", format_name, data.audio_format);// Pan Smoothing
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Pan Smooth:");
     ImGui::SameLine(bar_start_x);
@@ -665,10 +660,10 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
 
 // Draws the Listeningway debug overlay using ImGui.
 // Shows volume, beat, and frequency bands in real time.
-void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& data_mutex) {
+void DrawListeningwayDebugOverlay(const AudioAnalysisData& data) {
     try {
         ImGui::GetIO().UserData = (void*)&data;
-        std::lock_guard<std::mutex> lock(data_mutex);
+        LOCK_AUDIO_DATA();
         DrawToggles();
         DrawLogInfo();
         ImGui::Separator();

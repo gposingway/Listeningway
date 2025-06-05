@@ -5,6 +5,7 @@
 #include "system_audio_provider.h"
 #include "../audio_analysis.h"
 #include "../../utils/logging.h"
+#include "../../core/thread_safety_manager.h"
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 #include <vector>
@@ -104,7 +105,6 @@ void SystemAudioCaptureProvider::Uninitialize() {
 bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, 
                                              std::atomic_bool& running, 
                                              std::thread& thread, 
-                                             std::mutex& data_mutex, 
                                              AudioAnalysisData& data) {
     running = true;
     device_change_pending_ = false;
@@ -266,18 +266,22 @@ bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration&
                     UINT64 devicePosition = 0;
                     UINT64 qpcPosition = 0;
                     
-                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);                    if (SUCCEEDED(hr)) {
-                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
+                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);                    if (SUCCEEDED(hr)) {                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
                             // Check if analysis is enabled in config (thread-safe snapshot)
                             if (!Listeningway::ConfigurationManager::Snapshot().audio.analysisEnabled) {
                                 res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
                                 continue;
                             }
-                            extern AudioAnalyzer g_audio_analyzer;
-                            g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
-                                                              numFramesAvailable, 
-                                                              res.pwfx->nChannels, 
-                                                              data);
+                            
+                            // Use centralized thread safety for audio data access
+                            {
+                                LOCK_AUDIO_DATA();
+                                extern AudioAnalyzer g_audio_analyzer;
+                                g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
+                                                                  numFramesAvailable, 
+                                                                  res.pwfx->nChannels, 
+                                                                  data);
+                            }
                         }
                         res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
                     } else {

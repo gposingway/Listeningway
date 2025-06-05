@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <mutex>
 
 enum class LogLevel {
     Debug,
@@ -19,7 +18,3 @@ void LogToFile(const std::string& message, LogLevel level = LogLevel::Debug);
 // Log file management
 void OpenLogFile(const std::string& filename);
 void CloseLogFile();
-/**
- * @brief Global mutex for log file access (for advanced use).
- */
-extern std::mutex g_log_mutex;

@@ -3,6 +3,7 @@
 // Represents the 'None' or 'Off' selection in the provider dropdown
 // ---------------------------------------------
 #include "off_audio_provider.h"
+#include "../../core/thread_safety_manager.h"
 #include <string>
 #include <thread>
 #include <chrono>
@@ -11,14 +12,14 @@
 bool OffAudioCaptureProvider::IsAvailable() const { return true; }
 bool OffAudioCaptureProvider::Initialize() { return true; }
 void OffAudioCaptureProvider::Uninitialize() {}
-bool OffAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool OffAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data) {
     // Keep the thread running but provide dummy/zero data
     running = true;
     thread = std::thread([&, config]() {
         while (running.load()) {
             // Provide zero/dummy audio data
             {
-                std::lock_guard<std::mutex> lock(data_mutex);
+                LOCK_AUDIO_DATA();
                 data.volume = 0.0f;
                 std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
                 data.beat = 0.0f;

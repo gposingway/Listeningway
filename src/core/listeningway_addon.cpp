@@ -25,30 +25,28 @@
 #include "constants.h"
 #include "settings.h"
 #include "configuration/configuration_manager.h"
+#include "thread_safety_manager.h"
 using Listeningway::ConfigurationManager;
 
 std::atomic_bool g_addon_enabled = false;
 std::atomic_bool g_audio_thread_running = false;
 extern std::atomic_bool g_audio_analysis_enabled;
 std::thread g_audio_thread;
-std::mutex g_audio_data_mutex;
 AudioAnalysisData g_audio_data;
 static UniformManager g_uniform_manager;
 static std::chrono::steady_clock::time_point g_last_audio_update = std::chrono::steady_clock::now();
 static float g_last_volume = 0.0f;
 static std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
 std::atomic_bool g_switching_provider = false;
-std::mutex g_provider_switch_mutex;
 
 // Updates all Listeningway_* uniforms in loaded effects
-static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
-    float volume_to_set;
+static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {    float volume_to_set;
     std::vector<float> freq_bands_to_set;
     float beat_to_set;
     float volume_left, volume_right, audio_pan, audio_format;
     float amplifier = 1.0f;
     {
-        std::lock_guard<std::mutex> lock(g_audio_data_mutex);
+        LOCK_AUDIO_DATA();
         volume_to_set = g_audio_data.volume;
         freq_bands_to_set = g_audio_data.freq_bands;
         beat_to_set = g_audio_data.beat;
@@ -92,17 +90,16 @@ static void OnReloadedEffects(reshade::api::effect_runtime* runtime) {
 static void MaybeRestartAudioCaptureIfStale() {
     float current_volume;
     {
-        std::lock_guard<std::mutex> lock(g_audio_data_mutex);
+        LOCK_AUDIO_DATA();
         current_volume = g_audio_data.volume;
     }
     auto now = std::chrono::steady_clock::now();
     if (current_volume != g_last_volume) {
         g_last_audio_update = now;
         g_last_volume = current_volume;
-    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_last_audio_update).count() > static_cast<int>(DEFAULT_CAPTURE_STALE_TIMEOUT * 1000.0f)) {
-        // No new audio for the configured timeout, try to restart
+    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_last_audio_update).count() > static_cast<int>(DEFAULT_CAPTURE_STALE_TIMEOUT * 1000.0f)) {        // No new audio for the configured timeout, try to restart
         LOG_DEBUG("[Addon] Audio capture thread stale, attempting restart.");
-        CheckAndRestartAudioCapture(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+        CheckAndRestartAudioCapture(g_audio_thread_running, g_audio_thread, g_audio_data);
         LOG_DEBUG("[Addon] Audio capture thread restarted.");
         g_last_audio_update = now; // Prevent rapid restarts
     }
@@ -115,7 +112,7 @@ static void MaybeRestartAudioCaptureIfStale() {
 static void OverlayCallback(reshade::api::effect_runtime*) {
     try {
         MaybeRestartAudioCaptureIfStale();
-        DrawListeningwayDebugOverlay(g_audio_data, g_audio_data_mutex);
+        DrawListeningwayDebugOverlay(g_audio_data);
     } catch (const std::exception& ex) {
         LOG_ERROR(std::string("[Overlay] Exception: ") + ex.what());
     } catch (...) {
@@ -155,9 +152,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                     g_audio_analyzer.Start();
                     LOG_DEBUG("[Addon] Audio analyzer started with algorithm: " + 
                              std::to_string(config.beat.algorithm));
-                    
-                    // Start the audio capture thread
-                    StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+                      // Start the audio capture thread
+                    StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data);
                     LOG_DEBUG("[Addon] Audio capture thread started.");
                     g_addon_enabled = true;
                 }
@@ -209,7 +205,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
  */
 // Asynchronous, robust provider switch. Returns true on success, false on failure.
 extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
-    std::lock_guard<std::mutex> lock(g_provider_switch_mutex);
+    LOCK_PROVIDER_SWITCH();
     g_switching_provider = true;
     LOG_DEBUG("[Addon] SwitchAudioProvider: Begin switch to provider " + std::to_string(providerType));
 
@@ -221,9 +217,8 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
             LOG_DEBUG("[Addon] SwitchAudioProvider: Audio analysis disabled and thread stopped (None selected)");
         }
         g_switching_provider = false;
-        return true;
-    }    // Otherwise, robustly switch provider and restart thread if needed
-    bool switch_ok = SwitchAudioCaptureProviderAndRestart(providerType, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+        return true;    }    // Otherwise, robustly switch provider and restart thread if needed
+    bool switch_ok = SwitchAudioCaptureProviderAndRestart(providerType, g_audio_thread_running, g_audio_thread, g_audio_data);
     if (switch_ok) {
         g_audio_analysis_enabled = true;
         // Note: We could save the provider code here if needed, but it's handled in the switch function

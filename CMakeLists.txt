@@ -34,8 +34,8 @@ add_library(${PROJECT_NAME} SHARED
     src/audio/audio_capture.cpp # Ensure this is the .cpp file
     src/audio/audio_capture.h
     src/audio/audio_capture_manager.cpp src/audio/audio_capture_manager.h
-    src/audio/audio_analysis.cpp src/audio/audio_analysis.h
-    src/core/overlay.cpp src/core/overlay.h
+    src/audio/audio_analysis.cpp src/audio/audio_analysis.h    src/core/overlay.cpp src/core/overlay.h
+    src/core/thread_safety_manager.cpp src/core/thread_safety_manager.h
     src/utils/logging.cpp src/utils/logging.h
     src/core/uniform_manager.cpp src/core/uniform_manager.h
     src/core/settings.cpp src/core/settings.h    src/core/configuration/configuration_manager.cpp src/core/configuration/configuration_manager.h
