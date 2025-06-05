@@ -58,15 +58,15 @@ bool ConfigurationManager::Load() {
 void ConfigurationManager::ResetToDefaults() {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_config.ResetToDefaults();
+    // Always set provider code to the default after resetting
+    m_config.audio.captureProviderCode = GetDefaultProviderCode();
     ValidateProvider();
     // Set analysisEnabled based on the default provider's activates_capture
     auto provider_code = m_config.audio.captureProviderCode;
-    // Find the provider info for the current code
     auto available = EnumerateAvailableProviders();
     bool activates_capture = false;
     for (const auto& code : available) {
         if (code == provider_code) {
-            // Find the provider and get its info
             if (g_audio_capture_manager) {
                 for (const auto& info : g_audio_capture_manager->GetAvailableProviderInfos()) {
                     if (info.code == provider_code) {
@@ -111,8 +111,18 @@ std::string ConfigurationManager::GetDefaultProviderCode() const {
 void ConfigurationManager::ValidateProvider() {
     auto available = EnumerateAvailableProviders();
     auto& code = m_config.audio.captureProviderCode;
-    if (std::find(available.begin(), available.end(), code) == available.end()) {
-        code = GetDefaultProviderCode();
+    // If code is empty or not in available list, select default
+    if (code.empty() || std::find(available.begin(), available.end(), code) == available.end()) {
+        // Always select the provider with is_default flag (guaranteed to exist)
+        if (g_audio_capture_manager) {
+            for (const auto& info : g_audio_capture_manager->GetAvailableProviderInfos()) {
+                if (info.is_default) {
+                    code = info.code;
+                    return;
+                }
+            }
+        }
+        // If for some reason not found (should never happen), leave code empty
     }
 }
 
