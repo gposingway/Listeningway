@@ -9,7 +9,6 @@
 #include "overlay.h"
 #include "audio_analysis.h"
 #include "constants.h"
-#include "settings.h"
 #include "logging.h"
 #include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
 #include "configuration/configuration_manager.h"
@@ -21,9 +20,6 @@ using Listeningway::ConfigurationManager;
 #include <cmath>
 #include <algorithm> // For std::clamp
 
-extern std::atomic_bool g_audio_analysis_enabled;
-extern bool g_listeningway_debug_enabled;
-
 // External declarations for global variables used in overlay
 extern std::atomic_bool g_switching_provider;
 extern std::mutex g_provider_switch_mutex;
@@ -31,8 +27,20 @@ extern std::mutex g_provider_switch_mutex;
 // Declare SwitchAudioProvider for use in overlay.cpp
 extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000);
 
+// Use configuration for debug flag
+#define DEBUG_ENABLED (ConfigurationManager::Snapshot().debug.debugEnabled)
+
 // Static reference to avoid repeated Instance() calls - safe since ConfigurationManager is a singleton
 static auto& g_configManager = ConfigurationManager::Instance();
+
+// Set debug flag in the configuration manager
+static void SetDebugEnabled(bool enabled) {
+    auto& config = g_configManager.GetConfig();
+    config.debug.debugEnabled = enabled;
+}
+
+// Forward declaration for log file path utility (from logging.cpp)
+std::string GetLogFilePath();
 
 // Helper: Draw toggles (audio analysis, debug logging)
 static void DrawToggles() {
@@ -93,7 +101,7 @@ static void DrawToggles() {
     }
 
     // Use the global debug flag directly, then synchronize with configManager through SetDebugEnabled
-    bool debug_enabled = g_listeningway_debug_enabled;
+    bool debug_enabled = DEBUG_ENABLED;
     if (ImGui::Checkbox("Enable Debug Logging", &debug_enabled)) {
         SetDebugEnabled(debug_enabled);
         LOG_DEBUG(std::string("[Overlay] Debug Logging toggled ") + (debug_enabled ? "ON" : "OFF"));
@@ -102,7 +110,7 @@ static void DrawToggles() {
 
 // Helper: Draw log file info
 static void DrawLogInfo() {
-    if (g_listeningway_debug_enabled) {
+    if (DEBUG_ENABLED) {
         ImGui::Text("Log file: ");
         ImGui::SameLine();
         std::string logPath = GetLogFilePath();

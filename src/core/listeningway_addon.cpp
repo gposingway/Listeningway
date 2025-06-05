@@ -23,13 +23,11 @@
 #include "logging.h"
 #include "uniform_manager.h"
 #include "constants.h"
-#include "settings.h"
 #include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
 
 std::atomic_bool g_addon_enabled = false;
 std::atomic_bool g_audio_thread_running = false;
-extern std::atomic_bool g_audio_analysis_enabled;
 std::thread g_audio_thread;
 std::mutex g_audio_data_mutex;
 AudioAnalysisData g_audio_data;
@@ -135,9 +133,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                 LOG_DEBUG("[Addon] DLL_PROCESS_ATTACH: Startup sequence initiated.");
                 // Load configuration at startup (ensures config is loaded and provider is valid)
                 Listeningway::ConfigurationManager::Instance();
-                LOG_DEBUG("[Addon] Loaded settings from ini.");
-                LoadAllTunables();
-                LOG_DEBUG("[Addon] Loaded all tunables from ini.");
+                LOG_DEBUG("[Addon] Loaded settings.");
+                //LoadAllTunables();
+                //LOG_DEBUG("[Addon] Loaded all tunables from ini.");
                 DisableThreadLibraryCalls(hModule);
                 InitAudioDeviceNotification();
                 LOG_DEBUG("[Addon] Device notification initialized.");
@@ -215,17 +213,13 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
 
     // If switching to None, just stop analysis and thread
     if (providerType < 0) {
-        if (g_audio_analysis_enabled) {
-            g_audio_analysis_enabled = false;
-            StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
-            LOG_DEBUG("[Addon] SwitchAudioProvider: Audio analysis disabled and thread stopped (None selected)");
-        }
+        StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
+        LOG_DEBUG("[Addon] SwitchAudioProvider: Audio analysis disabled and thread stopped (None selected)");
         g_switching_provider = false;
         return true;
     }    // Otherwise, robustly switch provider and restart thread if needed
     bool switch_ok = SwitchAudioCaptureProviderAndRestart(providerType, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
     if (switch_ok) {
-        g_audio_analysis_enabled = true;
         // Note: We could save the provider code here if needed, but it's handled in the switch function
         LOG_DEBUG("[Addon] SwitchAudioProvider: Switched and restarted to provider " + std::to_string(providerType));
     } else {

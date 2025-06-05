@@ -4,7 +4,7 @@
 // ---------------------------------------------
 #include "uniform_manager.h"
 #include <string_view>
-#include "settings.h" // Include settings header for g_settings
+// No longer need settings.h - using ConfigurationManager directly
 
 void UniformManager::update_uniforms(reshade::api::effect_runtime* runtime, float volume, const std::vector<float>& freq_bands, float beat,
     float time_seconds, float phase_60hz, float phase_120hz, float total_phases_60hz, float total_phases_120hz,

@@ -1,6 +1,6 @@
 #pragma once
 #include "beat_detector.h"
-#include "settings.h"
+#include "../../core/configuration/configuration_manager.h"
 #include <mutex>
 #include <vector>
 #include <chrono>

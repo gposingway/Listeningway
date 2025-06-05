@@ -5,7 +5,6 @@
 #include "process_audio_capture.h"
 #include "audio_capture.h"
 #include "logging.h"
-#include "settings.h"
 #include "audio_analysis.h"
 #include "../core/configuration/configuration_manager.h"
 #include <thread>
