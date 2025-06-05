@@ -707,28 +707,29 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
             if (ImGui::IsItemHovered(-1)) {
                 ImGui::SetTooltip("Controls bass detail in logarithmic scale");
             }
-        }
         
-        // Always show min/max frequency controls
-        float band_min_freq = config.frequency.minFreq;
-        if (ImGui::SliderFloat("##MinFreq", &band_min_freq, 10.0f, 500.0f, "%.0f")) {
-            config.frequency.minFreq = band_min_freq;
+            float band_min_freq = config.frequency.minFreq;
+            if (ImGui::SliderFloat("##MinFreq", &band_min_freq, 10.0f, 500.0f, "%.0f")) {
+                config.frequency.minFreq = band_min_freq;
+            }
+            ImGui::SameLine();
+            ImGui::Text("Min Freq (Hz)");
+            if (ImGui::IsItemHovered(-1)) {
+                ImGui::SetTooltip("Minimum frequency for frequency bands");
+            }
+            
+            float band_max_freq = config.frequency.maxFreq;
+            if (ImGui::SliderFloat("##MaxFreq", &band_max_freq, 2000.0f, 22050.0f, "%.0f")) {
+                config.frequency.maxFreq = band_max_freq;
+            }
+            ImGui::SameLine();
+            ImGui::Text("Max Freq (Hz)");
+            if (ImGui::IsItemHovered(-1)) {
+                ImGui::SetTooltip("Maximum frequency for frequency bands");
+            }
+
         }
-        ImGui::SameLine();
-        ImGui::Text("Min Freq (Hz)");
-        if (ImGui::IsItemHovered(-1)) {
-            ImGui::SetTooltip("Minimum frequency for frequency bands");
-        }
-        
-        float band_max_freq = config.frequency.maxFreq;
-        if (ImGui::SliderFloat("##MaxFreq", &band_max_freq, 2000.0f, 22050.0f, "%.0f")) {
-            config.frequency.maxFreq = band_max_freq;
-        }
-        ImGui::SameLine();
-        ImGui::Text("Max Freq (Hz)");
-        if (ImGui::IsItemHovered(-1)) {
-            ImGui::SetTooltip("Maximum frequency for frequency bands");
-        }
+
         
         // 5-band equalizer settings
         DrawFrequencyBoostSettings();

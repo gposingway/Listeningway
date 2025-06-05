@@ -34,14 +34,32 @@ if not exist "%FFXIV_DIR%" (
     )
 )
 
-REM Check if ReShade addon directory exists, create if not
+REM Check if ReShade shader directory exists, create if not
+set "SHADER_DIR=%FFXIV_DIR%\reshade-shaders\Shaders"
+if not exist "%SHADER_DIR%" (
+    echo Creating ReShade shader directory: %SHADER_DIR%
+    mkdir "%SHADER_DIR%"
+    if !errorlevel! neq 0 (
+        echo ERROR: Failed to create shader directory.
+        exit /b 1
+    )
+)
 
 REM Copy the addon file
 echo Copying %ADDON_FILE% to %FFXIV_DIR%...
 copy "%SOURCE_DIR%\%ADDON_FILE%" "%FFXIV_DIR%\" /Y
 if !errorlevel! neq 0 (
-    echo ERROR: Failed to copy file.
-    exit /b 1
+    echo WARNING: Failed to copy %ADDON_FILE%.
+)
+
+REM Copy the .fx and .fxh files to the shader directory
+copy "%SOURCE_DIR%\Listeningway.fx" "%SHADER_DIR%\" /Y
+if !errorlevel! neq 0 (
+    echo WARNING: Failed to copy Listeningway.fx.
+)
+copy "%SOURCE_DIR%\ListeningwayUniforms.fxh" "%SHADER_DIR%\" /Y
+if !errorlevel! neq 0 (
+    echo WARNING: Failed to copy ListeningwayUniforms.fxh.
 )
 
 echo.
