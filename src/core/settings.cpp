@@ -242,10 +242,9 @@ void SaveAllTunables() {
 void ResetAllTunablesToDefaults() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     SettingsAdapter::ResetToDefaults(g_settings);
-    
-    // Update beat detector with default algorithm if audio analysis is enabled
+    // Update beat detector with default algorithm from g_settings if audio analysis is enabled
     if (g_audio_analysis_enabled) {
         extern AudioAnalyzer g_audio_analyzer;
-        g_audio_analyzer.SetBeatDetectionAlgorithm(DEFAULT_BEAT_DETECTION_ALGORITHM);
+        g_audio_analyzer.SetBeatDetectionAlgorithm(g_settings.beat_detection_algorithm);
     }
 }

@@ -13,7 +13,7 @@
 #include "logging.h"
 #include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
 #include "configuration/ConfigurationManager.h"
-#include "ui_constants.h"
+#include "core/ui_constants.h"
 #include <windows.h>
 #include <shellapi.h>
 #include <string>
@@ -512,12 +512,12 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::SameLine();
     ImGui::Text("%.2f", data.volume * amp);    // Compact Left/Right display under the main volume bar
     const float thin_bar_height = UI_SPACING_MEDIUM;  // Same height as frequency bands (was 6.0f)
-    const float small_spacing = 2.0f;    // Small gap between left and right bars
+    const float small_spacing = UI_SPACING_XSMALL;    // Use new constant for extra small spacing
     const float half_bar_width = (bar_width - small_spacing) * 0.5f;
     
     // Use the captured progress bar position for perfect alignment
     ImVec2 start_pos = progress_bar_screen_pos;
-    start_pos.y += ImGui::GetFrameHeight() + 2.0f;  // Position below the progress bar
+    start_pos.y += ImGui::GetFrameHeight() + UI_SPACING_XSMALL;  // Position below the progress bar
     
     // Calculate center point for both bars
     float center_x = start_pos.x + bar_width * 0.5f;

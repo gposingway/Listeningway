@@ -1,6 +1,13 @@
+// UI constants for Listeningway overlay and controls.
+// Spacing values are in pixels. Colors are 32-bit ARGB (0xAARRGGBB).
+// Example: 0xFF2196F3 = opaque blue, 0xFFFFFFFF = opaque white.
+//
+// Update these values to maintain consistent UI appearance.
+
 #pragma once
 
 // UI Spacing Constants
+constexpr float UI_SPACING_XSMALL = 2.0f; // Extra small spacing (half of SMALL)
 constexpr float UI_SPACING_SMALL = 4.0f;
 constexpr float UI_SPACING_MEDIUM = 6.0f;
 constexpr float UI_SPACING_LARGE = 12.0f;
