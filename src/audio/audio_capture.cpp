@@ -21,9 +21,8 @@ void InitAudioCapture() {
         g_audio_capture_manager->Initialize();
         
         // Set preferred provider from settings if specified
-        auto config = ConfigurationManager::Snapshot();
-        if (!config.audio.captureProviderCode.empty()) {
-            g_audio_capture_manager->SetPreferredProviderByCode(config.audio.captureProviderCode);
+        if (!ConfigurationManager::Config().audio.captureProviderCode.empty()) {
+            g_audio_capture_manager->SetPreferredProviderByCode(ConfigurationManager::Config().audio.captureProviderCode);
         }
         // If no provider code is set, let the manager use its default selection logic
     }

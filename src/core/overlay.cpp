@@ -448,6 +448,14 @@ static void DrawSpatialization(const AudioAnalysisData& data) {
     ImGui::ProgressBar(data.volume_right, ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
     ImGui::Text("%.2f", data.volume_right);
+
+    // Pan Angle (legacy, remove or update to new range)
+    // ImGui::AlignTextToFramePadding();
+    // ImGui::Text("Pan Angle:");
+    // ImGui::SameLine(bar_start_x);
+    // ImGui::ProgressBar((data.audio_pan + 180.0f) / 360.0f, ImVec2(bar_width, 0.0f));
+    // ImGui::SameLine();
+    // ImGui::Text("%.1f deg", data.audio_pan);
 }
 
 // Helper: Draw all volume, spatialization, and beat info in a single aligned block

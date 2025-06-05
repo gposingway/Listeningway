@@ -7,7 +7,6 @@
 #include "providers/process_audio_provider.h"
 #include "providers/off_audio_provider.h"
 #include "../utils/logging.h"
-#include "configuration/configuration_manager.h"
 #include <algorithm>
 #include <climits>
 

@@ -5,7 +5,6 @@
 #include "system_audio_provider.h"
 #include "../audio_analysis.h"
 #include "../../utils/logging.h"
-#include "configuration/configuration_manager.h"
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 #include <vector>

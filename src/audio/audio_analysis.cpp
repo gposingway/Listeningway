@@ -121,7 +121,6 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     const float max_freq = config.frequency.maxFreq;
     const float log_strength = config.frequency.logStrength;
     // TODO: Add fftSize, bandNorm, sample_rate to Configuration if needed, or define locally/with constants
-    // All three are now part of Configuration: config.frequency.fftSize, config.frequency.bandNorm, config.sample_rate
     const float nyquist_freq = config.sample_rate * 0.5f;
     
     // Ensure min and max are within sensible ranges for the FFT size
