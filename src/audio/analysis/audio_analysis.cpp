@@ -140,23 +140,14 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
     // FIXED IMPLEMENTATION: Addressing band gaps with more uniform distribution
     // Calculate band boundaries that ensure every FFT bin contributes to at least one band
     std::vector<float> band_edges(bands + 1);
-    
     if (use_log_scale) {
-        // Calculate logarithmic frequency bands with more uniform energy distribution
-        // Use a simpler and more reliable logarithmic mapping to avoid gaps
-
-        // Log-space boundaries ensure more even distribution
+        // Always use equal log steps for band edges
         const float log_min = std::log10(effective_min_freq);
         const float log_max = std::log10(effective_max_freq);
         const float log_range = log_max - log_min;
-
         for (size_t i = 0; i <= bands; i++) {
-            // Apply power function for customizable log scaling
             float t = static_cast<float>(i) / bands;
-            float adjusted_t = std::pow(t, log_strength);
-            
-            // Convert to frequency
-            band_edges[i] = std::pow(10.0f, log_min + adjusted_t * log_range);
+            band_edges[i] = std::pow(10.0f, log_min + t * log_range);
         }
     } else {
         // Linear frequency distribution - equally spaced bands
@@ -278,8 +269,12 @@ void AnalyzeAudioBuffer(const float* data, size_t numFrames, size_t numChannels,
         }
         
         // Apply the equalizer multiplier to the raw band value for visualization
-        // When equalizer is set to 0, the band will be close to 0 (true multiplier)
         out.freq_bands[band] = out.raw_freq_bands[band] * equalizer_multiplier;
+        // Apply logStrength as a logarithmic gain curve (only if log scale is enabled)
+        if (use_log_scale && log_strength != 0.0f) {
+            float gain = std::exp(static_cast<float>(band + 1) * (log_strength/3));
+            out.freq_bands[band] *= gain;
+        }
     }
     
     // --- Audio Spatialization: Calculate left/right volume and pan ---
