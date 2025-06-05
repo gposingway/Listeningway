@@ -54,7 +54,6 @@ constexpr float DEFAULT_BEAT_TIME_SCALE = 1e-9f;
 constexpr float DEFAULT_BEAT_TIME_INITIAL = 0.5f;
 constexpr float DEFAULT_BEAT_TIME_MIN = 0.05f;
 constexpr float DEFAULT_BEAT_TIME_DIVISOR = 0.05f;
-constexpr float DEFAULT_VOLUME_NORM = 2.0f;
 constexpr float DEFAULT_BAND_NORM = 0.1f;
 constexpr float DEFAULT_BAND_MIN_FREQ = 34.0f;
 constexpr float DEFAULT_BAND_MAX_FREQ = 13000.0f;
@@ -72,6 +71,7 @@ constexpr float DEFAULT_EQUALIZER_WIDTH = 0.15f;
 // Audio Capture
 // Pan smoothing (0.0 = no smoothing, higher values = more smoothing)
 constexpr float DEFAULT_PAN_SMOOTHING = 0.1f; // Default: no smoothing to preserve current behavior
+constexpr float DEFAULT_AMPLIFIER = 1.0f;
 
 // UI/Overlay tunables
 constexpr float DEFAULT_CAPTURE_STALE_TIMEOUT = 1.5f;
