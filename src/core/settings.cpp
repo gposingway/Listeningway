@@ -215,6 +215,9 @@ float ReadFloatFromIni(const char* iniFile, const char* section, const char* key
 void LoadAllTunables() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
     SettingsAdapter::Load(g_settings);
+    // Sync global state variables with loaded settings
+    g_audio_analysis_enabled.store(g_settings.audio_analysis_enabled);
+    g_listeningway_debug_enabled = g_settings.debug_enabled;
 }
 
 /**
@@ -223,7 +226,13 @@ void LoadAllTunables() {
  */
 void SaveAllTunables() {
     std::lock_guard<std::mutex> lock(g_settings_mutex);
+    int old_algorithm = g_settings.beat_detection_algorithm;
     SettingsAdapter::Save(g_settings);
+    // After saving, check if the algorithm changed and reconfigure AudioAnalyzer if needed
+    if (g_settings.beat_detection_algorithm != old_algorithm && g_audio_analysis_enabled) {
+        extern AudioAnalyzer g_audio_analyzer;
+        g_audio_analyzer.SetBeatDetectionAlgorithm(g_settings.beat_detection_algorithm);
+    }
 }
 
 /**

@@ -34,6 +34,18 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000);
 // Static reference to avoid repeated Instance() calls - safe since ConfigurationManager is a singleton
 static auto& g_configManager = ConfigurationManager::Instance();
 
+// Helper for audio format name mapping
+static const char* GetAudioFormatName(int format) {
+    switch (format) {
+        case 0: return "None";
+        case 1: return "Mono";
+        case 2: return "Stereo";
+        case 6: return "5.1";
+        case 8: return "7.1";
+        default: return "Unknown";
+    }
+}
+
 // Helper: Draw toggles (audio analysis, debug logging)
 static void DrawToggles() {
     auto& config = g_configManager.GetConfig();
@@ -626,15 +638,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Format:");
     ImGui::SameLine(bar_start_x);
-    const char* format_name = "None";
-    switch (static_cast<int>(data.audio_format)) {
-        case 0: format_name = "None"; break;
-        case 1: format_name = "Mono"; break;
-        case 2: format_name = "Stereo"; break;
-        case 6: format_name = "5.1"; break;
-        case 8: format_name = "7.1"; break;
-        default: format_name = "Unknown"; break;
-    }
+    const char* format_name = GetAudioFormatName(static_cast<int>(data.audio_format));
     ImGui::Text("%s (%.0f)", format_name, data.audio_format);    // Pan Smoothing
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Pan Smooth:");
@@ -834,5 +838,6 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data, std::mutex& dat
     } catch (const std::exception& ex) {
         LOG_ERROR(std::string("[Overlay] Exception in DrawListeningwayDebugOverlay: ") + ex.what());
     } catch (...) {
-        LOG_ERROR("[Overlay] Unknown exception in DrawListeningwayDebugOverlay.");    }
+        LOG_ERROR("[Overlay] Unknown exception in DrawListeningwayDebugOverlay.");
+    }
 }
