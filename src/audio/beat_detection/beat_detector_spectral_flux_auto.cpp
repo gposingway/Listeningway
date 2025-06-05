@@ -11,7 +11,7 @@ constexpr float MIN_TEMPO_BPM = 60.0f;
 constexpr float MAX_TEMPO_BPM = 180.0f;
 constexpr float ANALYSIS_INTERVAL = 2.0f; // Seconds between tempo analysis runs
 
-SpectralFluxAutoBeatDetector::SpectralFluxAutoBeatDetector()
+BeatDetectorSpectralFluxAuto::BeatDetectorSpectralFluxAuto()
     : is_running_(false),      analysis_pending_(false),
       flux_threshold_(Listeningway::ConfigurationManager::Snapshot().beat.spectralFluxThreshold),
       beat_value_(0.0f),
@@ -24,19 +24,19 @@ SpectralFluxAutoBeatDetector::SpectralFluxAutoBeatDetector()
 {
     result_.beat = 0.0f;
     result_.tempo_detected = false;
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Created");
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Created");
 }
 
-SpectralFluxAutoBeatDetector::~SpectralFluxAutoBeatDetector() {
+BeatDetectorSpectralFluxAuto::~BeatDetectorSpectralFluxAuto() {
     Stop();
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Destroyed");
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Destroyed");
 }
 
-void SpectralFluxAutoBeatDetector::Start() {
+void BeatDetectorSpectralFluxAuto::Start() {
     // Stop first if already running
     Stop();
     
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Starting");
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Starting");
     
     // Initialize state
     {
@@ -54,17 +54,17 @@ void SpectralFluxAutoBeatDetector::Start() {
     
     // Start analysis thread
     is_running_ = true;
-    analysis_thread_ = std::thread(&SpectralFluxAutoBeatDetector::TempoAnalysisThread, this);
+    analysis_thread_ = std::thread(&BeatDetectorSpectralFluxAuto::TempoAnalysisThread, this);
     
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Started");
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Started");
 }
 
-void SpectralFluxAutoBeatDetector::Stop() {
+void BeatDetectorSpectralFluxAuto::Stop() {
     if (!is_running_.load()) {
         return;
     }
     
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Stopping");
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Stopping");
     
     // Stop the analysis thread
     is_running_ = false;
@@ -72,10 +72,10 @@ void SpectralFluxAutoBeatDetector::Stop() {
         analysis_thread_.join();
     }
     
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Stopped");
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Stopped");
 }
 
-void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes, float flux, float flux_low, float dt) {
+void BeatDetectorSpectralFluxAuto::Process(const std::vector<float>& magnitudes, float flux, float flux_low, float dt) {
     if (!is_running_.load()) {
         return;
     }
@@ -114,7 +114,7 @@ void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes,
                     // Reset phase based on actual beat time
                     beat_phase_ = 0.0f;
                     
-                    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Beat aligned with tempo: " + 
+                    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat aligned with tempo: " + 
                               std::to_string(current_tempo_bpm_) + " BPM");
                 } 
                 else if (beat_gap > expected_beat_time * 0.5f) {
@@ -122,7 +122,7 @@ void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes,
                     // We still trigger a beat but we don't reset phase
                     beat_value_ = 1.0f;
                     time_since_last_beat_ = total_time_;
-                    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Beat detected (unaligned): " +
+                    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat detected (unaligned): " +
                               std::to_string(beat_gap) + "s gap");
                 }
             } else {
@@ -130,7 +130,7 @@ void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes,
                 beat_value_ = 1.0f;
                 time_since_last_beat_ = total_time_;
                 last_beat_time_ = std::chrono::steady_clock::now();
-                LOG_DEBUG("[SpectralFluxAutoBeatDetector] Beat detected (no tempo)");
+                LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat detected (no tempo)");
             }
         }
         
@@ -166,18 +166,18 @@ void SpectralFluxAutoBeatDetector::Process(const std::vector<float>& magnitudes,
     }
 }
 
-BeatDetectorResult SpectralFluxAutoBeatDetector::GetResult() const {
+BeatDetectorResult BeatDetectorSpectralFluxAuto::GetResult() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return result_;
 }
 
-void SpectralFluxAutoBeatDetector::TempoAnalysisThread() {
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Tempo analysis thread started");
+void BeatDetectorSpectralFluxAuto::TempoAnalysisThread() {
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Tempo analysis thread started");
     
     while (is_running_.load()) {
         // Wait for new analysis request
         if (analysis_pending_.load()) {
-            LOG_DEBUG("[SpectralFluxAutoBeatDetector] Running tempo analysis");
+            LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Running tempo analysis");
             
             // Copy flux history for analysis
             std::vector<float> flux_copy;
@@ -196,7 +196,7 @@ void SpectralFluxAutoBeatDetector::TempoAnalysisThread() {
                     if (current_tempo_bpm_ <= 0.0f || 
                         std::abs(current_tempo_bpm_ - detected_tempo) / current_tempo_bpm_ > Listeningway::ConfigurationManager::Snapshot().beat.tempoChangeThreshold) { // Thread-safe for beat detection thread
                         
-                        LOG_DEBUG("[SpectralFluxAutoBeatDetector] Tempo changed from " + 
+                        LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Tempo changed from " + 
                                   std::to_string(current_tempo_bpm_) + " to " + 
                                   std::to_string(detected_tempo) + " BPM");
                         
@@ -217,10 +217,10 @@ void SpectralFluxAutoBeatDetector::TempoAnalysisThread() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     
-    LOG_DEBUG("[SpectralFluxAutoBeatDetector] Tempo analysis thread stopped");
+    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Tempo analysis thread stopped");
 }
 
-float SpectralFluxAutoBeatDetector::DetectTempo(const std::vector<float>& flux_history) {
+float BeatDetectorSpectralFluxAuto::DetectTempo(const std::vector<float>& flux_history) {
     const auto config = Listeningway::ConfigurationManager::Snapshot(); // Thread-safe snapshot for tempo analysis
     
     if (flux_history.size() < 100) {
@@ -337,7 +337,7 @@ float SpectralFluxAutoBeatDetector::DetectTempo(const std::vector<float>& flux_h
     return primary_bpm;
 }
 
-void SpectralFluxAutoBeatDetector::UpdateBeatPhase(float dt) {
+void BeatDetectorSpectralFluxAuto::UpdateBeatPhase(float dt) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     if (current_tempo_bpm_ <= 0.0f) {

@@ -6,8 +6,9 @@
 #include <string>
 
 // Dummy provider for 'None (Audio Analysis Off)'
-class OffAudioCaptureProvider : public IAudioCaptureProvider {
-public:    bool IsAvailable() const override;
+class AudioCaptureProviderOff : public IAudioCaptureProvider {
+public:
+    bool IsAvailable() const override;
     bool Initialize() override;
     void Uninitialize() override;
     bool StartCapture(const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData&) override;
@@ -19,4 +20,4 @@ public:    bool IsAvailable() const override;
     void ResetRestartFlags() override;
 };
 
-extern "C" IAudioCaptureProvider* CreateOffAudioCaptureProvider();
+extern "C" IAudioCaptureProvider* CreateAudioCaptureProviderOff();

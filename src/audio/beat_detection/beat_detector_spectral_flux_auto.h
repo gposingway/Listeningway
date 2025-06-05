@@ -20,17 +20,17 @@
  * 2. Adjusting beat timing based on detected tempo
  * 3. Providing a beat phase based on detected tempo
  */
-class SpectralFluxAutoBeatDetector : public IBeatDetector {
+class BeatDetectorSpectralFluxAuto : public IBeatDetector {
 public:
     /**
      * @brief Constructor
      */
-    SpectralFluxAutoBeatDetector();
+    BeatDetectorSpectralFluxAuto();
     
     /**
      * @brief Destructor
      */
-    ~SpectralFluxAutoBeatDetector() override;
+    ~BeatDetectorSpectralFluxAuto() override;
     
     /**
      * @brief Start processing

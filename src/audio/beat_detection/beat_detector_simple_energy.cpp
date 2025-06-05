@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
-SimpleEnergyBeatDetector::SimpleEnergyBeatDetector() 
+BeatDetectorSimpleEnergy::BeatDetectorSimpleEnergy() 
     : is_running_(false), 
       last_beat_time_(0.0f),
       total_time_(0.0f),      beat_value_(0.0f),
@@ -13,15 +13,15 @@ SimpleEnergyBeatDetector::SimpleEnergyBeatDetector()
 {
     result_.beat = 0.0f;
     result_.tempo_detected = false; // Simple detector doesn't detect tempo
-    LOG_DEBUG("[SimpleEnergyBeatDetector] Created");
+    LOG_DEBUG("[BeatDetectorSimpleEnergy] Created");
 }
 
-SimpleEnergyBeatDetector::~SimpleEnergyBeatDetector() {
+BeatDetectorSimpleEnergy::~BeatDetectorSimpleEnergy() {
     Stop();
-    LOG_DEBUG("[SimpleEnergyBeatDetector] Destroyed");
+    LOG_DEBUG("[BeatDetectorSimpleEnergy] Destroyed");
 }
 
-void SimpleEnergyBeatDetector::Start() {
+void BeatDetectorSimpleEnergy::Start() {
     std::lock_guard<std::mutex> lock(mutex_);
     
     if (is_running_) {
@@ -35,10 +35,10 @@ void SimpleEnergyBeatDetector::Start() {
     flux_threshold_ = 0.0f;
     last_beat_timestamp_ = std::chrono::steady_clock::now();
     
-    LOG_DEBUG("[SimpleEnergyBeatDetector] Started");
+    LOG_DEBUG("[BeatDetectorSimpleEnergy] Started");
 }
 
-void SimpleEnergyBeatDetector::Stop() {
+void BeatDetectorSimpleEnergy::Stop() {
     std::lock_guard<std::mutex> lock(mutex_);
     
     if (!is_running_) {
@@ -46,10 +46,10 @@ void SimpleEnergyBeatDetector::Stop() {
     }
     
     is_running_ = false;
-    LOG_DEBUG("[SimpleEnergyBeatDetector] Stopped");
+    LOG_DEBUG("[BeatDetectorSimpleEnergy] Stopped");
 }
 
-void SimpleEnergyBeatDetector::Process(const std::vector<float>& magnitudes, float flux, float flux_low, float dt) {
+void BeatDetectorSimpleEnergy::Process(const std::vector<float>& magnitudes, float flux, float flux_low, float dt) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     if (!is_running_) {
@@ -119,7 +119,7 @@ void SimpleEnergyBeatDetector::Process(const std::vector<float>& magnitudes, flo
     result_.beat = beat_value_;
 }
 
-BeatDetectorResult SimpleEnergyBeatDetector::GetResult() const {
+BeatDetectorResult BeatDetectorSimpleEnergy::GetResult() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return result_;
 }

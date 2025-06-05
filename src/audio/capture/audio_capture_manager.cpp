@@ -65,10 +65,10 @@ void AudioCaptureManager::Uninitialize() {
 
 void AudioCaptureManager::RegisterProviders() {
     // Register system audio provider (always available)
-    providers_.push_back(std::make_unique<SystemAudioCaptureProvider>());
+    providers_.push_back(std::make_unique<AudioCaptureProviderSystem>());
     
     // Register off audio provider (dummy provider)
-    providers_.push_back(std::make_unique<OffAudioCaptureProvider>());
+    providers_.push_back(std::make_unique<AudioCaptureProviderOff>());
     
     LOG_DEBUG("[AudioCaptureManager] Registered " + std::to_string(providers_.size()) + " audio capture providers");
 }

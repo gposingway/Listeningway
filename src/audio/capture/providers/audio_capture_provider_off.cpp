@@ -12,10 +12,10 @@
 #include <chrono>
 #include <algorithm>
 
-bool OffAudioCaptureProvider::IsAvailable() const { return true; }
-bool OffAudioCaptureProvider::Initialize() { return true; }
-void OffAudioCaptureProvider::Uninitialize() {}
-bool OffAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data) {
+bool AudioCaptureProviderOff::IsAvailable() const { return true; }
+bool AudioCaptureProviderOff::Initialize() { return true; }
+void AudioCaptureProviderOff::Uninitialize() {}
+bool AudioCaptureProviderOff::StartCapture(const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, AudioAnalysisData& data) {
     // Keep the thread running but provide dummy/zero data
     running = true;
     thread = std::thread([&, config]() {
@@ -33,11 +33,11 @@ bool OffAudioCaptureProvider::StartCapture(const Listeningway::Configuration& co
     });
     return true;
 }
-void OffAudioCaptureProvider::StopCapture(std::atomic_bool& running, std::thread& thread) {
+void AudioCaptureProviderOff::StopCapture(std::atomic_bool& running, std::thread& thread) {
     running = false;
     if (thread.joinable()) thread.join();
 }
-AudioProviderInfo OffAudioCaptureProvider::GetProviderInfo() const {
+AudioProviderInfo AudioCaptureProviderOff::GetProviderInfo() const {
     return AudioProviderInfo{
         "off", // code as string
         "None (Audio Analysis Off)", // name
@@ -46,12 +46,12 @@ AudioProviderInfo OffAudioCaptureProvider::GetProviderInfo() const {
         false // activates_capture
     };
 }
-AudioCaptureProviderType OffAudioCaptureProvider::GetProviderType() const { return AudioCaptureProviderType::SYSTEM_AUDIO; } // or a new OFF type
-std::string OffAudioCaptureProvider::GetProviderName() const { return "None (Audio Analysis Off)"; }
-bool OffAudioCaptureProvider::ShouldRestart() { return false; }
-void OffAudioCaptureProvider::ResetRestartFlags() {}
+AudioCaptureProviderType AudioCaptureProviderOff::GetProviderType() const { return AudioCaptureProviderType::SYSTEM_AUDIO; } // or a new OFF type
+std::string AudioCaptureProviderOff::GetProviderName() const { return "None (Audio Analysis Off)"; }
+bool AudioCaptureProviderOff::ShouldRestart() { return false; }
+void AudioCaptureProviderOff::ResetRestartFlags() {}
 
 // Factory function for registration
-extern "C" IAudioCaptureProvider* CreateOffAudioCaptureProvider() {
-    return new OffAudioCaptureProvider();
+extern "C" IAudioCaptureProvider* CreateAudioCaptureProviderOff() {
+    return new AudioCaptureProviderOff();
 }

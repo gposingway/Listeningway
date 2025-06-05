@@ -7,7 +7,7 @@
 #include <atomic>
 
 // System-wide audio capture using WASAPI loopback
-class SystemAudioCaptureProvider : public IAudioCaptureProvider {
+class AudioCaptureProviderSystem : public IAudioCaptureProvider {
 private:
     class DeviceNotificationClient;
 
@@ -16,8 +16,8 @@ private:
     static DeviceNotificationClient* notification_client_;
 
 public:
-    SystemAudioCaptureProvider() = default;
-    ~SystemAudioCaptureProvider() override = default;
+    AudioCaptureProviderSystem() = default;
+    ~AudioCaptureProviderSystem() override = default;
 
     AudioProviderInfo GetProviderInfo() const override;
 

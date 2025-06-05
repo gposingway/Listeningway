@@ -11,10 +11,10 @@
  * Detects beats by identifying spikes in low-frequency spectral flux above an adaptive threshold.
  * This is the original Listeningway algorithm, tuned for strong, regular beats (e.g., EDM, pop).
  */
-class SimpleEnergyBeatDetector : public IBeatDetector {
+class BeatDetectorSimpleEnergy : public IBeatDetector {
 public:
-    SimpleEnergyBeatDetector();
-    ~SimpleEnergyBeatDetector() override;
+    BeatDetectorSimpleEnergy();
+    ~BeatDetectorSimpleEnergy() override;
 
     /// Start the beat detector.
     void Start() override;

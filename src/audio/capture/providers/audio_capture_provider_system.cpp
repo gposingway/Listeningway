@@ -12,12 +12,12 @@
 #include <combaseapi.h>
 
 // Static member definitions
-std::atomic_bool SystemAudioCaptureProvider::device_change_pending_(false);
-IMMDeviceEnumerator* SystemAudioCaptureProvider::device_enumerator_ = nullptr;
-SystemAudioCaptureProvider::DeviceNotificationClient* SystemAudioCaptureProvider::notification_client_ = nullptr;
+std::atomic_bool AudioCaptureProviderSystem::device_change_pending_(false);
+IMMDeviceEnumerator* AudioCaptureProviderSystem::device_enumerator_ = nullptr;
+AudioCaptureProviderSystem::DeviceNotificationClient* AudioCaptureProviderSystem::notification_client_ = nullptr;
 
 // Notification client for device changes
-class SystemAudioCaptureProvider::DeviceNotificationClient : public IMMNotificationClient {
+class AudioCaptureProviderSystem::DeviceNotificationClient : public IMMNotificationClient {
     LONG ref_ = 1;
 public:
     ULONG STDMETHODCALLTYPE AddRef() override { 
@@ -42,7 +42,7 @@ public:
     
     HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR) override {
         if (flow == eRender && role == eConsole) {
-            SystemAudioCaptureProvider::SetDeviceChangePending();
+            AudioCaptureProviderSystem::SetDeviceChangePending();
         }
         return S_OK;
     }
@@ -54,12 +54,12 @@ public:
     HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR, const PROPERTYKEY) override { return S_OK; }
 };
 
-bool SystemAudioCaptureProvider::IsAvailable() const {
+bool AudioCaptureProviderSystem::IsAvailable() const {
     // WASAPI is available on Windows Vista and later
     return true;
 }
 
-bool SystemAudioCaptureProvider::Initialize() {
+bool AudioCaptureProviderSystem::Initialize() {
     if (!device_enumerator_) {
         HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, 
                                     CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), 
@@ -86,7 +86,7 @@ bool SystemAudioCaptureProvider::Initialize() {
     return true;
 }
 
-void SystemAudioCaptureProvider::Uninitialize() {
+void AudioCaptureProviderSystem::Uninitialize() {
     if (device_enumerator_ && notification_client_) {
         device_enumerator_->UnregisterEndpointNotificationCallback(notification_client_);
         notification_client_->Release();
@@ -101,7 +101,7 @@ void SystemAudioCaptureProvider::Uninitialize() {
     LOG_DEBUG("[SystemAudioProvider] Uninitialized.");
 }
 
-bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, 
+bool AudioCaptureProviderSystem::StartCapture(const Listeningway::Configuration& config, 
                                              std::atomic_bool& running, 
                                              std::thread& thread, 
                                              AudioAnalysisData& data) {
@@ -306,14 +306,14 @@ bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration&
     return true;
 }
 
-void SystemAudioCaptureProvider::StopCapture(std::atomic_bool& running, std::thread& thread) {
+void AudioCaptureProviderSystem::StopCapture(std::atomic_bool& running, std::thread& thread) {
     running = false;
     if (thread.joinable()) {
         thread.join();
     }
 }
 
-AudioProviderInfo SystemAudioCaptureProvider::GetProviderInfo() const {
+AudioProviderInfo AudioCaptureProviderSystem::GetProviderInfo() const {
     return AudioProviderInfo{
         "system", // code as string
         "System Audio", // name
