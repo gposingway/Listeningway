@@ -6,7 +6,9 @@
 #include "audio_capture_manager.h"
 #include "providers/audio_capture_provider.h"
 #include "../utils/logging.h"
-#include "settings.h"
+#include "configuration/ConfigurationManager.h"
+using Listeningway::ConfigurationManager;
+
 #include <memory>
 
 // Global audio capture manager instance
@@ -19,8 +21,8 @@ void InitAudioCapture() {
         g_audio_capture_manager->Initialize();
         
         // Set preferred provider from settings if specified
-        if (!g_settings.audio_capture_provider_code.empty()) {
-            g_audio_capture_manager->SetPreferredProviderByCode(g_settings.audio_capture_provider_code);
+        if (!ConfigurationManager::Config().audio.captureProviderCode.empty()) {
+            g_audio_capture_manager->SetPreferredProviderByCode(ConfigurationManager::Config().audio.captureProviderCode);
         }
         // If no provider code is set, let the manager use its default selection logic
     }
@@ -40,8 +42,11 @@ void UninitAudioCapture() {
 }
 
 // Starts a background thread that captures audio and updates analysis data using the selected provider.
-void StartAudioCaptureThread(const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
-    InitAudioCapture();
+void StartAudioCaptureThread(std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    const auto& config = ConfigurationManager::Config();
+    if (!g_audio_capture_manager) {
+        InitializeAudioCapture();
+    }
     if (g_audio_capture_manager) {
         g_audio_capture_manager->StartCapture(config, running, thread, data_mutex, data);
     }
@@ -58,7 +63,8 @@ void StopAudioCaptureThread(std::atomic_bool& running, std::thread& thread) {
 }
 
 // Helper to restart audio capture if provider signals restart is needed
-void CheckAndRestartAudioCapture(const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+void CheckAndRestartAudioCapture(std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    const auto& config = ConfigurationManager::Config();
     if (g_audio_capture_manager) {
         g_audio_capture_manager->CheckAndRestartCapture(config, running, thread, data_mutex, data);
     }
@@ -117,9 +123,10 @@ std::string GetAudioCaptureProviderName(const std::string& providerCode) {
 }
 
 // Overlay API: Switch provider and restart capture thread if running
-bool SwitchAudioCaptureProviderAndRestart(int providerType, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool SwitchAudioCaptureProviderAndRestart(int providerType, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    const auto& config = ConfigurationManager::Config();
     if (!g_audio_capture_manager) {
-        InitAudioCapture();
+        InitializeAudioCapture();
     }
     if (!g_audio_capture_manager) return false;
     if (providerType < 0) return false; // -1 is "None (off)"
@@ -127,9 +134,10 @@ bool SwitchAudioCaptureProviderAndRestart(int providerType, const AudioAnalysisC
 }
 
 // Overlay API: Switch provider by code and restart capture thread if running
-bool SwitchAudioCaptureProviderByCodeAndRestart(const std::string& providerCode, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool SwitchAudioCaptureProviderByCodeAndRestart(const std::string& providerCode, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+    const auto& config = ConfigurationManager::Config();
     if (!g_audio_capture_manager) {
-        InitAudioCapture();
+        InitializeAudioCapture();
     }
     if (!g_audio_capture_manager) return false;
     return g_audio_capture_manager->SwitchProviderByCodeAndRestart(providerCode, config, running, thread, data_mutex, data);

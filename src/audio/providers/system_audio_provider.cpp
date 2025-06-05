@@ -101,7 +101,7 @@ void SystemAudioCaptureProvider::Uninitialize() {
     LOG_DEBUG("[SystemAudioProvider] Uninitialized.");
 }
 
-bool SystemAudioCaptureProvider::StartCapture(const AudioAnalysisConfig& config, 
+bool SystemAudioCaptureProvider::StartCapture(const Listeningway::Configuration& config, 
                                              std::atomic_bool& running, 
                                              std::thread& thread, 
                                              std::mutex& data_mutex, 
@@ -270,20 +270,12 @@ bool SystemAudioCaptureProvider::StartCapture(const AudioAnalysisConfig& config,
                     if (SUCCEEDED(hr)) {
                         if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
                             extern AudioAnalyzer g_audio_analyzer;
-                            extern ListeningwaySettings g_settings;
                             
-                            if (g_settings.audio_analysis_enabled) {
-                                // Use the global audio analyzer
-                                g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
-                                                                  numFramesAvailable, 
-                                                                  res.pwfx->nChannels, 
-                                                                  config, 
-                                                                  data);
-                            } else {
-                                data.volume = 0.0f;
-                                std::fill(data.freq_bands.begin(), data.freq_bands.end(), 0.0f);
-                                data.beat = 0.0f;
-                            }
+                            // Remove reference to g_settings and always analyze audio (config now controls enable/disable)
+                            g_audio_analyzer.AnalyzeAudioBuffer(reinterpret_cast<float*>(pData), 
+                                                              numFramesAvailable, 
+                                                              res.pwfx->nChannels, 
+                                                              data);
                         }
                         res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
                     } else {

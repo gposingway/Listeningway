@@ -2,6 +2,7 @@
 
 #include <array>
 #include <string>
+#include "../constants.h"
 
 namespace Listeningway {
 
@@ -48,18 +49,20 @@ struct Configuration {
 
     // Frequency Band Settings
     struct FrequencyBands {
-        bool logScaleEnabled = true;
-        float logStrength = 1.0f;
-        float minFreq = 20.0f;
-        float maxFreq = 20000.0f;
-        
-        // 5-band equalizer
-        std::array<float, 5> equalizerBands = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-        float equalizerWidth = 0.2f;
-        
-        // Amplifier for visualization scaling
-        float amplifier = 1.0f;
+        bool logScaleEnabled = DEFAULT_BAND_LOG_SCALE;
+        float logStrength = DEFAULT_BAND_LOG_STRENGTH;
+        float minFreq = DEFAULT_BAND_MIN_FREQ;
+        float maxFreq = DEFAULT_BAND_MAX_FREQ;
+        std::array<float, 5> equalizerBands = { DEFAULT_EQUALIZER_BAND1, DEFAULT_EQUALIZER_BAND2, DEFAULT_EQUALIZER_BAND3, DEFAULT_EQUALIZER_BAND4, DEFAULT_EQUALIZER_BAND5 };
+        float equalizerWidth = DEFAULT_EQUALIZER_WIDTH;
+        float amplifier = DEFAULT_VOLUME_NORM;
+        size_t bands = DEFAULT_NUM_BANDS;
+        size_t fftSize = DEFAULT_FFT_SIZE;
+        float bandNorm = DEFAULT_BAND_NORM;
     } frequency;
+
+    // Audio sample rate (Hz)
+    float sample_rate = 48000.0f;
 
     // Debug and Logging Settings
     struct Debug {

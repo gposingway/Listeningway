@@ -25,6 +25,7 @@
 #include "constants.h"
 #include "settings.h"
 #include "configuration/ConfigurationManager.h"
+using Listeningway::ConfigurationManager;
 
 static std::atomic_bool g_addon_enabled = false;
 static std::atomic_bool g_audio_thread_running = false;
@@ -32,7 +33,6 @@ static std::atomic_bool g_audio_analysis_enabled = true;
 static std::thread g_audio_thread;
 static std::mutex g_audio_data_mutex;
 static AudioAnalysisData g_audio_data;
-static AudioAnalysisConfig g_audio_config(g_settings);
 static UniformManager g_uniform_manager;
 static std::chrono::steady_clock::time_point g_last_audio_update = std::chrono::steady_clock::now();
 static float g_last_volume = 0.0f;
@@ -58,7 +58,7 @@ static void UpdateShaderUniforms(reshade::api::effect_runtime* runtime) {
         audio_format = g_audio_data.audio_format;
     }
     // Get amplifier from config (thread-safe)
-    amplifier = ConfigurationManager::Instance().GetConfig().frequency.amplifier;
+    amplifier = ConfigurationManager::Config().frequency.amplifier;
     // Apply amplifier to all relevant values
     volume_to_set *= amplifier;
     beat_to_set *= amplifier;
@@ -99,10 +99,10 @@ static void MaybeRestartAudioCaptureIfStale() {
     if (current_volume != g_last_volume) {
         g_last_audio_update = now;
         g_last_volume = current_volume;
-    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_last_audio_update).count() > static_cast<int>(g_settings.capture_stale_timeout * 1000.0f)) {
+    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_last_audio_update).count() > static_cast<int>(DEFAULT_CAPTURE_STALE_TIMEOUT * 1000.0f)) {
         // No new audio for the configured timeout, try to restart
         LOG_DEBUG("[Addon] Audio capture thread stale, attempting restart.");
-        CheckAndRestartAudioCapture(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+        CheckAndRestartAudioCapture(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
         LOG_DEBUG("[Addon] Audio capture thread restarted.");
         g_last_audio_update = now; // Prevent rapid restarts
     }
@@ -150,13 +150,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                         (reshade::addon_event_traits<reshade::addon_event::reshade_reloaded_effects>::decl)OnReloadedEffects);
                     
                     // Initialize and start the audio analyzer with the configured algorithm
-                    g_audio_analyzer.SetBeatDetectionAlgorithm(g_settings.beat_detection_algorithm);
+                    g_audio_analyzer.SetBeatDetectionAlgorithm(ConfigurationManager::Config().beat.algorithm);
                     g_audio_analyzer.Start();
                     LOG_DEBUG("[Addon] Audio analyzer started with algorithm: " + 
-                             std::to_string(g_settings.beat_detection_algorithm));
+                             std::to_string(ConfigurationManager::Config().beat.algorithm));
                     
                     // Start the audio capture thread
-                    StartAudioCaptureThread(g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+                    StartAudioCaptureThread(g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
                     LOG_DEBUG("[Addon] Audio capture thread started.");
                     g_addon_enabled = true;
                 }
@@ -217,16 +217,14 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000) {
         if (g_audio_analysis_enabled) {
             g_audio_analysis_enabled = false;
             StopAudioCaptureThread(g_audio_thread_running, g_audio_thread);
-            g_settings.audio_analysis_enabled.store(false);
             LOG_DEBUG("[Addon] SwitchAudioProvider: Audio analysis disabled and thread stopped (None selected)");
         }
         g_switching_provider = false;
         return true;
     }    // Otherwise, robustly switch provider and restart thread if needed
-    bool switch_ok = SwitchAudioCaptureProviderAndRestart(providerType, g_audio_config, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
+    bool switch_ok = SwitchAudioCaptureProviderAndRestart(providerType, g_audio_thread_running, g_audio_thread, g_audio_data_mutex, g_audio_data);
     if (switch_ok) {
         g_audio_analysis_enabled = true;
-        g_settings.audio_analysis_enabled.store(true);
         // Note: We could save the provider code here if needed, but it's handled in the switch function
         LOG_DEBUG("[Addon] SwitchAudioProvider: Switched and restarted to provider " + std::to_string(providerType));
     } else {

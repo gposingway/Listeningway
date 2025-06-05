@@ -199,7 +199,7 @@ bool GetCurrentProcessAudioInfo(wchar_t* session_name, size_t session_name_size,
     return success;
 }
 
-void StartProcessAudioCaptureThread(const AudioAnalysisConfig& config, 
+void StartProcessAudioCaptureThread(const Listeningway::Configuration& config, 
                                    const ProcessAudioCaptureConfig& process_config,
                                    std::atomic_bool& running, 
                                    std::thread& thread, 

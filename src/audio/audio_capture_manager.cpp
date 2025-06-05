@@ -150,7 +150,7 @@ bool AudioCaptureManager::SetPreferredProviderByCode(const std::string& provider
 }
 
 // New method: Switch provider and restart capture thread if running
-bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
     bool was_running = running.load();
     if (was_running) {
         StopCapture(running, thread);
@@ -164,7 +164,7 @@ bool AudioCaptureManager::SwitchProviderAndRestart(AudioCaptureProviderType type
 }
 
 // New method: Switch provider by code and restart capture thread if running
-bool AudioCaptureManager::SwitchProviderByCodeAndRestart(const std::string& providerCode, const AudioAnalysisConfig& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
+bool AudioCaptureManager::SwitchProviderByCodeAndRestart(const std::string& providerCode, const Listeningway::Configuration& config, std::atomic_bool& running, std::thread& thread, std::mutex& data_mutex, AudioAnalysisData& data) {
     // Handle "off" code specially - stop capture and don't switch to any provider
     if (providerCode == "off") {
         if (running.load()) {
@@ -247,7 +247,7 @@ IAudioCaptureProvider* AudioCaptureManager::SelectBestProvider() {
     return nullptr;
 }
 
-bool AudioCaptureManager::StartCapture(const AudioAnalysisConfig& config, 
+bool AudioCaptureManager::StartCapture(const Listeningway::Configuration& config, 
                                       std::atomic_bool& running, 
                                       std::thread& thread, 
                                       std::mutex& data_mutex, 
@@ -268,7 +268,7 @@ void AudioCaptureManager::StopCapture(std::atomic_bool& running, std::thread& th
     }
 }
 
-void AudioCaptureManager::CheckAndRestartCapture(const AudioAnalysisConfig& config, 
+void AudioCaptureManager::CheckAndRestartCapture(const Listeningway::Configuration& config, 
                                                  std::atomic_bool& running, 
                                                  std::thread& thread, 
                                                  std::mutex& data_mutex, 

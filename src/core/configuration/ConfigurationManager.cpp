@@ -1,97 +1,78 @@
 #include "ConfigurationManager.h"
 #include "logging.h"
+#include <algorithm>
+#include <set>
+
+namespace Listeningway {
+
+// Static configuration instance
+Configuration ConfigurationManager::m_config = {};
 
 ConfigurationManager& ConfigurationManager::Instance() {
     static ConfigurationManager instance;
     return instance;
 }
 
-ConfigurationManager::ConfigurationManager() {
-    // Load configuration on startup
-    Load();
+Configuration& ConfigurationManager::Config() {
+    return Instance().GetConfig();
 }
 
-const Listeningway::Configuration& ConfigurationManager::GetConfig() const {
-    std::lock_guard<std::mutex> lock(m_mutex);
+const Configuration& ConfigurationManager::ConfigConst() {
+    return Instance().GetConfig();
+}
+
+Configuration& ConfigurationManager::GetConfig() {
     return m_config;
 }
 
-Listeningway::Configuration& ConfigurationManager::GetConfig() {
-    std::lock_guard<std::mutex> lock(m_mutex);
+const Configuration& ConfigurationManager::GetConfig() const {
     return m_config;
 }
 
-void ConfigurationManager::NotifyConfigurationChanged() {
-    // Validate configuration after any change
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_config.Validate();
-    }
-    
-    // Notify listeners
-    NotifyListeners();
-}
-
-bool ConfigurationManager::Save(const std::string& filename) const {
+bool ConfigurationManager::Save(const std::string& filename) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    return m_config.Save(filename.empty() ? "listeningway_config.json" : filename);
+    return m_config.Save(filename.empty() ? Configuration::GetDefaultConfigPath() : filename);
 }
 
 bool ConfigurationManager::Load(const std::string& filename) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    bool result = m_config.Load(filename.empty() ? "listeningway_config.json" : filename);
-    
-    // Always validate after loading
+    bool loaded = m_config.Load(filename.empty() ? Configuration::GetDefaultConfigPath() : filename);
+    ValidateProvider();
     m_config.Validate();
-    
-    return result;
+    return loaded;
 }
 
 void ConfigurationManager::ResetToDefaults() {
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_config.ResetToDefaults();
-    }
-    
-    NotifyListeners();
-}
-
-void ConfigurationManager::AddChangeListener(std::shared_ptr<IConfigurationChangeListener> listener) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_listeners.push_back(std::weak_ptr<IConfigurationChangeListener>(listener));
+    m_config.ResetToDefaults();
+    ValidateProvider();
 }
 
-void ConfigurationManager::RemoveChangeListener(std::shared_ptr<IConfigurationChangeListener> listener) {
+void ConfigurationManager::EnsureValidProvider() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_listeners.erase(
-        std::remove_if(m_listeners.begin(), m_listeners.end(),
-            [&listener](const std::weak_ptr<IConfigurationChangeListener>& weak_listener) {
-                return weak_listener.expired() || weak_listener.lock() == listener;
-            }), 
-        m_listeners.end());
+    ValidateProvider();
 }
 
-void ConfigurationManager::NotifyListeners() {
-    std::vector<std::shared_ptr<IConfigurationChangeListener>> listeners_copy;
-    
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        // Copy listeners and remove expired ones
-        for (auto it = m_listeners.begin(); it != m_listeners.end();) {
-            if (auto listener = it->lock()) {
-                listeners_copy.push_back(listener);
-                ++it;
-            } else {
-                it = m_listeners.erase(it);
-            }
-        }
-    }
-      // Notify listeners outside the lock to avoid deadlocks
-    for (auto& listener : listeners_copy) {
-        try {
-            listener->OnConfigurationChanged("*", "", "");
-        } catch (const std::exception& e) {
-            LOG_ERROR("[ConfigurationManager] Exception in listener notification: " + std::string(e.what()));
-        }
+std::vector<std::string> ConfigurationManager::EnumerateAvailableProviders() const {
+    // TODO: Implement actual provider enumeration logic
+    // Example: return {"system", "process", "off"};
+    return {"system", "process", "off"};
+}
+
+std::string ConfigurationManager::GetDefaultProviderCode() const {
+    // TODO: Implement logic to determine the default provider
+    // Example: return "system";
+    return "system";
+}
+
+void ConfigurationManager::ValidateProvider() {
+    auto available = EnumerateAvailableProviders();
+    auto& code = m_config.audio.captureProviderCode;
+    if (std::find(available.begin(), available.end(), code) == available.end()) {
+        code = GetDefaultProviderCode();
     }
 }
+
+ConfigurationManager::ConfigurationManager() = default;
+
+} // namespace Listeningway

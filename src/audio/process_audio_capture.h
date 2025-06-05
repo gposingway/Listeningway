@@ -33,7 +33,7 @@ struct ProcessAudioCaptureConfig {
  * @param data_mutex Mutex protecting the analysis data.
  * @param data Analysis data to be updated by the thread.
  */
-void StartProcessAudioCaptureThread(const AudioAnalysisConfig& config, 
+void StartProcessAudioCaptureThread(const Listeningway::Configuration& config, 
                                    const ProcessAudioCaptureConfig& process_config,
                                    std::atomic_bool& running, 
                                    std::thread& thread, 
