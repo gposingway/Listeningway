@@ -89,9 +89,15 @@ void ConfigurationManager::EnsureValidProvider() {
 }
 
 std::vector<std::string> ConfigurationManager::EnumerateAvailableProviders() const {
-    // TODO: Implement actual provider enumeration logic
-    // Example: return {"system", "process", "off"};
-    return {"system", "process", "off"};
+    // Query AudioCaptureManager for available providers dynamically
+    std::vector<std::string> result;
+    extern std::unique_ptr<AudioCaptureManager> g_audio_capture_manager;
+
+    for (const auto& info : g_audio_capture_manager->GetAvailableProviderInfos()) {
+        result.push_back(info.code);
+    }
+
+    return result;
 }
 
 std::string ConfigurationManager::GetDefaultProviderCode() const {
