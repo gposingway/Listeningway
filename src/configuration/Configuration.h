@@ -24,26 +24,21 @@ struct Configuration {
 
     // Beat Detection Settings
     struct BeatDetection {
-        int algorithm = 0;  // 0 = Simple Energy, 1 = Spectral Flux + Autocorrelation
-        
-        // Simple Energy Algorithm Settings
-        float falloffDefault = 2.0f;
-        float timeScale = 1e-9f;
-        float timeInitial = 0.5f;
-        float timeMin = 0.1f;
-        float timeDivisor = 0.2f;
-        
-        // Spectral Flux + Autocorrelation Algorithm Settings
-        float spectralFluxThreshold = 0.05f;
-        float spectralFluxDecayMultiplier = 2.0f;
-        float tempoChangeThreshold = 0.3f;
-        float beatInductionWindow = 0.1f;
-        float octaveErrorWeight = 0.7f;
-          // Band-Limited Beat Detection
-        float minFreq = 0.0f;
-        float maxFreq = 500.0f;
-        float fluxLowAlpha = 0.1f;
-        float fluxLowThresholdMultiplier = 2.0f;
+        int algorithm = DEFAULT_BEAT_DETECTION_ALGORITHM; 
+        float falloffDefault = DEFAULT_BEAT_FALLOFF_DEFAULT;
+        float timeScale = DEFAULT_BEAT_TIME_SCALE;
+        float timeInitial = DEFAULT_BEAT_TIME_INITIAL;
+        float timeMin = DEFAULT_BEAT_TIME_MIN;
+        float timeDivisor = DEFAULT_BEAT_TIME_DIVISOR;
+        float spectralFluxThreshold = DEFAULT_SPECTRAL_FLUX_THRESHOLD;
+        float spectralFluxDecayMultiplier = DEFAULT_SPECTRAL_FLUX_DECAY_MULTIPLIER;
+        float tempoChangeThreshold = DEFAULT_TEMPO_CHANGE_THRESHOLD;
+        float beatInductionWindow = DEFAULT_BEAT_INDUCTION_WINDOW;
+        float octaveErrorWeight = DEFAULT_OCTAVE_ERROR_WEIGHT;
+        float minFreq = DEFAULT_BEAT_MIN_FREQ;
+        float maxFreq = DEFAULT_BEAT_MAX_FREQ;
+        float fluxLowAlpha = DEFAULT_FLUX_LOW_ALPHA;
+        float fluxLowThresholdMultiplier = DEFAULT_FLUX_LOW_THRESHOLD_MULTIPLIER;
         float fluxMin = DEFAULT_BEAT_FLUX_MIN;
     } beat;
 

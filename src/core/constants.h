@@ -58,7 +58,7 @@ constexpr float DEFAULT_BAND_NORM = 0.1f;
 constexpr float DEFAULT_BAND_MIN_FREQ = 183.0f;
 constexpr float DEFAULT_BAND_MAX_FREQ = 22050.0f;
 constexpr bool  DEFAULT_BAND_LOG_SCALE = true;
-constexpr float DEFAULT_BAND_LOG_STRENGTH = 0.26f;
+constexpr float DEFAULT_BAND_LOG_STRENGTH = 0.1f;
 
 // 5-Band Equalizer
 constexpr float DEFAULT_EQUALIZER_BAND1 = 1.11f;
