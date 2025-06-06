@@ -31,7 +31,7 @@ Thank you for your interest in contributing to Listeningway! This project is a m
 - Add high-level comments to each file and function.
 - Use `// ...existing code...` in code reviews to indicate unchanged regions.
 - **To generate API documentation:**
-  - Run Doxygen with the provided `Doxyfile` in `tools/reshade`.
+  - Run Doxygen with the provided `Doxyfile` in `third_party/reshade`.
 
 ## How to Extend
 - **Add new analysis features:** Implement in `audio_analysis.*` and update `AudioAnalysisData`. Use the `AudioAnalysisConfig` struct for all tunables.

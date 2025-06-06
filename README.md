@@ -424,7 +424,7 @@ For most users, the defaults work well! Tweak only if you want to optimize for a
   * All dependencies (like KissFFT) are linked statically; no extra DLLs needed beside the `.addon` file.
   * Check the ReShade log file (`ReShade.log` or `d3d11.log` etc. in game dir) for any addon errors.
   * If you change the number of frequency bands (`NumBands` in `.json`), you MUST update it in `settings.h` (`DEFAULT_NUM_BANDS`) AND adjust your shader code (array sizes, uniform source annotations if needed) accordingly\! Same applies if adding new uniforms.
-  * Doxygen documentation can be generated using the `Doxyfile` in `tools/reshade`.
+  * Doxygen documentation can be generated using the `Doxyfile` in `third_party/reshade`.
 
   HUGE thanks to the ReShade community and the creators of these libraries\!
 

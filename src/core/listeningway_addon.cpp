@@ -17,8 +17,8 @@
 #include <combaseapi.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
-#include "audio_capture.h"
-#include "audio_analysis.h"
+#include "audio/capture/audio_capture.h"
+#include "audio/analysis/audio_analysis.h"
 #include "overlay.h"
 #include "logging.h"
 #include "uniform_manager.h"

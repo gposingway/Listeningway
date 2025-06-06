@@ -4,7 +4,7 @@ setlocal
 
 REM --- Configuration ---
 set TOOLS_DIR=tools
-set RESHADE_DIR=%TOOLS_DIR%\reshade
+set RESHADE_DIR=third_party\reshade
 set VCPKG_DIR=%TOOLS_DIR%\vcpkg
 set RESHADE_REPO_URL=https://github.com/crosire/reshade.git
 set VCPKG_REPO_URL=https://github.com/microsoft/vcpkg.git
@@ -12,7 +12,7 @@ set BUILD_DIR=build
 set CMAKE_GENERATOR="Visual Studio 17 2022" REM Adjust if needed
 set CMAKE_PLATFORM=x64
 set VCPKG_TOOLCHAIN_FILE=%~dp0%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake
-set RESHADE_SDK_INCLUDE_PATH=%~dp0%RESHADE_DIR%\include
+set RESHADE_SDK_INCLUDE_PATH=%CD%\third_party\reshade\include
 set VCPKG_TARGET_TRIPLET=x64-windows-static
 
 REM --- Preparation Steps ---
