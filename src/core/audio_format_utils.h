@@ -81,11 +81,10 @@ namespace AudioFormatUtils {
      * @param format The audio format
      * @param channel_index The channel index
      * @return true if it's a right channel
-     */
-    constexpr bool IsRightChannel(AudioFormat format, int channel_index) {
+     */    constexpr bool IsRightChannel(AudioFormat format, int channel_index) {
         switch (format) {
             case AudioFormat::Mono:
-                return true; // Mono is both left and right
+                return channel_index == 0; // Mono channel counts as right too for balance calculation
             case AudioFormat::Stereo:
                 return channel_index == 1;
             case AudioFormat::Surround51:

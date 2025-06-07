@@ -368,48 +368,76 @@ void AudioCaptureManager::StopAudioSystem() {
 
 bool AudioCaptureManager::ApplyConfiguration(const Listeningway::Configuration& config) {
     LOG_DEBUG("[AudioCaptureManager] Applying new configuration to audio system");
-      // Get access to global audio system variables
     extern std::atomic_bool g_audio_thread_running;
     extern std::thread g_audio_thread;
     extern AudioAnalysisData g_audio_data;
     extern AudioAnalyzer g_audio_analyzer;
-    
-    try {
-        bool was_running = g_audio_thread_running.load();
-        
-        // If audio analysis is disabled in config, stop the system
-        if (!config.audio.analysisEnabled) {
-            if (was_running) {
-                LOG_DEBUG("[AudioCaptureManager] Audio analysis disabled in config, stopping system");
-                StopAudioSystem();
-            }
-            return true;
+
+    static bool last_activates_capture = true; // Track previous provider state
+    bool activates_capture = false;
+    // Find the provider info for the requested provider code
+    IAudioCaptureProvider* target_provider = nullptr;
+    for (const auto& provider : providers_) {
+        if (provider->IsAvailable() && provider->GetProviderInfo().code == config.audio.captureProviderCode) {
+            target_provider = provider.get();
+            break;
         }
-        
-        // If audio was not running but should be enabled, start it
-        if (!was_running && config.audio.analysisEnabled) {
-            LOG_DEBUG("[AudioCaptureManager] Audio analysis enabled in config, starting system");
-            g_audio_analyzer.Start();
-            if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data)) {
-                LOG_ERROR("[AudioCaptureManager] Failed to start audio capture");
-                return false;
-            }
-            return true;
-        }
-        
-        // If already running, restart to apply new settings
-        if (was_running) {
-            LOG_DEBUG("[AudioCaptureManager] Restarting audio system to apply configuration changes");
-            return RestartAudioSystem(config);
-        }
-        
-        LOG_DEBUG("[AudioCaptureManager] Configuration applied successfully");
-        return true;
-    } catch (const std::exception& ex) {
-        LOG_ERROR("[AudioCaptureManager] Exception during configuration application: " + std::string(ex.what()));
-        return false;
-    } catch (...) {
-        LOG_ERROR("[AudioCaptureManager] Unknown exception during configuration application");
-        return false;
     }
+    if (target_provider) {
+        activates_capture = target_provider->GetProviderInfo().activates_capture;
+    }
+    // If switching from capture to none, stop and clear data
+    if (last_activates_capture && !activates_capture) {
+        if (g_audio_thread_running.load()) {
+            LOG_DEBUG("[AudioCaptureManager] Switching to non-capturing provider, stopping audio system");
+            StopAudioSystem();
+        }
+        // Clear analysis data so UI doesn't show stale values
+        g_audio_data = AudioAnalysisData(config.frequency.bands);
+        last_activates_capture = false;
+        return true;
+    }
+    // If switching from none to capture, start system
+    if (!last_activates_capture && activates_capture) {
+        LOG_DEBUG("[AudioCaptureManager] Switching to capturing provider, starting audio system");
+        g_audio_analyzer.Start();
+        if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data)) {
+            LOG_ERROR("[AudioCaptureManager] Failed to start audio capture");
+            last_activates_capture = false;
+            return false;
+        }
+        last_activates_capture = true;
+        return true;
+    }
+    // If audio analysis is disabled in config, stop the system
+    bool was_running = g_audio_thread_running.load();
+    if (!config.audio.analysisEnabled) {
+        if (was_running) {
+            LOG_DEBUG("[AudioCaptureManager] Audio analysis disabled in config, stopping system");
+            StopAudioSystem();
+        }
+        last_activates_capture = activates_capture;
+        return true;
+    }
+    // If audio was not running but should be enabled, start it
+    if (!was_running && config.audio.analysisEnabled) {
+        LOG_DEBUG("[AudioCaptureManager] Audio analysis enabled in config, starting system");
+        g_audio_analyzer.Start();
+        if (!StartCapture(config, g_audio_thread_running, g_audio_thread, g_audio_data)) {
+            LOG_ERROR("[AudioCaptureManager] Failed to start audio capture");
+            last_activates_capture = activates_capture;
+            return false;
+        }
+        last_activates_capture = activates_capture;
+        return true;
+    }
+    // If already running, restart to apply new settings
+    if (was_running) {
+        LOG_DEBUG("[AudioCaptureManager] Restarting audio system to apply configuration changes");
+        last_activates_capture = activates_capture;
+        return RestartAudioSystem(config);
+    }
+    LOG_DEBUG("[AudioCaptureManager] Configuration applied successfully");
+    last_activates_capture = activates_capture;
+    return true;
 }

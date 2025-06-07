@@ -20,7 +20,8 @@ BeatDetectorSpectralFluxAuto::BeatDetectorSpectralFluxAuto()
       beat_phase_(0.0f),
       time_since_last_analysis_(0.0f),
       time_since_last_beat_(0.0f),
-      total_time_(0.0f)
+      total_time_(0.0f),
+      last_beat_log_time_(std::chrono::steady_clock::now())
 {
     result_.beat = 0.0f;
     result_.tempo_detected = false;
@@ -110,27 +111,46 @@ void BeatDetectorSpectralFluxAuto::Process(const std::vector<float>& magnitudes,
                     beat_value_ = 1.0f;
                     time_since_last_beat_ = total_time_;
                     last_beat_time_ = std::chrono::steady_clock::now();
-                    
-                    // Reset phase based on actual beat time
+                      // Reset phase based on actual beat time
                     beat_phase_ = 0.0f;
                     
-                    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat aligned with tempo: " + 
-                              std::to_string(current_tempo_bpm_) + " BPM");
+                    // Throttled logging to reduce excessive debug output
+                    auto now = std::chrono::steady_clock::now();
+                    auto time_since_last_log = std::chrono::duration_cast<std::chrono::duration<float>>(now - last_beat_log_time_).count();
+                    if (time_since_last_log >= BEAT_LOG_THROTTLE_SECONDS) {
+                        LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat aligned with tempo: " + 
+                                  std::to_string(current_tempo_bpm_) + " BPM");
+                        last_beat_log_time_ = now;
+                    }
                 } 
                 else if (beat_gap > expected_beat_time * 0.5f) {
                     // Not aligned exactly, but could be a genuine beat
                     // We still trigger a beat but we don't reset phase
                     beat_value_ = 1.0f;
                     time_since_last_beat_ = total_time_;
-                    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat detected (unaligned): " +
-                              std::to_string(beat_gap) + "s gap");
+                    
+                    // Throttled logging to reduce excessive debug output
+                    auto now = std::chrono::steady_clock::now();
+                    auto time_since_last_log = std::chrono::duration_cast<std::chrono::duration<float>>(now - last_beat_log_time_).count();
+                    if (time_since_last_log >= BEAT_LOG_THROTTLE_SECONDS) {
+                        LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat detected (unaligned): " +
+                                  std::to_string(beat_gap) + "s gap");
+                        last_beat_log_time_ = now;
+                    }
                 }
             } else {
                 // No tempo detected yet, use simple threshold approach
                 beat_value_ = 1.0f;
                 time_since_last_beat_ = total_time_;
                 last_beat_time_ = std::chrono::steady_clock::now();
-                LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat detected (no tempo)");
+                
+                // Throttled logging to reduce excessive debug output  
+                auto now = std::chrono::steady_clock::now();
+                auto time_since_last_log = std::chrono::duration_cast<std::chrono::duration<float>>(now - last_beat_log_time_).count();
+                if (time_since_last_log >= BEAT_LOG_THROTTLE_SECONDS) {
+                    LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Beat detected (no tempo)");
+                    last_beat_log_time_ = now;
+                }
             }
         }
         
@@ -177,7 +197,8 @@ void BeatDetectorSpectralFluxAuto::TempoAnalysisThread() {
     while (is_running_.load()) {
         // Wait for new analysis request
         if (analysis_pending_.load()) {
-            LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Running tempo analysis");
+            // Remove frequent debug logging - tempo analysis runs every 2 seconds
+            // LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Running tempo analysis");
             
             // Copy flux history for analysis
             std::vector<float> flux_copy;
@@ -196,6 +217,7 @@ void BeatDetectorSpectralFluxAuto::TempoAnalysisThread() {
                     if (current_tempo_bpm_ <= 0.0f || 
                         std::abs(current_tempo_bpm_ - detected_tempo) / current_tempo_bpm_ > Listeningway::ConfigurationManager::Snapshot().beat.tempoChangeThreshold) { // Thread-safe for beat detection thread
                         
+                        // Only log when tempo actually changes - this is important information
                         LOG_DEBUG("[BeatDetectorSpectralFluxAuto] Tempo changed from " + 
                                   std::to_string(current_tempo_bpm_) + " to " + 
                                   std::to_string(detected_tempo) + " BPM");
@@ -205,6 +227,7 @@ void BeatDetectorSpectralFluxAuto::TempoAnalysisThread() {
                         tempo_confidence_ = std::min(0.8f, tempo_confidence_ + 0.2f);
                     } else {
                         // Tempo is consistent, increase confidence
+                        // Remove this logging as it's too frequent and not important
                         tempo_confidence_ = std::min(1.0f, tempo_confidence_ + 0.1f);
                     }
                 }

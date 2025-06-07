@@ -386,6 +386,9 @@ You can fine-tune Listeningway's audio reactivity for your needs using the overl
 **Pan Smoothing**
 - `audio.panSmoothing`: 0.0 = no smoothing (fast, but jittery), 0.1–0.3 = light smoothing, 0.4–0.7 = medium, 0.8–1.0 = heavy smoothing (very stable, but slow to react).
 
+**User Panning Adjustment**
+- `audio.panOffset`: User panning adjustment, range -1.0 (full left) to +1.0 (full right), default 0.0. This value is added to the detected pan before smoothing/output. Use to compensate for system or room bias.
+
 **5-Band Equalizer**
 - `frequency.equalizerBands`: Array of 5 multipliers for low to high frequencies (e.g. `[1.0, 1.5, 2.0, 2.5, 3.0]`). Boost or cut specific ranges for more visible bass, mids, or treble.
 - `frequency.equalizerWidth`: Controls how wide each band's effect is (in octaves). Higher = smoother transitions, lower = more focused boosts.

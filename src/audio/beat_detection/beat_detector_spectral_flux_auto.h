@@ -97,7 +97,10 @@ private:
     float time_since_last_analysis_ = 0.0f;
     float time_since_last_beat_ = 0.0f;
     float total_time_ = 0.0f;
-    
-    // Timestamps for timing measurement
+      // Timestamps for timing measurement
     std::chrono::steady_clock::time_point last_beat_time_;
+    
+    // Logging throttling to reduce excessive debug output
+    std::chrono::steady_clock::time_point last_beat_log_time_;
+    static constexpr float BEAT_LOG_THROTTLE_SECONDS = 5.0f; // Only log beat detection every 5 seconds
 };

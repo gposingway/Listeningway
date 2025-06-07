@@ -69,9 +69,14 @@ constexpr float DEFAULT_EQUALIZER_BAND5 = 1.63f;
 constexpr float DEFAULT_EQUALIZER_WIDTH = 0.15f;
 
 // Audio Capture
+// Pan calculation constants
+constexpr float DEFAULT_PAN_BALANCE_DEADZONE = 0.02f; // 2% deadzone around center for balanced audio
+constexpr float DEFAULT_PAN_SILENCE_THRESHOLD = 0.00001f; // Very low threshold for "silence" detection
+constexpr float DEFAULT_PAN_SIGNIFICANT_THRESHOLD = 0.05f; // Threshold for "significant" signal level
 // Pan smoothing (0.0 = no smoothing, higher values = more smoothing)
 constexpr float DEFAULT_PAN_SMOOTHING = 0.1f; // Default: no smoothing to preserve current behavior
 constexpr float DEFAULT_AMPLIFIER = 1.0f;
+constexpr float DEFAULT_PAN_OFFSET = 0.0f;
 
 // UI/Overlay tunables
 constexpr float DEFAULT_CAPTURE_STALE_TIMEOUT = 1.5f;
@@ -125,3 +130,6 @@ constexpr float OVERLAY_FLUX_SMOOTH_STEP = 0.001f;
 constexpr float OVERLAY_FLUX_THRESH_MIN = 1.0f;
 constexpr float OVERLAY_FLUX_THRESH_MAX = 3.0f;
 constexpr float OVERLAY_FLUX_THRESH_STEP = 0.01f;
+constexpr float OVERLAY_PAN_OFFSET_MIN = -1.0f;
+constexpr float OVERLAY_PAN_OFFSET_MAX = 1.0f;
+constexpr float OVERLAY_PAN_OFFSET_STEP = 0.01f;

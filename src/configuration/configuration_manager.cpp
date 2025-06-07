@@ -154,20 +154,27 @@ void ConfigurationManager::ApplyConfigToLiveSystems() {
 }
 
 void ConfigurationManager::RestartAudioSystems() {
-    std::lock_guard<std::mutex> lock(m_mutex);
     LOG_DEBUG("[ConfigurationManager] Restarting audio systems...");
     
     try {
-        // Validate provider before restarting
-        ValidateProvider();
+        // Create a local copy of the configuration while holding the lock
+        Configuration config_copy;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            // Validate provider before restarting
+            ValidateProvider();
+            // Copy the configuration for use outside the lock
+            config_copy = m_config;
+        }
         
-        // Apply beat detection algorithm
-        g_audio_analyzer.SetBeatDetectionAlgorithm(m_config.beat.algorithm);
+        // Apply beat detection algorithm (this doesn't need the lock)
+        g_audio_analyzer.SetBeatDetectionAlgorithm(config_copy.beat.algorithm);
         
         // Delegate audio system management to AudioCaptureManager
+        // This is done outside the lock to prevent deadlock
         extern std::unique_ptr<AudioCaptureManager> g_audio_capture_manager;
         if (g_audio_capture_manager) {
-            if (!g_audio_capture_manager->RestartAudioSystem(m_config)) {
+            if (!g_audio_capture_manager->RestartAudioSystem(config_copy)) {
                 LOG_ERROR("[ConfigurationManager] Failed to restart audio system");
             }
         } else {

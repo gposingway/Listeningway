@@ -20,6 +20,7 @@ struct Configuration {
         std::string captureProviderCode = "off"; // provider code string, e.g. "system", "process", "off"
         // int captureProvider = -1;  // (legacy, remove after migration)
         float panSmoothing = 0.1f;
+        float panOffset = 0.0f; // User panning adjustment, range [-1, +1], default 0
     } audio;
 
     // Beat Detection Settings

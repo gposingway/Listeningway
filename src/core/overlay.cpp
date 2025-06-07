@@ -626,6 +626,19 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     if (ImGui::IsItemHovered(-1)) {
         ImGui::SetTooltip("Reduces pan jitter. 0.0 = no smoothing (current behavior), higher values = more smoothing");
     }
+    // Pan Offset slider (full width, under Pan Smoothing)
+    float pan_offset = config.audio.panOffset;
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Pan Offset:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::PushItemWidth(bar_width);
+    if (ImGui::SliderFloat("##PanOffset", &pan_offset, OVERLAY_PAN_OFFSET_MIN, OVERLAY_PAN_OFFSET_MAX, "%.2f")) {
+        config.audio.panOffset = pan_offset;
+    }
+    ImGui::PopItemWidth();
+    if (ImGui::IsItemHovered(-1)) {
+        ImGui::SetTooltip("Adjusts the detected pan left/right. -1 = full left, 0 = no offset, +1 = full right. Use to compensate for system or room bias.");
+    }
     // Amplifier slider (full width, aligned under Pan Smooth, with label)
     float amplifier = config.frequency.amplifier;
     bool amp_is_spinal = amplifier > 10.0f;

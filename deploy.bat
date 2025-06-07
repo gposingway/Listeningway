@@ -53,9 +53,9 @@ if !errorlevel! neq 0 (
 )
 
 REM Copy Listeningway.fx to game directory
-copy /Y "%SOURCE_DIR%\Listeningway.fx" "%FFXIV_DIR%\Listeningway.fx" || echo WARNING: Failed to copy Listeningway.fx.
+copy /Y "%SOURCE_DIR%\Listeningway.fx" "%FFXIV_DIR%\reshade-shaders\shaders\Listeningway.fx" || echo WARNING: Failed to copy Listeningway.fx.
 REM Copy ListeningwayUniforms.fxh to game directory
-copy /Y "%SOURCE_DIR%\ListeningwayUniforms.fxh" "%FFXIV_DIR%\ListeningwayUniforms.fxh" || echo WARNING: Failed to copy ListeningwayUniforms.fxh.
+copy /Y "%SOURCE_DIR%\ListeningwayUniforms.fxh" "%FFXIV_DIR%\reshade-shaders\shaders\ListeningwayUniforms.fxh" || echo WARNING: Failed to copy ListeningwayUniforms.fxh.
 
 echo.
 echo Listeningway successfully deployed to:

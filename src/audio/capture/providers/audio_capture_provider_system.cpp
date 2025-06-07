@@ -10,6 +10,8 @@
 #include <vector>
 #include <windows.h>
 #include <combaseapi.h>
+#include <chrono>
+#include <thread>
 
 // Static member definitions
 std::atomic_bool AudioCaptureProviderSystem::device_change_pending_(false);
@@ -264,8 +266,9 @@ bool AudioCaptureProviderSystem::StartCapture(const Listeningway::Configuration&
                     DWORD flags = 0;
                     UINT64 devicePosition = 0;
                     UINT64 qpcPosition = 0;
-                    
-                    hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);                    if (SUCCEEDED(hr)) {                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
+                      hr = res.pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, &devicePosition, &qpcPosition);
+                    if (SUCCEEDED(hr)) {
+                        if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && numFramesAvailable > 0 && isFloatFormat) {
                             // Check if analysis is enabled in config (thread-safe snapshot)
                             if (!Listeningway::ConfigurationManager::Snapshot().audio.analysisEnabled) {
                                 res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
@@ -284,7 +287,46 @@ bool AudioCaptureProviderSystem::StartCapture(const Listeningway::Configuration&
                         }
                         res.pCaptureClient->ReleaseBuffer(numFramesAvailable);
                     } else {
-                        LOG_ERROR("[SystemAudioProvider] GetBuffer failed: " + std::to_string(hr));
+                        // Improved WASAPI error handling
+                        switch (hr) {
+                            case AUDCLNT_E_BUFFER_ERROR:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Audio buffer error");
+                                break;
+                            case AUDCLNT_E_BUFFER_TOO_LARGE:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Buffer too large");
+                                break;
+                            case AUDCLNT_E_BUFFER_SIZE_ERROR:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Buffer size error");
+                                break;
+                            case AUDCLNT_E_OUT_OF_ORDER:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Out of order");
+                                break;                            case AUDCLNT_E_DEVICE_INVALIDATED:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Device invalidated - attempting recovery");
+                                // Device was removed or became invalid, need to restart capture
+                                device_change_pending_ = true;
+                                return;
+                            case AUDCLNT_E_RESOURCES_INVALIDATED:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Resources invalidated - attempting recovery");
+                                // Resources were invalidated, need to restart capture
+                                device_change_pending_ = true;
+                                return;
+                            case AUDCLNT_E_SERVICE_NOT_RUNNING:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Audio service not running");
+                                break;
+                            case E_POINTER:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed: Invalid pointer");
+                                break;
+                            default:
+                                LOG_ERROR("[SystemAudioProvider] GetBuffer failed with HRESULT: 0x" + 
+                                         std::to_string(static_cast<unsigned long>(hr)) + " (decimal: " + 
+                                         std::to_string(hr) + ")");
+                                break;
+                        }
+                        
+                        // For certain errors, wait before retrying to avoid tight loop
+                        if (hr == AUDCLNT_E_BUFFER_ERROR || hr == AUDCLNT_E_OUT_OF_ORDER) {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                        }
                     }
                 }
             }
