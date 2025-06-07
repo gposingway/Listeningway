@@ -1,10 +1,12 @@
 @echo off
 setlocal
 
+set RESHADE_SDK_PATH=%CD%\third_party\reshade\include
+
 REM === Generate ListeningwayUniforms.fxh from template ===
 set NUM_BANDS=32
-set TEMPLATE=build-templates\ListeningwayUniforms.fxh.template
-set OUTPUT=ListeningwayUniforms.fxh
+set TEMPLATE=templates\ListeningwayUniforms.fxh.template
+set OUTPUT=assets\ListeningwayUniforms.fxh
 if exist %TEMPLATE% (
     powershell -Command "(Get-Content %TEMPLATE%) -replace '\{\{NUM_BANDS\}\}', '%NUM_BANDS%' | Set-Content %OUTPUT%"
 ) else (
@@ -13,8 +15,8 @@ if exist %TEMPLATE% (
 )
 
 REM === Generate listeningway.rc from template and current-version.txt ===
-set RC_TEMPLATE=build-templates\listeningway.rc.template
-set RC_OUTPUT=listeningway.rc
+set RC_TEMPLATE=templates\listeningway.rc.template
+set RC_OUTPUT=assets\listeningway.rc
 set VERSION_FILE=current-version.txt
 if not exist %RC_TEMPLATE% (
     echo Template %RC_TEMPLATE% not found!
@@ -56,12 +58,12 @@ if not exist %DIST% mkdir %DIST%
 move /Y build\%CONFIG%\Listeningway.addon %DIST%\Listeningway.addon
 
 REM Copy Listeningway.fx to dist
-copy /Y Listeningway.fx %DIST%\Listeningway.fx
+copy /Y assets\Listeningway.fx %DIST%\Listeningway.fx
 REM Copy ListeningwayUniforms.fxh to dist
-copy /Y ListeningwayUniforms.fxh %DIST%\ListeningwayUniforms.fxh
+copy /Y assets\ListeningwayUniforms.fxh %DIST%\ListeningwayUniforms.fxh
 
 REM Extract FileVersion from listeningway.rc and write to dist/VERSION.txt using PowerShell (robust to spaces)
-powershell -Command "Select-String 'FileVersion' listeningway.rc | ForEach-Object { if ($_.Line -match 'FileVersion\"\s*,\s*\"([^\"]+)\"') { $matches[1] } }" > %DIST%\VERSION.txt
+powershell -Command "Select-String 'FileVersion' assets/listeningway.rc | Select-Object -ExpandProperty Line | Where-Object { $_ -like '*VALUE*' } | ForEach-Object { if ($_ -match '"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"') { $matches[1] } }" > %DIST%\VERSION.txt
 
 REM No DLLs to copy for static build
 

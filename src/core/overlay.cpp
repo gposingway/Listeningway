@@ -7,13 +7,13 @@
 #include <imgui.h>
 #include <reshade.hpp>
 #include "overlay.h"
-#include "audio_analysis.h"
+#include "audio/analysis/audio_analysis.h"
 #include "constants.h"
 #include "audio_format_utils.h"
 #include "settings.h"
 #include "logging.h"
 #include "thread_safety_manager.h"
-#include "audio_capture.h" // Added for GetAvailableAudioCaptureProviders and GetAudioCaptureProviderName
+#include "audio/capture/audio_capture.h"
 #include "configuration/configuration_manager.h"
 using Listeningway::ConfigurationManager;
 #include <windows.h>
@@ -35,6 +35,11 @@ extern "C" bool SwitchAudioProvider(int providerType, int timeout_ms = 2000);
 
 // Static reference to avoid repeated Instance() calls - safe since ConfigurationManager is a singleton
 static auto& g_configManager = ConfigurationManager::Instance();
+
+// Overlay/ImGui color constants (must be defined after ImGui headers)
+constexpr ImU32 OVERLAY_BAR_COLOR_BG = IM_COL32(40, 40, 40, 128);           // Dark background for bars
+constexpr ImU32 OVERLAY_BAR_COLOR_OUTLINE = IM_COL32(60, 60, 60, 128);      // Outline for frequency bars
+constexpr ImU32 OVERLAY_BAR_COLOR_CENTER_MARKER = IM_COL32(255, 255, 255, 180); // Center marker (white, semi-transparent)
 
 // Helper: Draw toggles (audio analysis, debug logging)
 static void DrawToggles() {
@@ -156,7 +161,7 @@ static void DrawFrequencyBands(const AudioAnalysisData& data) {
     
     // Always use compact visualization with thin horizontal bars stacked vertically
     // Calculate total height for all bars with no spacing
-    float barHeight = 6.0f; // Thin bar height
+    float barHeight = OVERLAY_BAR_HEIGHT_THIN; // Thin bar height
     float totalHeight = barHeight * band_count;
     
     // Create a child window to contain all the bars - removed scrollbars
@@ -169,11 +174,9 @@ static void DrawFrequencyBands(const AudioAnalysisData& data) {
     // Draw each frequency band as a thin bar
     for (size_t i = 0; i < band_count; ++i) {
         float value = std::clamp(data.freq_bands[i] * amp, 0.0f, 1.0f);
-        
         // Calculate bar coordinates - each bar directly below the previous one
         ImVec2 barStart(startPos.x, startPos.y + i * barHeight);
         ImVec2 barEnd(startPos.x + value * windowSize.x, barStart.y + barHeight);
-        
         // Draw filled bar
         ImGui::GetWindowDrawList()->AddRectFilled(
             barStart,
@@ -182,18 +185,16 @@ static void DrawFrequencyBands(const AudioAnalysisData& data) {
                                       25 + 230 * ((float)i / band_count),         // Green gradient (low to high frequencies)
                                       230,                                        // Constant blue
                                       255)),                                       // Alpha
-            0.0f  // No rounding
+            OVERLAY_BAR_ROUNDING  // No rounding
         );
-        
         // Draw background/outline for the full bar area
         ImGui::GetWindowDrawList()->AddRect(
             barStart,
             ImVec2(startPos.x + windowSize.x, barStart.y + barHeight),
-            ImGui::GetColorU32(IM_COL32(60, 60, 60, 128)), // Dark gray
-            0.0f  // No rounding
+            OVERLAY_BAR_COLOR_OUTLINE, // Dark gray
+            OVERLAY_BAR_ROUNDING  // No rounding
         );
     }
-    
     ImGui::Dummy(ImVec2(0, totalHeight)); // Reserve space for our custom drawing
     ImGui::EndChild();
 }
@@ -369,7 +370,7 @@ static void DrawFrequencyBoostSettings() {
         ImGui::PushID("Equalizer");
           // Use the same compact style as Frequency Band Mapping with text on the right
         float equalizer_band1 = config.frequency.equalizerBands[0];
-        if (ImGui::SliderFloat("##band1", &equalizer_band1, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band1", &equalizer_band1, OVERLAY_EQ_BAND_MIN, OVERLAY_EQ_BAND_MAX, "%.2f")) {
             config.frequency.equalizerBands[0] = equalizer_band1;
         }
         ImGui::SameLine();
@@ -378,7 +379,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for lowest frequency bands (bass)");
         }
           float equalizer_band2 = config.frequency.equalizerBands[1];
-        if (ImGui::SliderFloat("##band2", &equalizer_band2, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band2", &equalizer_band2, OVERLAY_EQ_BAND_MIN, OVERLAY_EQ_BAND_MAX, "%.2f")) {
             config.frequency.equalizerBands[1] = equalizer_band2;
         }
         ImGui::SameLine();
@@ -387,7 +388,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for low-mid frequency bands");
         }
           float equalizer_band3 = config.frequency.equalizerBands[2];
-        if (ImGui::SliderFloat("##band3", &equalizer_band3, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band3", &equalizer_band3, OVERLAY_EQ_BAND_MIN, OVERLAY_EQ_BAND_MAX, "%.2f")) {
             config.frequency.equalizerBands[2] = equalizer_band3;
         }
         ImGui::SameLine();
@@ -396,7 +397,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for mid frequency bands");
         }
           float equalizer_band4 = config.frequency.equalizerBands[3];
-        if (ImGui::SliderFloat("##band4", &equalizer_band4, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band4", &equalizer_band4, OVERLAY_EQ_BAND_MIN, OVERLAY_EQ_BAND_MAX, "%.2f")) {
             config.frequency.equalizerBands[3] = equalizer_band4;
         }
         ImGui::SameLine();
@@ -405,7 +406,7 @@ static void DrawFrequencyBoostSettings() {
             ImGui::SetTooltip("Boost for mid-high frequency bands");
         }
           float equalizer_band5 = config.frequency.equalizerBands[4];
-        if (ImGui::SliderFloat("##band5", &equalizer_band5, 0.0f, 4.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##band5", &equalizer_band5, OVERLAY_EQ_BAND_MIN, OVERLAY_EQ_BAND_MAX, "%.2f")) {
             config.frequency.equalizerBands[4] = equalizer_band5;
         }
         ImGui::SameLine();
@@ -417,7 +418,7 @@ static void DrawFrequencyBoostSettings() {
         ImGui::PopID();
           // Add the equalizer width slider
         float equalizer_width = config.frequency.equalizerWidth;
-        if (ImGui::SliderFloat("##EqualizerWidth", &equalizer_width, 0.05f, 0.5f, "%.2f")) {
+        if (ImGui::SliderFloat("##EqualizerWidth", &equalizer_width, OVERLAY_EQ_WIDTH_MIN, OVERLAY_EQ_WIDTH_MAX, "%.2f")) {
             config.frequency.equalizerWidth = equalizer_width;
         }
         ImGui::SameLine();
@@ -483,13 +484,13 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::ProgressBar(std::clamp(data.volume * amp, 0.0f, 1.0f), ImVec2(bar_width, 0.0f));
     ImGui::SameLine();
     ImGui::Text("%.2f", data.volume * amp);    // Compact Left/Right display under the main volume bar
-    const float thin_bar_height = 6.0f;  // Same height as frequency bands
-    const float small_spacing = 2.0f;    // Small gap between left and right bars
+    const float thin_bar_height = OVERLAY_BAR_HEIGHT_THIN;  // Same height as frequency bands
+    const float small_spacing = OVERLAY_BAR_SPACING_SMALL;    // Small gap between left and right bars
     const float half_bar_width = (bar_width - small_spacing) * 0.5f;
     
     // Use the captured progress bar position for perfect alignment
     ImVec2 start_pos = progress_bar_screen_pos;
-    start_pos.y += ImGui::GetFrameHeight() + 2.0f;  // Position below the progress bar
+    start_pos.y += ImGui::GetFrameHeight() + OVERLAY_BAR_SPACING_SMALL;  // Position below the progress bar
     
     // Calculate center point for both bars
     float center_x = start_pos.x + bar_width * 0.5f;
@@ -502,8 +503,8 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
       // Draw Left bar background
     ImGui::GetWindowDrawList()->AddRectFilled(
         left_bar_bg_min, left_bar_bg_max,
-        ImGui::GetColorU32(IM_COL32(40, 40, 40, 128)),  // Dark background
-        0.0f  // No rounding
+        OVERLAY_BAR_COLOR_BG,  // Dark background
+        OVERLAY_BAR_ROUNDING  // No rounding
     );
     
     // Draw Left bar fill (grows from right edge leftward)
@@ -511,7 +512,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
         ImGui::GetWindowDrawList()->AddRectFilled(
             left_bar_fill_min, left_bar_fill_max,
             ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
-            0.0f  // No rounding
+            OVERLAY_BAR_ROUNDING  // No rounding
         );
     }
     
@@ -524,8 +525,8 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     // Draw Right bar background
     ImGui::GetWindowDrawList()->AddRectFilled(
         right_bar_bg_min, right_bar_bg_max,
-        ImGui::GetColorU32(IM_COL32(40, 40, 40, 128)),  // Dark background
-        0.0f  // No rounding
+        OVERLAY_BAR_COLOR_BG,  // Dark background
+        OVERLAY_BAR_ROUNDING  // No rounding
     );
     
     // Draw Right bar fill (grows from left edge rightward)
@@ -533,11 +534,11 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
         ImGui::GetWindowDrawList()->AddRectFilled(
             right_bar_fill_min, right_bar_fill_max,
             ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
-            0.0f  // No rounding
+            OVERLAY_BAR_ROUNDING  // No rounding
         );    }    // Reserve space for the custom drawn left/right bars and move cursor down
     // Use minimal spacing between the left/right bars and the pan bar
     // This should be just enough to visually separate the bars (2-4 pixels)
-    ImGui::Dummy(ImVec2(0, 4.0f)); // Small spacing after left/right bars
+    ImGui::Dummy(ImVec2(0, OVERLAY_BAR_SPACING_LARGE)); // Small spacing after left/right bars
     
     // Pan bar (without label and without text overlay)
     // Use invisible dummy element for alignment with bars above
@@ -551,11 +552,10 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     // Draw pan bar background - full width to match other bars
     ImVec2 pan_bar_bg_min = ImVec2(pan_cursor_pos.x, pan_cursor_pos.y);
     ImVec2 pan_bar_bg_max = ImVec2(pan_cursor_pos.x + bar_width, pan_cursor_pos.y + thin_bar_height);
-    
     ImGui::GetWindowDrawList()->AddRectFilled(
         pan_bar_bg_min, pan_bar_bg_max,
-        ImGui::GetColorU32(IM_COL32(40, 40, 40, 128)),  // Dark background (same as other bars)
-        0.0f  // No rounding
+        OVERLAY_BAR_COLOR_BG,  // Dark background (same as other bars)
+        OVERLAY_BAR_ROUNDING  // No rounding
     );
     
     // Calculate center position
@@ -573,7 +573,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
         ImGui::GetWindowDrawList()->AddRectFilled(
             pan_bar_fill_min, pan_bar_fill_max,
             ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
-            0.0f  // No rounding
+            OVERLAY_BAR_ROUNDING  // No rounding
         );
     } else if (pan_clamped > 0.0f) {
         // Extend to the right for positive values
@@ -584,7 +584,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
         ImGui::GetWindowDrawList()->AddRectFilled(
             pan_bar_fill_min, pan_bar_fill_max,
             ImGui::GetColorU32(ImGuiCol_PlotHistogram),  // Match main volume bar color
-            0.0f  // No rounding
+            OVERLAY_BAR_ROUNDING  // No rounding
         );
     }
     
@@ -592,15 +592,15 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::GetWindowDrawList()->AddLine(
         ImVec2(pan_center_x, pan_cursor_pos.y),
         ImVec2(pan_center_x, pan_cursor_pos.y + thin_bar_height),
-        ImGui::GetColorU32(IM_COL32(255, 255, 255, 180)),  // White semi-transparent
-        1.0f
+        OVERLAY_BAR_COLOR_CENTER_MARKER,  // White semi-transparent
+        OVERLAY_BAR_CENTER_MARKER_THICKNESS
     );
     
     // Reserve space for the pan bar (using Dummy to advance cursor)
     ImGui::Dummy(ImVec2(bar_width, thin_bar_height));
     
     // Add spacing after the pan bar (same as other bars)
-    ImGui::Dummy(ImVec2(0, 4.0f));
+    ImGui::Dummy(ImVec2(0, OVERLAY_BAR_SPACING_LARGE));
     // Beat
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Beat:");
@@ -626,6 +626,19 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     if (ImGui::IsItemHovered(-1)) {
         ImGui::SetTooltip("Reduces pan jitter. 0.0 = no smoothing (current behavior), higher values = more smoothing");
     }
+    // Pan Offset slider (full width, under Pan Smoothing)
+    float pan_offset = config.audio.panOffset;
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Pan Offset:");
+    ImGui::SameLine(bar_start_x);
+    ImGui::PushItemWidth(bar_width);
+    if (ImGui::SliderFloat("##PanOffset", &pan_offset, OVERLAY_PAN_OFFSET_MIN, OVERLAY_PAN_OFFSET_MAX, "%.2f")) {
+        config.audio.panOffset = pan_offset;
+    }
+    ImGui::PopItemWidth();
+    if (ImGui::IsItemHovered(-1)) {
+        ImGui::SetTooltip("Adjusts the detected pan left/right. -1 = full left, 0 = no offset, +1 = full right. Use to compensate for system or room bias.");
+    }
     // Amplifier slider (full width, aligned under Pan Smooth, with label)
     float amplifier = config.frequency.amplifier;
     bool amp_is_spinal = amplifier > 10.0f;
@@ -646,7 +659,7 @@ static void DrawVolumeSpatializationBeat(const AudioAnalysisData& data) {
     ImGui::Text("Amplifier:");
     ImGui::SameLine(bar_start_x);
     ImGui::PushItemWidth(bar_width);
-    if (ImGui::SliderFloat("##Amplifier", &amplifier, 1.0f, 11.0f, "%.2f")) {
+    if (ImGui::SliderFloat("##Amplifier", &amplifier, OVERLAY_AMPLIFIER_MIN, OVERLAY_AMPLIFIER_MAX, "%.2f")) {
         config.frequency.amplifier = amplifier;
     }
     ImGui::PopItemWidth();
@@ -694,7 +707,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data) {
         // Display log-specific settings only when log scale is enabled
         if (config.frequency.logScaleEnabled) {
             float band_log_strength = config.frequency.logStrength;
-            if (ImGui::SliderFloat("##LogStrength", &band_log_strength, 0.2f, 3.0f, "%.2f")) {
+            if (ImGui::SliderFloat("##LogStrength", &band_log_strength, OVERLAY_LOG_STRENGTH_MIN, OVERLAY_LOG_STRENGTH_MAX, "%.2f")) {
                 config.frequency.logStrength = band_log_strength;
             }
             ImGui::SameLine();
@@ -704,7 +717,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data) {
             }
         
             float band_min_freq = config.frequency.minFreq;
-            if (ImGui::SliderFloat("##MinFreq", &band_min_freq, 10.0f, 500.0f, "%.0f")) {
+            if (ImGui::SliderFloat("##MinFreq", &band_min_freq, OVERLAY_MIN_FREQ_MIN, OVERLAY_MIN_FREQ_MAX, "%.0f")) {
                 config.frequency.minFreq = band_min_freq;
             }
             ImGui::SameLine();
@@ -714,7 +727,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data) {
             }
             
             float band_max_freq = config.frequency.maxFreq;
-            if (ImGui::SliderFloat("##MaxFreq", &band_max_freq, 2000.0f, 22050.0f, "%.0f")) {
+            if (ImGui::SliderFloat("##MaxFreq", &band_max_freq, OVERLAY_MAX_FREQ_MIN, OVERLAY_MAX_FREQ_MAX, "%.0f")) {
                 config.frequency.maxFreq = band_max_freq;
             }
             ImGui::SameLine();
@@ -735,21 +748,21 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data) {
         }
         
         float beat_min_freq = config.beat.minFreq;
-        if (ImGui::SliderFloat("##BeatMinFreq", &beat_min_freq, 0.0f, 100.0f, "%.1f")) {
+        if (ImGui::SliderFloat("##BeatMinFreq", &beat_min_freq, OVERLAY_BEAT_MIN_FREQ_MIN, OVERLAY_BEAT_MIN_FREQ_MAX, "%.1f")) {
             config.beat.minFreq = beat_min_freq;
         }
         ImGui::SameLine();
         ImGui::Text("Beat Min Freq (Hz)");
         
         float beat_max_freq = config.beat.maxFreq;
-        if (ImGui::SliderFloat("##BeatMaxFreq", &beat_max_freq, 100.0f, 500.0f, "%.1f")) {
+        if (ImGui::SliderFloat("##BeatMaxFreq", &beat_max_freq, OVERLAY_BEAT_MAX_FREQ_MIN, OVERLAY_BEAT_MAX_FREQ_MAX, "%.1f")) {
             config.beat.maxFreq = beat_max_freq;
         }
         ImGui::SameLine();
         ImGui::Text("Beat Max Freq (Hz)");
         
         float flux_low_alpha = config.beat.fluxLowAlpha;
-        if (ImGui::SliderFloat("##LowFluxSmoothing", &flux_low_alpha, 0.01f, 0.5f, "%.3f")) {
+        if (ImGui::SliderFloat("##LowFluxSmoothing", &flux_low_alpha, OVERLAY_FLUX_SMOOTH_MIN, OVERLAY_FLUX_SMOOTH_MAX, "%.3f")) {
             config.beat.fluxLowAlpha = flux_low_alpha;
         }
         ImGui::SameLine();
@@ -759,7 +772,7 @@ void DrawListeningwayDebugOverlay(const AudioAnalysisData& data) {
         }
         
         float flux_low_threshold_multiplier = config.beat.fluxLowThresholdMultiplier;
-        if (ImGui::SliderFloat("##LowFluxThreshold", &flux_low_threshold_multiplier, 1.0f, 3.0f, "%.2f")) {
+        if (ImGui::SliderFloat("##LowFluxThreshold", &flux_low_threshold_multiplier, OVERLAY_FLUX_THRESH_MIN, OVERLAY_FLUX_THRESH_MAX, "%.2f")) {
             config.beat.fluxLowThresholdMultiplier = flux_low_threshold_multiplier;
         }
         ImGui::SameLine();

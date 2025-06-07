@@ -1,6 +1,6 @@
 #include "constants.h"
 #include "settings.h"
-#include "audio_analysis.h"
+#include "audio/analysis/audio_analysis.h"
 #include "logging.h"
 #include "configuration/configuration_manager.h"
 #include <windows.h>
