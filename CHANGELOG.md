@@ -5,6 +5,40 @@ All notable changes to Listeningway will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0.3] - 2025-06-07
+
+### New Features
+- Added documentation files clarifying core, audio, configuration, and utility module responsibilities.
+- Introduced scaffolding for threading utilities.
+- Added `audio.panOffset` configuration parameter for user panning adjustment with smoothing support.
+
+### Refactor
+- Restructured audio and provider modules for better organization and clarity.
+- Updated include paths across the project to reflect new directory structure.
+- Removed process-specific audio capture providers and related code.
+- Removed several UI renderer components and associated files.
+- Removed the `tools/reshade` subproject and all related references.
+- Renamed and clarified audio capture provider classes for consistency.
+- Introduced `AudioCaptureManager` class to manage audio capture providers and selection.
+- Improved error handling in system audio capture provider.
+- Refined audio capture manager logic to track provider state and transitions.
+
+### Documentation
+- Updated documentation to reflect new paths for configuration files and third-party tools.
+
+### Chores
+- Updated version information to 1.2.0.3.
+- Adjusted build and deployment scripts to align with new directory structure and third-party dependencies.
+
+### Style
+- Improved and clarified file header comments across multiple files.
+- Replaced hardcoded UI constants with named constants for overlay elements and sliders.
+- Updated beat detector class names for clarity and consistency.
+
+### Bug Fixes
+- Refined audio analysis frequency band calculations with improved logarithmic gain application.
+- Enhanced pan calculation logic with deadzone and surround channel handling.
+
 ## [1.2.0.2] - 2025-06-05
 
 ### New Features
